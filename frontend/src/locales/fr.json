@@ -1,0 +1,75 @@
+{
+  "common": {
+    "appName": "url.addrien",
+    "mascotAlt": "Rouge-gorge dans son nid"
+  },
+  "auth": {
+    "tagline": "Mes liens et fichiers partagés",
+    "emailLabel": "Adresse e-mail",
+    "passwordLabel": "Mot de passe",
+    "signIn": "Se connecter",
+    "invalidCredentials": "Adresse e-mail ou mot de passe incorrect.",
+    "accountLocked": "Compte temporairement verrouillé suite à trop de tentatives échouées. Réessayez dans {{seconds}} s.",
+    "accountLockedNoDelay": "Compte temporairement verrouillé.",
+    "validation": {
+      "emailInvalid": "Adresse e-mail invalide",
+      "passwordRequired": "Mot de passe requis"
+    }
+  },
+  "layout": {
+    "navigation": "Navigation",
+    "allLinks": "Tous les liens",
+    "settings": "Réglages",
+    "toggleTheme": "Changer de thème",
+    "account": "Mon compte",
+    "signOut": "Se déconnecter",
+    "storage": "Stockage S3",
+    "storageUsed": "Stockage utilisé",
+    "storageUnavailable": "Indisponible"
+  },
+  "dashboard": {
+    "title": "Tous les liens",
+    "subtitle": "Redirections, partages et dépôts, au même endroit.",
+    "linksRegion": "Liens",
+    "emptyTitle": "Aucun lien pour l'instant",
+    "emptyBody": "Les redirections <r>/r/</r>, les partages <d>/d/</d> et les dépôts <u>/u/</u> apparaîtront ici."
+  },
+  "settings": {
+    "title": "Réglages",
+    "subtitle": "Langue de l'interface et sécurité du compte.",
+    "languageTitle": "Langue",
+    "languageLabel": "Langue de l'interface",
+    "languageHelp": "S'applique à tout le site, pages publiques comprises.",
+    "languageFr": "Français",
+    "languageEn": "English",
+    "languageUpdated": "Langue mise à jour.",
+    "languageUpdateFailed": "Impossible de changer la langue.",
+    "passwordTitle": "Mot de passe",
+    "passwordHelp": "Changer le mot de passe déconnecte toutes les autres sessions.",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "passwordRules": "12 caractères minimum, avec une majuscule, une minuscule, un chiffre et un symbole.",
+    "changePassword": "Changer le mot de passe",
+    "passwordChanged": "Mot de passe changé. Les autres sessions sont déconnectées.",
+    "validation": {
+      "currentRequired": "Mot de passe actuel requis",
+      "minLength": "Au moins {{count}} caractères",
+      "complexity": "Une majuscule, une minuscule, un chiffre et un symbole",
+      "mismatch": "Les deux mots de passe diffèrent"
+    }
+  },
+  "notFound": {
+    "title": "Lien introuvable",
+    "body": "Ce lien n'existe pas, ou n'est plus disponible.",
+    "backHome": "Retour à l'accueil"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue, réessayez.",
+    "tooManyRequests": "Trop de requêtes, réessayez dans {{seconds}} s.",
+    "tooManyRequestsNoDelay": "Trop de requêtes, réessayez dans un instant."
+  },
+  "units": {
+    "bytes": ["o", "Ko", "Mo", "Go", "To"]
+  }
+}

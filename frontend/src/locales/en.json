@@ -1,0 +1,75 @@
+{
+  "common": {
+    "appName": "url.addrien",
+    "mascotAlt": "Robin in its nest"
+  },
+  "auth": {
+    "tagline": "My links and shared files",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "signIn": "Sign in",
+    "invalidCredentials": "Wrong email address or password.",
+    "accountLocked": "Account temporarily locked after too many failed attempts. Try again in {{seconds}} s.",
+    "accountLockedNoDelay": "Account temporarily locked.",
+    "validation": {
+      "emailInvalid": "Invalid email address",
+      "passwordRequired": "Password required"
+    }
+  },
+  "layout": {
+    "navigation": "Navigation",
+    "allLinks": "All links",
+    "settings": "Settings",
+    "toggleTheme": "Toggle theme",
+    "account": "My account",
+    "signOut": "Sign out",
+    "storage": "S3 storage",
+    "storageUsed": "Storage used",
+    "storageUnavailable": "Unavailable"
+  },
+  "dashboard": {
+    "title": "All links",
+    "subtitle": "Redirects, shares and drop boxes, in one place.",
+    "linksRegion": "Links",
+    "emptyTitle": "No links yet",
+    "emptyBody": "Redirects <r>/r/</r>, shares <d>/d/</d> and drop boxes <u>/u/</u> will show up here."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Interface language and account security.",
+    "languageTitle": "Language",
+    "languageLabel": "Interface language",
+    "languageHelp": "Applies to the whole site, public pages included.",
+    "languageFr": "Français",
+    "languageEn": "English",
+    "languageUpdated": "Language updated.",
+    "languageUpdateFailed": "Could not change the language.",
+    "passwordTitle": "Password",
+    "passwordHelp": "Changing the password signs out every other session.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm the new password",
+    "passwordRules": "At least 12 characters, with an uppercase letter, a lowercase letter, a digit and a symbol.",
+    "changePassword": "Change password",
+    "passwordChanged": "Password changed. Other sessions are signed out.",
+    "validation": {
+      "currentRequired": "Current password required",
+      "minLength": "At least {{count}} characters",
+      "complexity": "An uppercase letter, a lowercase letter, a digit and a symbol",
+      "mismatch": "The two passwords differ"
+    }
+  },
+  "notFound": {
+    "title": "Link not found",
+    "body": "This link does not exist, or is no longer available.",
+    "backHome": "Back to home"
+  },
+  "errors": {
+    "generic": "Something went wrong, try again.",
+    "tooManyRequests": "Too many requests, try again in {{seconds}} s.",
+    "tooManyRequestsNoDelay": "Too many requests, try again in a moment."
+  },
+  "units": {
+    "bytes": ["B", "KB", "MB", "GB", "TB"]
+  }
+}

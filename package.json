@@ -1,0 +1,15 @@
+{
+  "name": "urls",
+  "version": "0.0.1",
+  "description": "url.addrien.fr: personal URL shortener, file sharing and file drop, behind a single admin dashboard.",
+  "private": true,
+  "author": "FireDroX <contact@addrien.fr>",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "back:dev": "pnpm --filter backend start:dev",
+    "front:dev": "pnpm --filter frontend dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test"
+  }
+}

@@ -1,0 +1,55 @@
+# Prod: the database (MariaDB/MySQL) and the S3 (RustFS, exposed on
+# cdn.addrien.fr) already run on the server, shared with NestWiki. Only
+# backend + frontend are started here, from images built by the CI
+# (never rebuilt on the server).
+#
+# Networks, named in the root .env:
+# - `default` (created by compose): frontend + backend. The frontend sees
+#   neither the database nor the storage.
+# - DATABASE_NETWORK / STORAGE_NETWORK: existing --internal networks shared
+#   only with the database / the storage, e.g.
+#     docker network create --internal db-urls
+#     docker network connect db-urls mariadb
+#     docker network create --internal s3-urls
+#     docker network connect s3-urls rustfs
+#
+# Only the frontend port is published, on BIND_ADDRESS (127.0.0.1): the
+# Cloudflare Tunnel on the host serves it as url.addrien.fr.
+#
+# backend/.env must point DB_HOST / S3_ENDPOINT at the real container
+# names on those networks, S3_PUBLIC_ENDPOINT at https://cdn.addrien.fr
+# and CLIENT_IP_HEADER at cf-connecting-ip.
+services:
+  backend:
+    image: ghcr.io/firedrox/urls-backend:${URLS_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - backend/.env
+    mem_limit: ${BACKEND_MEM_LIMIT:-512m}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - default
+      - database
+      - storage
+
+  frontend:
+    image: ghcr.io/firedrox/urls-frontend:${URLS_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_HOST_PORT:-8081}:80"
+    depends_on:
+      - backend
+    networks:
+      - default
+
+networks:
+  database:
+    external: true
+    name: ${DATABASE_NETWORK:?}
+  storage:
+    external: true
+    name: ${STORAGE_NETWORK:?}

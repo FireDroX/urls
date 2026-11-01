@@ -1,0 +1,41 @@
+# Dependencies
+**/node_modules/
+
+# Build output
+**/dist/
+**/build/
+
+# Env files (keep the .example templates tracked)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Logs
+**/*.log
+**/npm-debug.log*
+
+# Test coverage
+**/coverage/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript incremental build info
+**/*.tsbuildinfo
+
+# Graphify
+graphify-out/
+
+# Claude
+.claude/
+
+# Scripts d'infra locaux (hors dépôt)
+infra/
+
+# Plan et maquette de travail (documents perso, hors dépôt)
+Plan url.addrien.fr.md
+Maquette url.addrien.fr.html
