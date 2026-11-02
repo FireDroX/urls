@@ -5,6 +5,7 @@ export const PASSWORD_MAX_LENGTH = 256;
 export const PASSWORD_COMPLEXITY_REGEX =
   /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
 export const MIN_JWT_SECRET_LENGTH = 32;
+export const MIN_IP_HASH_SECRET_LENGTH = 32;
 export const KNOWN_DEFAULT_SECRETS: readonly string[] = [
   'changeme',
   'change-me',
@@ -75,6 +76,14 @@ export const LINK_CREATE_THROTTLE_LIMIT = 20;
 export const LINK_REDIRECT_THROTTLE_TTL_MS = 60_000;
 export const LINK_REDIRECT_THROTTLE_LIMIT = 30;
 export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
+
+export const EVENT_TYPES = ['click'] as const;
+export const EVENT_REFERER_MAX_LENGTH = 2048;
+export const EVENT_USER_AGENT_MAX_LENGTH = 512;
+export const IP_HASH_ALGORITHM = 'sha256';
+export const COUNTRY_HEADER = 'cf-ipcountry';
+export const COUNTRY_CODE_REGEX = /^[A-Z]{2}$/;
+export const UNKNOWN_COUNTRY_CODES: readonly string[] = ['XX', 'T1'];
 
 export const JSON_BODY_LIMIT = '100kb';
 

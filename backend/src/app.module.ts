@@ -13,6 +13,7 @@ import {
 } from './common/variables.global.js';
 import { validateEnvironment } from './config/env.validation.js';
 import { typeOrmConfig } from './config/typeorm.config.js';
+import { EventsModule } from './events/events.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LinksModule } from './links/links.module.js';
 import { SecurityModule } from './security/security.module.js';
@@ -38,6 +39,7 @@ import { UsersModule } from './users/users.module.js';
     AuthModule,
     StorageModule,
     SettingsModule,
+    EventsModule,
     LinksModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerBehindProxyGuard }],

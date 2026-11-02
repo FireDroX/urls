@@ -17,12 +17,14 @@ import {
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { CurrentVisitor } from '../common/decorators/current-visitor.decorator.js';
 import { ErrorResponseDto } from '../common/dto/error-response.dto.js';
 import {
   LINK_REDIRECT_THROTTLE_LIMIT,
   LINK_REDIRECT_THROTTLE_TTL_MS,
   PUBLIC_LINK_CACHE_CONTROL,
 } from '../common/variables.global.js';
+import type { Visitor } from '../common/visitor.js';
 import { LinksExceptionFilter } from './filter/links.exception.filter.js';
 import { LinksMapper } from './mapper/links.mapper.js';
 import { LinksService } from './services/links.service.js';
@@ -52,7 +54,12 @@ export class RedirectsController {
   })
   @ApiGoneResponse({ description: 'Lien expiré.', type: ErrorResponseDto })
   @ApiTooManyRequestsResponse({ description: 'Trop de requêtes.' })
-  async redirect(@Param('id') id: string): Promise<HttpRedirectResponse> {
-    return LinksMapper.toRedirect(await this.linksService.resolveRedirect(id));
+  async redirect(
+    @Param('id') id: string,
+    @CurrentVisitor() visitor: Visitor,
+  ): Promise<HttpRedirectResponse> {
+    return LinksMapper.toRedirect(
+      await this.linksService.resolveRedirect(id, visitor),
+    );
   }
 }

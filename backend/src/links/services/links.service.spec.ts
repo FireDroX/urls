@@ -10,6 +10,8 @@ import {
   PUBLIC_ID_GENERATION_ATTEMPTS,
   PUBLIC_ID_LENGTH,
 } from '../../common/variables.global.js';
+import type { Visitor } from '../../common/visitor.js';
+import type { EventsService } from '../../events/services/events.service.js';
 import type { Link } from '../entities/link.entity.js';
 import type {
   LinkRepository,
@@ -20,6 +22,12 @@ import { LinksService } from './links.service.js';
 const USER_ID = 'user-1';
 const FUTURE = '2999-01-01T00:00:00.000Z';
 const PAST = '2000-01-01T00:00:00.000Z';
+const VISITOR: Visitor = {
+  ip: '203.0.113.9',
+  referer: 'https://news.example/post',
+  userAgent: 'Mozilla/5.0',
+  country: 'FR',
+};
 
 function buildLink(overrides: Partial<Link> = {}): Link {
   return {
@@ -45,6 +53,7 @@ describe('LinksService', () => {
     softDelete: ReturnType<typeof vi.fn>;
   };
   let audit: { record: ReturnType<typeof vi.fn> };
+  let events: { recordClick: ReturnType<typeof vi.fn> };
   let service: LinksService;
 
   beforeEach(() => {
@@ -56,9 +65,11 @@ describe('LinksService', () => {
       softDelete: vi.fn().mockResolvedValue(undefined),
     };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
+    events = { recordClick: vi.fn().mockResolvedValue(undefined) };
     service = new LinksService(
       repository as unknown as LinkRepository,
       audit as unknown as AuditLogService,
+      events as unknown as EventsService,
     );
   });
 
@@ -312,12 +323,22 @@ describe('LinksService', () => {
   });
 
   describe('resolveRedirect', () => {
-    it('returns the destination of an active link', async () => {
+    it('returns the destination of an active link and records a click', async () => {
       repository.findByPublicId.mockResolvedValue(
         buildLink({ expiresAt: new Date(FUTURE) }),
       );
 
-      await expect(service.resolveRedirect('abc123')).resolves.toBe(
+      await expect(service.resolveRedirect('abc123', VISITOR)).resolves.toBe(
+        'https://example.com/',
+      );
+      expect(events.recordClick).toHaveBeenCalledWith('internal-uuid', VISITOR);
+    });
+
+    it('does not wait for the click to be recorded', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+      events.recordClick.mockReturnValue(new Promise(() => undefined));
+
+      await expect(service.resolveRedirect('abc123', VISITOR)).resolves.toBe(
         'https://example.com/',
       );
     });
@@ -334,11 +355,12 @@ describe('LinksService', () => {
       repository.findByPublicId.mockResolvedValue(link);
 
       const error = await service
-        .resolveRedirect('abc123')
+        .resolveRedirect('abc123', VISITOR)
         .catch((caught: unknown) => caught);
 
       expect(error).toBeInstanceOf(LinkNotFoundException);
       expect(error).toEqual(new LinkNotFoundException());
+      expect(events.recordClick).not.toHaveBeenCalled();
     });
 
     it('throws a link expired error once expires_at has passed', async () => {
@@ -346,9 +368,10 @@ describe('LinksService', () => {
         buildLink({ expiresAt: new Date(PAST) }),
       );
 
-      await expect(service.resolveRedirect('abc123')).rejects.toBeInstanceOf(
-        LinkExpiredException,
-      );
+      await expect(
+        service.resolveRedirect('abc123', VISITOR),
+      ).rejects.toBeInstanceOf(LinkExpiredException);
+      expect(events.recordClick).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -360,10 +383,11 @@ describe('LinksService', () => {
     ])(
       'rejects the malformed id "%s" without querying the database',
       async (id) => {
-        await expect(service.resolveRedirect(id)).rejects.toBeInstanceOf(
-          LinkNotFoundException,
-        );
+        await expect(
+          service.resolveRedirect(id, VISITOR),
+        ).rejects.toBeInstanceOf(LinkNotFoundException);
         expect(repository.findByPublicId).not.toHaveBeenCalled();
+        expect(events.recordClick).not.toHaveBeenCalled();
       },
     );
   });
