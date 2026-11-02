@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '#lib/api-client'
-import { createLink, deleteLink, linkUrl, listLinks, updateLink, type Link } from './links'
+import { createLink, deleteLink, getLink, getLinkStats, linkUrl, listLinks, updateLink, type Link } from './links'
 
 vi.mock('#lib/api-client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -52,6 +52,21 @@ describe('links api', () => {
 
     await expect(deleteLink('docs')).resolves.toBeUndefined()
     expect(apiClient.delete).toHaveBeenCalledWith('/links/docs')
+  })
+
+  it('gets a link by its public id', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(link))
+
+    await expect(getLink('docs')).resolves.toEqual(link)
+    expect(apiClient.get).toHaveBeenCalledWith('/links/docs', { signal: undefined })
+  })
+
+  it('gets the stats of a link for the given number of days', async () => {
+    const stats = { id: 'docs', days: 7, since: '2026-10-27', timeZone: 'UTC', total: 0, daily: [], referers: [], countries: [] }
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(stats))
+
+    await expect(getLinkStats('docs', 7)).resolves.toEqual(stats)
+    expect(apiClient.get).toHaveBeenCalledWith('/links/docs/stats', { params: { days: 7 }, signal: undefined })
   })
 
   it('encodes the id so it stays a single path segment', async () => {

@@ -13,6 +13,7 @@ import {
 import {
   EVENT_REFERER_MAX_LENGTH,
   EVENT_USER_AGENT_MAX_LENGTH,
+  LINK_STATS_TOP_LIMIT,
 } from '../../common/variables.global.js';
 import type { Visitor } from '../../common/visitor.js';
 import type {
@@ -36,7 +37,12 @@ function visitor(overrides: Partial<Visitor> = {}): Visitor {
 }
 
 describe('EventsService', () => {
-  let repository: { insert: ReturnType<typeof vi.fn> };
+  let repository: {
+    insert: ReturnType<typeof vi.fn>;
+    countClicksByDay: ReturnType<typeof vi.fn>;
+    topReferers: ReturnType<typeof vi.fn>;
+    topCountries: ReturnType<typeof vi.fn>;
+  };
   let service: EventsService;
   let logError: MockInstance<Logger['error']>;
 
@@ -45,7 +51,12 @@ describe('EventsService', () => {
   }
 
   beforeEach(() => {
-    repository = { insert: vi.fn().mockResolvedValue(undefined) };
+    repository = {
+      insert: vi.fn().mockResolvedValue(undefined),
+      countClicksByDay: vi.fn().mockResolvedValue([]),
+      topReferers: vi.fn().mockResolvedValue([]),
+      topCountries: vi.fn().mockResolvedValue([]),
+    };
     const config = { getOrThrow: vi.fn().mockReturnValue(SECRET) };
     service = new EventsService(
       repository as unknown as LinkEventRepository,
@@ -136,5 +147,94 @@ describe('EventsService', () => {
 
     expect(logError).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(logError.mock.calls)).not.toContain(IP);
+  });
+
+  describe('clickStats', () => {
+    const NOW = new Date('2026-11-02T15:30:00.000Z');
+
+    it('queries a window starting at UTC midnight, today included', async () => {
+      await service.clickStats(LINK_ID, 7, NOW);
+
+      const query = {
+        linkId: LINK_ID,
+        since: new Date('2026-10-27T00:00:00.000Z'),
+      };
+      expect(repository.countClicksByDay).toHaveBeenCalledWith(query);
+      expect(repository.topReferers).toHaveBeenCalledWith(
+        query,
+        LINK_STATS_TOP_LIMIT,
+      );
+      expect(repository.topCountries).toHaveBeenCalledWith(
+        query,
+        LINK_STATS_TOP_LIMIT,
+      );
+    });
+
+    it('fills the days without clicks with zero and sums the total', async () => {
+      repository.countClicksByDay.mockResolvedValue([
+        { day: '2026-10-31', clicks: 4 },
+        { day: '2026-11-02', clicks: 2 },
+      ]);
+
+      const stats = await service.clickStats(LINK_ID, 4, NOW);
+
+      expect(stats.since).toBe('2026-10-30');
+      expect(stats.total).toBe(6);
+      expect(stats.daily).toEqual([
+        { day: '2026-10-30', clicks: 0 },
+        { day: '2026-10-31', clicks: 4 },
+        { day: '2026-11-01', clicks: 0 },
+        { day: '2026-11-02', clicks: 2 },
+      ]);
+    });
+
+    it('crosses month and year boundaries', async () => {
+      const stats = await service.clickStats(
+        LINK_ID,
+        3,
+        new Date('2027-01-01T00:00:00.000Z'),
+      );
+
+      expect(stats.daily.map((entry) => entry.day)).toEqual([
+        '2026-12-30',
+        '2026-12-31',
+        '2027-01-01',
+      ]);
+    });
+
+    it('returns a single day for a one-day window', async () => {
+      const stats = await service.clickStats(LINK_ID, 1, NOW);
+
+      expect(stats.since).toBe('2026-11-02');
+      expect(stats.daily).toEqual([{ day: '2026-11-02', clicks: 0 }]);
+    });
+
+    it('returns an empty but complete series when there is no click', async () => {
+      const stats = await service.clickStats(LINK_ID, 30, NOW);
+
+      expect(stats.total).toBe(0);
+      expect(stats.daily).toHaveLength(30);
+      expect(stats.daily.every((entry) => entry.clicks === 0)).toBe(true);
+      expect(stats.referers).toEqual([]);
+      expect(stats.countries).toEqual([]);
+    });
+
+    it('passes the top referers and countries through, direct and unknown as null', async () => {
+      const referers = [
+        { value: null, clicks: 3 },
+        { value: 'https://news.example/', clicks: 1 },
+      ];
+      const countries = [
+        { value: 'FR', clicks: 3 },
+        { value: null, clicks: 1 },
+      ];
+      repository.topReferers.mockResolvedValue(referers);
+      repository.topCountries.mockResolvedValue(countries);
+
+      const stats = await service.clickStats(LINK_ID, 7, NOW);
+
+      expect(stats.referers).toEqual(referers);
+      expect(stats.countries).toEqual(countries);
+    });
   });
 });

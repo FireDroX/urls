@@ -6,10 +6,49 @@ import {
   EVENT_REFERER_MAX_LENGTH,
   EVENT_USER_AGENT_MAX_LENGTH,
   IP_HASH_ALGORITHM,
+  LINK_STATS_TOP_LIMIT,
+  MS_PER_DAY,
   UNKNOWN_COUNTRY_CODES,
 } from '../../common/variables.global.js';
 import type { Visitor } from '../../common/visitor.js';
-import type { LinkEventRepository } from '../persistence/link-event.repository.js';
+import type {
+  ClickCountByValue,
+  DailyClickCount,
+  LinkEventRepository,
+} from '../persistence/link-event.repository.js';
+
+export interface LinkClickStats {
+  since: string;
+  total: number;
+  daily: DailyClickCount[];
+  referers: ClickCountByValue[];
+  countries: ClickCountByValue[];
+}
+
+function utcDay(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function firstDayOfWindow(days: number, now: Date): Date {
+  const today = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return new Date(today - (days - 1) * MS_PER_DAY);
+}
+
+function fillMissingDays(
+  since: Date,
+  days: number,
+  counts: DailyClickCount[],
+): DailyClickCount[] {
+  const clicksByDay = new Map(counts.map((count) => [count.day, count.clicks]));
+  return Array.from({ length: days }, (_, offset) => {
+    const day = utcDay(new Date(since.getTime() + offset * MS_PER_DAY));
+    return { day, clicks: clicksByDay.get(day) ?? 0 };
+  });
+}
 
 function truncate(value: string | undefined, maxLength: number): string | null {
   return value ? value.slice(0, maxLength) : null;
@@ -56,6 +95,28 @@ export class EventsService {
         error instanceof Error ? error.stack : undefined,
       );
     }
+  }
+
+  async clickStats(
+    linkId: string,
+    days: number,
+    now = new Date(),
+  ): Promise<LinkClickStats> {
+    const since = firstDayOfWindow(days, now);
+    const query = { linkId, since };
+    const [counts, referers, countries] = await Promise.all([
+      this.repository.countClicksByDay(query),
+      this.repository.topReferers(query, LINK_STATS_TOP_LIMIT),
+      this.repository.topCountries(query, LINK_STATS_TOP_LIMIT),
+    ]);
+    const daily = fillMissingDays(since, days, counts);
+    return {
+      since: utcDay(since),
+      total: daily.reduce((sum, day) => sum + day.clicks, 0),
+      daily,
+      referers,
+      countries,
+    };
   }
 
   private hashIp(ip: string): string {

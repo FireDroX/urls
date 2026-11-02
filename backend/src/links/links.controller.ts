@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import {
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
@@ -30,8 +32,12 @@ import type { AuthenticatedUser } from '../common/strategies/jwt.strategy.js';
 import {
   LINK_CREATE_THROTTLE_LIMIT,
   LINK_CREATE_THROTTLE_TTL_MS,
+  LINK_STATS_DEFAULT_DAYS,
+  LINK_STATS_MAX_DAYS,
+  LINK_STATS_MIN_DAYS,
 } from '../common/variables.global.js';
 import type { LinkResponseDto } from './dto/out/link-response.dto.js';
+import type { LinkStatsResponseDto } from './dto/out/link-stats-response.dto.js';
 import { LinksExceptionFilter } from './filter/links.exception.filter.js';
 import { LinksMapper } from './mapper/links.mapper.js';
 import { LinksService } from './services/links.service.js';
@@ -62,6 +68,29 @@ export class LinksController {
   @ApiNotFoundResponse({ description: 'Lien inconnu.', type: ErrorResponseDto })
   async get(@Param('id') id: string): Promise<ResponseDto<LinkResponseDto>> {
     return LinksMapper.toResponse(await this.linksService.get(id));
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({
+    summary: 'Clics par jour (UTC), top referers et top pays d’une redirection',
+  })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    description: `Nombre de jours, de ${LINK_STATS_MIN_DAYS} à ${LINK_STATS_MAX_DAYS} (défaut ${LINK_STATS_DEFAULT_DAYS}).`,
+  })
+  @ApiBadRequestResponse({
+    description: 'Nombre de jours invalide.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Lien inconnu.', type: ErrorResponseDto })
+  async stats(
+    @Param('id') id: string,
+    @Query() query: unknown,
+  ): Promise<ResponseDto<LinkStatsResponseDto>> {
+    return LinksMapper.toStatsResponse(
+      await this.linksService.stats(id, query),
+    );
   }
 
   @Post()

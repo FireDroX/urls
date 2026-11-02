@@ -1,17 +1,21 @@
-import { useState, type ReactNode } from 'react'
-import { ArrowRightLeft, Plus } from 'lucide-react'
+import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { linkUrl, updateLink, type Link } from '#api/links'
+import { updateLink, type Link } from '#api/links'
 import { DeleteLinkDialog } from '#components/links/DeleteLinkDialog'
 import { LinkFormDialog } from '#components/links/LinkFormDialog'
+import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
 import { LinksTable, type LinkActions } from '#components/links/LinksTable'
 import { Button } from '#components/ui/button'
 import { Skeleton } from '#components/ui/skeleton'
+import { useCopyLink } from '#hooks/useCopyLink'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
 import { useLinks, type LinksState } from '#hooks/useLinks'
 import { extractErrorMessage } from '#lib/api-errors'
 import { linkErrorMessages } from '#lib/link-errors'
+import { linkDetailPath } from '#utils/link-stats'
 
 const SKELETON_ROWS = 3
 
@@ -19,19 +23,6 @@ interface DialogState {
   kind: 'form' | 'delete'
   link?: Link
   open: boolean
-}
-
-function LinksPlaceholder({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
-  return (
-    <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
-      <div className="flex size-12 items-center justify-center rounded-full bg-accent text-muted-foreground">
-        <ArrowRightLeft className="size-5" aria-hidden="true" />
-      </div>
-      <h2 className="font-heading text-lg font-semibold">{title}</h2>
-      <p className="max-w-md text-sm text-muted-foreground">{body}</p>
-      {action}
-    </section>
-  )
 }
 
 function LinksContent({ state, actions, onRetry }: { state: LinksState; actions: LinkActions; onRetry: () => void }) {
@@ -70,6 +61,8 @@ export function Redirects() {
   useDocumentTitle(t('links.title'))
   const { state, reload, add, replace, remove } = useLinks()
   const [dialog, setDialog] = useState<DialogState>({ kind: 'form', open: false })
+  const copyLink = useCopyLink()
+  const navigate = useNavigate()
 
   function closeDialog() {
     setDialog((current) => ({ ...current, open: false }))
@@ -96,15 +89,6 @@ export function Redirects() {
     closeDialog()
   }
 
-  async function copyLink(link: Link) {
-    try {
-      await navigator.clipboard.writeText(linkUrl(link.id))
-      toast.success(t('links.copied'))
-    } catch {
-      toast.error(t('links.copyFailed'))
-    }
-  }
-
   async function toggleLink(link: Link) {
     try {
       const saved = await updateLink(link.id, { disabled: !link.disabled })
@@ -116,7 +100,8 @@ export function Redirects() {
   }
 
   const actions: LinkActions = {
-    onCopy: (link) => void copyLink(link),
+    onCopy: (link) => void copyLink(link.id),
+    onStats: (link) => void navigate(linkDetailPath(link.id)),
     onEdit: (link) => setDialog({ kind: 'form', link, open: true }),
     onToggle: (link) => void toggleLink(link),
     onDelete: (link) => setDialog({ kind: 'delete', link, open: true }),

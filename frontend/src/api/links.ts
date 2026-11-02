@@ -12,6 +12,32 @@ export interface Link {
   updatedAt: string
 }
 
+export interface DailyClicks {
+  date: string
+  clicks: number
+}
+
+export interface RefererClicks {
+  referer: string | null
+  clicks: number
+}
+
+export interface CountryClicks {
+  country: string | null
+  clicks: number
+}
+
+export interface LinkStats {
+  id: string
+  days: number
+  since: string
+  timeZone: string
+  total: number
+  daily: DailyClicks[]
+  referers: RefererClicks[]
+  countries: CountryClicks[]
+}
+
 export interface CreateLinkPayload {
   destination: string
   slug?: string
@@ -37,6 +63,16 @@ export function linkUrl(id: string, origin = window.location.origin): string {
 
 export async function listLinks(): Promise<Link[]> {
   const { data } = await apiClient.get<ResponseDto<Link[]>>(LINKS_PATH)
+  return data.data
+}
+
+export async function getLink(id: string, signal?: AbortSignal): Promise<Link> {
+  const { data } = await apiClient.get<ResponseDto<Link>>(linkPath(id), { signal })
+  return data.data
+}
+
+export async function getLinkStats(id: string, days: number, signal?: AbortSignal): Promise<LinkStats> {
+  const { data } = await apiClient.get<ResponseDto<LinkStats>>(`${linkPath(id)}/stats`, { params: { days }, signal })
   return data.data
 }
 
