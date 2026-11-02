@@ -10,6 +10,8 @@ import {
   LINK_SLUG_REGEX,
   PUBLIC_ID_GENERATION_ATTEMPTS,
 } from '../../common/variables.global.js';
+import type { Visitor } from '../../common/visitor.js';
+import { EventsService } from '../../events/services/events.service.js';
 import { createLinkSchema } from '../dto/in/create-link.dto.js';
 import { updateLinkSchema } from '../dto/in/update-link.dto.js';
 import type { Link } from '../entities/link.entity.js';
@@ -32,6 +34,7 @@ export class LinksService {
     @Inject('LinksRepository')
     private readonly repository: LinkRepository,
     private readonly auditLog: AuditLogService,
+    private readonly events: EventsService,
   ) {}
 
   list(): Promise<Link[]> {
@@ -49,7 +52,7 @@ export class LinksService {
     return link;
   }
 
-  async resolveRedirect(publicId: string): Promise<string> {
+  async resolveRedirect(publicId: string, visitor: Visitor): Promise<string> {
     const link = await this.get(publicId);
     if (link.disabled || !link.destination) {
       throw new LinkNotFoundException();
@@ -57,6 +60,7 @@ export class LinksService {
     if (link.expiresAt && link.expiresAt.getTime() <= Date.now()) {
       throw new LinkExpiredException();
     }
+    void this.events.recordClick(link.id, visitor);
     return link.destination;
   }
 

@@ -10,6 +10,7 @@ function validConfig(): Record<string, unknown> {
     PUBLIC_URL: 'https://url.example.org',
     JWT_ACCESS_SECRET: STRONG_ACCESS,
     JWT_REFRESH_SECRET: STRONG_REFRESH,
+    IP_HASH_SECRET: 'e'.repeat(16) + 'f'.repeat(16),
     DB_HOST: 'mariadb',
     DB_USERNAME: 'urls_app',
     DB_DATABASE: 'urls',
@@ -45,6 +46,7 @@ describe('validateEnvironment', () => {
     'PUBLIC_URL',
     'JWT_ACCESS_SECRET',
     'JWT_REFRESH_SECRET',
+    'IP_HASH_SECRET',
     'DB_HOST',
     'DB_USERNAME',
     'DB_DATABASE',
@@ -70,6 +72,18 @@ describe('validateEnvironment', () => {
     expect(
       problemsFor({ ...validConfig(), JWT_ACCESS_SECRET: 'x'.repeat(31) }),
     ).toEqual(['JWT_ACCESS_SECRET: must be at least 32 characters long']);
+  });
+
+  it('rejects an IP hash secret shorter than 32 characters', () => {
+    expect(
+      problemsFor({ ...validConfig(), IP_HASH_SECRET: 'x'.repeat(31) }),
+    ).toEqual(['IP_HASH_SECRET: must be at least 32 characters long']);
+  });
+
+  it('rejects a known default IP hash secret', () => {
+    expect(
+      problemsFor({ ...validConfig(), IP_HASH_SECRET: 'changeme' }),
+    ).toEqual(['IP_HASH_SECRET: uses a well-known default value']);
   });
 
   it('rejects a short storage secret', () => {
