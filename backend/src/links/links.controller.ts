@@ -72,7 +72,8 @@ export class LinksController {
 
   @Get(':id/stats')
   @ApiOperation({
-    summary: 'Clics par jour (UTC), top referers et top pays d’une redirection',
+    summary:
+      'Clics par jour (UTC), top sources (par hôte) et top pays d’une redirection',
   })
   @ApiQuery({
     name: 'days',

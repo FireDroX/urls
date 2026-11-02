@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LINK_STATS_DEFAULT_DAYS, parseStatsDays, refererLabel, utcDayToDate } from './link-stats'
+import { LINK_STATS_DEFAULT_DAYS, parseStatsDays, utcDayToDate } from './link-stats'
 
 describe('parseStatsDays', () => {
   it.each([
@@ -19,19 +19,5 @@ describe('parseStatsDays', () => {
 describe('utcDayToDate', () => {
   it('reads the day as UTC midnight', () => {
     expect(utcDayToDate('2026-11-02').toISOString()).toBe('2026-11-02T00:00:00.000Z')
-  })
-})
-
-describe('refererLabel', () => {
-  it('shows the host of a URL', () => {
-    expect(refererLabel('https://news.example:8443/post?id=1')).toBe('news.example:8443')
-  })
-
-  it('keeps a value that is not a URL', () => {
-    expect(refererLabel('not a url')).toBe('not a url')
-  })
-
-  it('keeps a URL without host', () => {
-    expect(refererLabel('android-app:')).toBe('android-app:')
   })
 })

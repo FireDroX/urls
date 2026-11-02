@@ -3,8 +3,8 @@ export interface DailyClicksDto {
   clicks: number;
 }
 
-export interface RefererClicksDto {
-  referer: string | null;
+export interface RefererHostClicksDto {
+  host: string | null;
   clicks: number;
 }
 
@@ -20,6 +20,6 @@ export interface LinkStatsResponseDto {
   timeZone: string;
   total: number;
   daily: DailyClicksDto[];
-  referers: RefererClicksDto[];
+  referers: RefererHostClicksDto[];
   countries: CountryClicksDto[];
 }

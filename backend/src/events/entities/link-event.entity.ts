@@ -31,6 +31,14 @@ export class LinkEvent {
   @Column({ type: 'varchar', length: 2048, nullable: true })
   referer: string | null;
 
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'referer_host',
+    nullable: true,
+  })
+  refererHost: string | null;
+
   @Column({ type: 'varchar', length: 512, name: 'user_agent', nullable: true })
   userAgent: string | null;
 
