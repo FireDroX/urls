@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "url.addrien",
-    "mascotAlt": "Robin in its nest"
+    "mascotAlt": "Robin in its nest",
+    "backHome": "Back to home"
   },
   "auth": {
     "tagline": "My links and shared files",
@@ -61,8 +62,11 @@
   },
   "notFound": {
     "title": "Link not found",
-    "body": "This link does not exist, or is no longer available.",
-    "backHome": "Back to home"
+    "body": "This link does not exist, or is no longer available."
+  },
+  "linkExpired": {
+    "title": "Link expired",
+    "body": "This link has expired and no longer leads anywhere."
   },
   "errors": {
     "generic": "Something went wrong, try again.",

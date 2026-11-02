@@ -29,4 +29,11 @@ describe('LinksMapper', () => {
     });
     expect(JSON.stringify(data)).not.toContain(link.id);
   });
+
+  it('redirects with a 302, never a permanent redirect', () => {
+    expect(LinksMapper.toRedirect('https://example.com/')).toEqual({
+      url: 'https://example.com/',
+      statusCode: 302,
+    });
+  });
 });

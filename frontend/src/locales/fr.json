@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "url.addrien",
-    "mascotAlt": "Rouge-gorge dans son nid"
+    "mascotAlt": "Rouge-gorge dans son nid",
+    "backHome": "Retour à l'accueil"
   },
   "auth": {
     "tagline": "Mes liens et fichiers partagés",
@@ -61,8 +62,11 @@
   },
   "notFound": {
     "title": "Lien introuvable",
-    "body": "Ce lien n'existe pas, ou n'est plus disponible.",
-    "backHome": "Retour à l'accueil"
+    "body": "Ce lien n'existe pas, ou n'est plus disponible."
+  },
+  "linkExpired": {
+    "title": "Lien expiré",
+    "body": "Ce lien a expiré et ne mène plus nulle part."
   },
   "errors": {
     "generic": "Une erreur est survenue, réessayez.",

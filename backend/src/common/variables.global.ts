@@ -72,6 +72,9 @@ export const RESERVED_LINK_SLUGS: readonly string[] = [
 ];
 export const LINK_CREATE_THROTTLE_TTL_MS = 60_000;
 export const LINK_CREATE_THROTTLE_LIMIT = 20;
+export const LINK_REDIRECT_THROTTLE_TTL_MS = 60_000;
+export const LINK_REDIRECT_THROTTLE_LIMIT = 30;
+export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
 export const JSON_BODY_LIMIT = '100kb';
 

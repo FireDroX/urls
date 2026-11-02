@@ -10,6 +10,7 @@ import { HttpExceptionFilter } from '../../common/filters/http-exception.filter.
 const STATUS_BY_EXCEPTION: Record<string, number> = {
   ValidationException: HttpStatus.BAD_REQUEST,
   LinkNotFoundException: HttpStatus.NOT_FOUND,
+  LinkExpiredException: HttpStatus.GONE,
   SlugAlreadyTakenException: HttpStatus.CONFLICT,
 };
 

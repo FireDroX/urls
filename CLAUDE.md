@@ -24,7 +24,7 @@ Toujours lancer l'app via les scripts `pnpm run <script>` du package concerné. 
 
 ```bash
 cd backend && pnpm run start:dev    # API en watch (http://localhost:3001/api)
-cd frontend && pnpm run dev         # Vite, proxifie /api vers VITE_API_PROXY_TARGET
+cd frontend && pnpm run dev         # Vite, proxifie /api et /r/ vers VITE_API_PROXY_TARGET
 ```
 
 Backend (`backend/`) :
@@ -57,7 +57,7 @@ Ne jamais afficher ni copier les valeurs des `.env` : générer de nouveaux secr
 
 - `docker-compose.yml` : stack complète (mysql + rustfs + backend + frontend, plus `storage-init` en profil `setup`, qui monte `infra/rustfs`), pour un serveur vierge ou un essai local. Réseaux `database` et `storage` en `internal`, partagés seulement avec le backend ; seul le frontend publie un port (`127.0.0.1:8081`), servi par le Cloudflare Tunnel.
 - `docker-compose.external.yml` : prod, la base et le RustFS existent déjà (ceux de NestWiki, S3 exposé sur `cdn.addrien.fr`). Images `ghcr.io/firedrox/urls-{backend,frontend}` poussées par la CI sur `main`, réseaux externes `DATABASE_NETWORK`/`STORAGE_NETWORK` (réseaux `--internal` dédiés).
-- Backend : utilisateur `node` (non root), `mem_limit`, `read_only`, `no-new-privileges`. `entrypoint.sh` lance migrations, seed admin puis l'API. Le frontend nginx proxifie `/api/` vers `backend:3000` et envoie la CSP (scripts du site + Turnstile seulement), `nosniff`, `X-Frame-Options`.
+- Backend : utilisateur `node` (non root), `mem_limit`, `read_only`, `no-new-privileges`. `entrypoint.sh` lance migrations, seed admin puis l'API. Le frontend nginx proxifie `/api/` et `/r/` vers `backend:3000` et envoie la CSP (scripts du site + Turnstile seulement), `nosniff`, `X-Frame-Options`.
 
 ## Architecture backend (`backend/src`)
 
@@ -86,6 +86,8 @@ Même découpage en couches que NestWiki :
 **Audit** : `AuditLogService.record` (`audit/`) journalise connexions (réussies, échouées, verrouillées), changements de mot de passe et de réglages, et créations, modifications et suppressions de liens (`AuditAction`).
 
 **Liens** (`links/`) : une seule table `links` pour les trois types (`redirect`, puis `share` et `drop`), contrainte `CHECK` sur le type et sur la destination obligatoire d'une redirection. `public_id` = slug choisi ou `generatePublicId()`, unique et en `utf8mb4_bin` (sensible à la casse, comme l'alphabet base62). API admin `GET/POST /api/links`, `GET/PATCH/DELETE /api/links/:id` (`:id` = `public_id`) ; tout est modifiable (destination, slug, expiration, désactivation). Suppression en soft delete (`deleted_at`) : le slug d'un lien supprimé reste pris (409), pour qu'une ancienne URL partagée ne pointe jamais vers une autre destination. Limites (longueurs, alphabet du slug, noms réservés, throttle de création) dans `variables.global.ts`.
+
+**Redirection publique `/r/:id`** (`links/redirects.controller.ts`) : seule route hors du préfixe `/api` (`exclude` de `setGlobalPrefix` dans `main.ts`), servie par le backend pour répondre côté serveur. Lien actif → `302` vers la destination, `Cache-Control: no-store` (jamais de 301 ni de cache). Lien inexistant, désactivé, supprimé ou id mal formé (vérifié avant toute requête SQL) → même `LinkNotFoundException` (404, corps et en-têtes identiques) ; `expires_at` passé → `LinkExpiredException` (410). `@Throttle` dédié (`LINK_REDIRECT_THROTTLE_*`, par IP via `resolveClientIp`). Les pages 404/410 sont celles de la SPA, statut conservé : nginx (`proxy_intercept_errors` + `error_page 404 410 /index.html`) et le proxy Vite (plugin `public-link-proxy` de `vite.config.ts`) remplacent le corps JSON par `index.html` ; la route `/r/:id` du front (`RedirectUnavailable`) relit le statut par un `fetch` sans suivre la redirection (`redirect: 'manual'`) et affiche « lien introuvable » ou « lien expiré » dans la langue du site. Les 429 passent tels quels (`Retry-After` conservé).
 
 **Stockage** : client AWS SDK v3 (`storage/`), `forcePathStyle`, deux clients : interne (`S3_ENDPOINT`) et de signature (`S3_PUBLIC_ENDPOINT`). Bucket privé, accès uniquement par URLs présignées en `Content-Disposition: attachment`. `GET /api/storage/usage` lit `GET /rustfs/admin/v3/quota-stats/<bucket>` signé SigV4 (l'utilisateur de l'app n'a besoin que de `s3:GetBucketQuota`). Le quota RustFS ne suffit pas : avant toute URL présignée d'upload, vérifier aussi la place restante côté SQL, et traduire « Bucket quota exceeded » en 413.
 

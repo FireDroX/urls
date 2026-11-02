@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditLogService } from '../../audit/services/audit-log.service.js';
+import { LinkExpiredException } from '../../common/exceptions/links/link-expired.exception.js';
 import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { parseDto } from '../../common/parse-dto.js';
@@ -46,6 +47,17 @@ export class LinksService {
       throw new LinkNotFoundException();
     }
     return link;
+  }
+
+  async resolveRedirect(publicId: string): Promise<string> {
+    const link = await this.get(publicId);
+    if (link.disabled || !link.destination) {
+      throw new LinkNotFoundException();
+    }
+    if (link.expiresAt && link.expiresAt.getTime() <= Date.now()) {
+      throw new LinkExpiredException();
+    }
+    return link.destination;
   }
 
   async create(input: unknown, userId: string): Promise<Link> {
