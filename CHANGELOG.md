@@ -1,5 +1,9 @@
 # Changelog
 
+## Non publié
+
+- Redirections publiques `/r/<id>` en 302, avec pages « lien introuvable » (404) et « lien expiré » (410) en français ou en anglais, et limite de débit par visiteur.
+
 ## 0.0.1 — 2026-11-01
 
 - Socle du projet : API NestJS, dashboard React, base MySQL et stockage S3 (RustFS).

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import type { INestApplication } from '@nestjs/common';
+import { type INestApplication, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -40,7 +40,9 @@ async function bootstrap() {
 
   app.set('trust proxy', trustedProxyHops());
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'r/:id', method: RequestMethod.GET }],
+  });
   app.enableCors({
     origin: process.env.PUBLIC_URL,
     credentials: true,

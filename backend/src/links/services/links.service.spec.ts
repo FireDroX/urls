@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuditLogService } from '../../audit/services/audit-log.service.js';
+import { LinkExpiredException } from '../../common/exceptions/links/link-expired.exception.js';
 import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
 import {
   LINK_DESTINATION_MAX_LENGTH,
+  LINK_SLUG_MAX_LENGTH,
   PUBLIC_ID_GENERATION_ATTEMPTS,
   PUBLIC_ID_LENGTH,
 } from '../../common/variables.global.js';
@@ -17,6 +19,7 @@ import { LinksService } from './links.service.js';
 
 const USER_ID = 'user-1';
 const FUTURE = '2999-01-01T00:00:00.000Z';
+const PAST = '2000-01-01T00:00:00.000Z';
 
 function buildLink(overrides: Partial<Link> = {}): Link {
   return {
@@ -306,6 +309,63 @@ describe('LinksService', () => {
         service.update('missing', { disabled: true }, USER_ID),
       ).rejects.toBeInstanceOf(LinkNotFoundException);
     });
+  });
+
+  describe('resolveRedirect', () => {
+    it('returns the destination of an active link', async () => {
+      repository.findByPublicId.mockResolvedValue(
+        buildLink({ expiresAt: new Date(FUTURE) }),
+      );
+
+      await expect(service.resolveRedirect('abc123')).resolves.toBe(
+        'https://example.com/',
+      );
+    });
+
+    it.each([
+      ['missing or deleted', null],
+      ['disabled', buildLink({ disabled: true })],
+      ['not a redirect', buildLink({ type: 'share', destination: null })],
+      [
+        'disabled and expired',
+        buildLink({ disabled: true, expiresAt: new Date(PAST) }),
+      ],
+    ])('throws the same not found error when %s', async (_case, link) => {
+      repository.findByPublicId.mockResolvedValue(link);
+
+      const error = await service
+        .resolveRedirect('abc123')
+        .catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(LinkNotFoundException);
+      expect(error).toEqual(new LinkNotFoundException());
+    });
+
+    it('throws a link expired error once expires_at has passed', async () => {
+      repository.findByPublicId.mockResolvedValue(
+        buildLink({ expiresAt: new Date(PAST) }),
+      );
+
+      await expect(service.resolveRedirect('abc123')).rejects.toBeInstanceOf(
+        LinkExpiredException,
+      );
+    });
+
+    it.each([
+      'a'.repeat(LINK_SLUG_MAX_LENGTH + 1),
+      'abc.def',
+      'abc def',
+      '../admin',
+      '',
+    ])(
+      'rejects the malformed id "%s" without querying the database',
+      async (id) => {
+        await expect(service.resolveRedirect(id)).rejects.toBeInstanceOf(
+          LinkNotFoundException,
+        );
+        expect(repository.findByPublicId).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('remove', () => {
