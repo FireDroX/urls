@@ -6,6 +6,7 @@ import { useAuth } from '#hooks/useAuth'
 import { Dashboard } from '#pages/Dashboard'
 import { Login } from '#pages/Login'
 import { NotFound } from '#pages/NotFound'
+import { Redirects } from '#pages/Redirects'
 import { RedirectUnavailable } from '#pages/RedirectUnavailable'
 import { Settings } from '#pages/Settings'
 
@@ -23,6 +24,7 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="/redirects" element={<Redirects />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/account" element={<Navigate to="/settings" replace />} />
         </Route>

@@ -2,7 +2,9 @@
   "common": {
     "appName": "url.addrien",
     "mascotAlt": "Rouge-gorge dans son nid",
-    "backHome": "Retour à l'accueil"
+    "backHome": "Retour à l'accueil",
+    "cancel": "Annuler",
+    "retry": "Réessayer"
   },
   "auth": {
     "tagline": "Mes liens et fichiers partagés",
@@ -20,6 +22,7 @@
   "layout": {
     "navigation": "Navigation",
     "allLinks": "Tous les liens",
+    "redirects": "Redirections",
     "settings": "Réglages",
     "toggleTheme": "Changer de thème",
     "account": "Mon compte",
@@ -34,6 +37,80 @@
     "linksRegion": "Liens",
     "emptyTitle": "Aucun lien pour l'instant",
     "emptyBody": "Les redirections <r>/r/</r>, les partages <d>/d/</d> et les dépôts <u>/u/</u> apparaîtront ici."
+  },
+  "links": {
+    "title": "Redirections",
+    "subtitle": "Des liens courts /r/ qui renvoient vers l'adresse de votre choix.",
+    "new": "Nouvelle redirection",
+    "emptyTitle": "Aucune redirection pour l'instant",
+    "emptyBody": "Créez une redirection pour obtenir un lien court à partager.",
+    "loadFailedTitle": "Impossible de charger les redirections",
+    "loadFailedBody": "Vérifiez votre connexion, puis réessayez.",
+    "columns": {
+      "link": "Lien",
+      "destination": "Destination",
+      "state": "État",
+      "expiresAt": "Expiration",
+      "actions": "Actions"
+    },
+    "state": {
+      "active": "Actif",
+      "disabled": "Désactivé",
+      "expired": "Expiré"
+    },
+    "noExpiry": "Jamais",
+    "copy": "Copier le lien {{slug}}",
+    "copied": "Lien copié.",
+    "copyFailed": "Impossible de copier le lien.",
+    "actions": "Actions pour {{slug}}",
+    "edit": "Modifier",
+    "disable": "Désactiver",
+    "enable": "Réactiver",
+    "created": "Redirection créée.",
+    "updated": "Redirection mise à jour.",
+    "deleted": "Redirection supprimée.",
+    "disabledToast": "Redirection désactivée.",
+    "enabledToast": "Redirection réactivée.",
+    "form": {
+      "createTitle": "Nouvelle redirection",
+      "createDescription": "Le lien court renverra vers la destination indiquée.",
+      "editTitle": "Modifier la redirection",
+      "editDescription": "Destination, slug, expiration et état restent modifiables à tout moment.",
+      "destination": "Destination",
+      "destinationPlaceholder": "https://exemple.fr/une-page",
+      "slug": "Slug",
+      "slugOptional": "Slug (facultatif)",
+      "slugHelp": "Laissez vide pour un identifiant généré. Lettres, chiffres, « - » et « _ ».",
+      "slugEditHelp": "Changer le slug invalide l'ancienne adresse du lien.",
+      "expiresAt": "Expiration (facultatif)",
+      "expiresAtHelp": "Laissez vide pour un lien qui n'expire jamais.",
+      "noExpiry": "Aucune",
+      "disabled": "Désactivé",
+      "disabledHelp": "Un lien désactivé répond « lien introuvable ».",
+      "create": "Créer",
+      "save": "Enregistrer"
+    },
+    "delete": {
+      "action": "Supprimer",
+      "title": "Supprimer cette redirection ?",
+      "description": "Le lien /r/{{slug}} cessera de fonctionner. Son slug restera réservé et ne pourra pas être réutilisé.",
+      "confirm": "Supprimer"
+    },
+    "validation": {
+      "destinationRequired": "Destination requise",
+      "destinationTooLong": "{{max}} caractères maximum",
+      "destinationInvalid": "Adresse http:// ou https:// attendue",
+      "slugTooShort": "Au moins {{min}} caractères",
+      "slugTooLong": "{{max}} caractères maximum",
+      "slugCharacters": "Lettres, chiffres, « - » et « _ » uniquement",
+      "slugReserved": "Ce slug est réservé",
+      "expiresInPast": "La date d'expiration doit être dans le futur"
+    },
+    "errors": {
+      "invalid": "Destination ou slug invalide.",
+      "notFound": "Cette redirection n'existe plus.",
+      "slugTaken": "Ce slug est déjà pris."
+    }
   },
   "settings": {
     "title": "Réglages",
