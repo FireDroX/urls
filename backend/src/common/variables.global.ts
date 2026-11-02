@@ -39,6 +39,10 @@ export const LOGIN_THROTTLE_LIMIT = 5;
 
 export const DEFAULT_TRUSTED_PROXY_HOPS = 1;
 
+export const DB_DEFAULT_PORT = 3306;
+export const DB_DRIVER_TIME_ZONE = 'Z';
+export const DB_SESSION_TIME_ZONE = '+00:00';
+
 export const PUBLIC_ID_ALPHABET =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 export const PUBLIC_ID_LENGTH = 8;

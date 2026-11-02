@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { mysqlConnectionOptions } from '../config/mysql-connection.js';
 import { User } from '../users/entities/user.entity.js';
 import {
   defaultAdminSettingsFromEnv,
@@ -7,14 +8,7 @@ import {
 } from './default-admin.js';
 
 const dataSource = new DataSource({
-  type: 'mysql',
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT ?? 3306),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  timezone: 'Z',
-  synchronize: false,
+  ...mysqlConnectionOptions((key) => process.env[key]),
   entities: [User],
 });
 
