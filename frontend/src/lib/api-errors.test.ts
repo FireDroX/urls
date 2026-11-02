@@ -31,6 +31,18 @@ describe('extractErrorMessage', () => {
     )
   })
 
+  it('prefers the translated message given for the status', () => {
+    const error = axiosError(409, { error: 'Slug already taken' })
+
+    expect(extractErrorMessage(error, undefined, { 409: 'Slug pris' })).toBe('Slug pris')
+  })
+
+  it('keeps the Retry-After message of a 429 over a status message', () => {
+    const error = axiosError(429, {}, { 'retry-after': '7' })
+
+    expect(extractErrorMessage(error, undefined, { 429: 'ignored' })).toBe('Trop de requêtes, réessayez dans 7 s.')
+  })
+
   it('falls back to a generic message for anything else', () => {
     expect(extractErrorMessage(new Error('boom'))).toBe('Une erreur est survenue, réessayez.')
   })
