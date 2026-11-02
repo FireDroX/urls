@@ -2,7 +2,9 @@
   "common": {
     "appName": "url.addrien",
     "mascotAlt": "Robin in its nest",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "cancel": "Cancel",
+    "retry": "Try again"
   },
   "auth": {
     "tagline": "My links and shared files",
@@ -20,6 +22,7 @@
   "layout": {
     "navigation": "Navigation",
     "allLinks": "All links",
+    "redirects": "Redirects",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
     "account": "My account",
@@ -34,6 +37,80 @@
     "linksRegion": "Links",
     "emptyTitle": "No links yet",
     "emptyBody": "Redirects <r>/r/</r>, shares <d>/d/</d> and drop boxes <u>/u/</u> will show up here."
+  },
+  "links": {
+    "title": "Redirects",
+    "subtitle": "Short /r/ links that send visitors to the address of your choice.",
+    "new": "New redirect",
+    "emptyTitle": "No redirects yet",
+    "emptyBody": "Create a redirect to get a short link to share.",
+    "loadFailedTitle": "Could not load the redirects",
+    "loadFailedBody": "Check your connection, then try again.",
+    "columns": {
+      "link": "Link",
+      "destination": "Destination",
+      "state": "Status",
+      "expiresAt": "Expiry",
+      "actions": "Actions"
+    },
+    "state": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "expired": "Expired"
+    },
+    "noExpiry": "Never",
+    "copy": "Copy link {{slug}}",
+    "copied": "Link copied.",
+    "copyFailed": "Could not copy the link.",
+    "actions": "Actions for {{slug}}",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "created": "Redirect created.",
+    "updated": "Redirect updated.",
+    "deleted": "Redirect deleted.",
+    "disabledToast": "Redirect disabled.",
+    "enabledToast": "Redirect enabled.",
+    "form": {
+      "createTitle": "New redirect",
+      "createDescription": "The short link will send visitors to this destination.",
+      "editTitle": "Edit redirect",
+      "editDescription": "Destination, slug, expiry and status can be changed at any time.",
+      "destination": "Destination",
+      "destinationPlaceholder": "https://example.com/a-page",
+      "slug": "Slug",
+      "slugOptional": "Slug (optional)",
+      "slugHelp": "Leave empty for a generated ID. Letters, digits, \"-\" and \"_\".",
+      "slugEditHelp": "Changing the slug breaks the link's previous address.",
+      "expiresAt": "Expiry (optional)",
+      "expiresAtHelp": "Leave empty for a link that never expires.",
+      "noExpiry": "None",
+      "disabled": "Disabled",
+      "disabledHelp": "A disabled link answers \"link not found\".",
+      "create": "Create",
+      "save": "Save"
+    },
+    "delete": {
+      "action": "Delete",
+      "title": "Delete this redirect?",
+      "description": "The link /r/{{slug}} will stop working. Its slug stays reserved and cannot be reused.",
+      "confirm": "Delete"
+    },
+    "validation": {
+      "destinationRequired": "Destination required",
+      "destinationTooLong": "{{max}} characters maximum",
+      "destinationInvalid": "An http:// or https:// address is expected",
+      "slugTooShort": "At least {{min}} characters",
+      "slugTooLong": "{{max}} characters maximum",
+      "slugCharacters": "Letters, digits, \"-\" and \"_\" only",
+      "slugReserved": "This slug is reserved",
+      "expiresInPast": "The expiry date must be in the future"
+    },
+    "errors": {
+      "invalid": "Invalid destination or slug.",
+      "notFound": "This redirect no longer exists.",
+      "slugTaken": "This slug is already taken."
+    }
   },
   "settings": {
     "title": "Settings",

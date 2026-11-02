@@ -11,9 +11,19 @@ export function retryAfterSeconds(error: unknown): number | null {
   return Number.isFinite(value) && value > 0 ? Math.ceil(value) : null
 }
 
-export function extractErrorMessage(error: unknown, fallback = i18n.t('errors.generic')): string {
+export type MessagesByStatus = Partial<Record<number, string>>
+
+export function extractErrorMessage(
+  error: unknown,
+  fallback = i18n.t('errors.generic'),
+  messagesByStatus: MessagesByStatus = {},
+): string {
   if (isAxiosError(error) && error.response?.status === TOO_MANY_REQUESTS) {
     return tooManyRequestsMessage(error)
+  }
+  const statusMessage = isAxiosError(error) ? messagesByStatus[error.response?.status ?? 0] : undefined
+  if (statusMessage) {
+    return statusMessage
   }
   if (isAxiosError(error) && typeof error.response?.data?.error === 'string') {
     return error.response.data.error

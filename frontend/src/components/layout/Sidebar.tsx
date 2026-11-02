@@ -1,4 +1,4 @@
-import { LayoutDashboard, Settings } from 'lucide-react'
+import { ArrowRightLeft, LayoutDashboard, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router'
 import { StorageMeter } from '#components/layout/StorageMeter'
@@ -6,6 +6,7 @@ import { cn } from '#lib/utils'
 
 const NAV_ITEMS = [
   { to: '/', labelKey: 'layout.allLinks', icon: LayoutDashboard },
+  { to: '/redirects', labelKey: 'layout.redirects', icon: ArrowRightLeft },
   { to: '/settings', labelKey: 'layout.settings', icon: Settings },
 ] as const
 
