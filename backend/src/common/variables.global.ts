@@ -42,6 +42,37 @@ export const PUBLIC_ID_ALPHABET =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 export const PUBLIC_ID_LENGTH = 8;
 
+export const PUBLIC_ID_GENERATION_ATTEMPTS = 5;
+
+export const LINK_TYPES = ['redirect', 'share', 'drop'] as const;
+export const LINK_DESTINATION_MAX_LENGTH = 2048;
+export const LINK_DESTINATION_PROTOCOLS: readonly string[] = [
+  'http:',
+  'https:',
+];
+export const LINK_SLUG_MIN_LENGTH = 3;
+export const LINK_SLUG_MAX_LENGTH = 64;
+export const LINK_SLUG_REGEX = /^[A-Za-z0-9_-]+$/;
+export const RESERVED_LINK_SLUGS: readonly string[] = [
+  'account',
+  'admin',
+  'api',
+  'assets',
+  'd',
+  'dashboard',
+  'health',
+  'links',
+  'login',
+  'logout',
+  'new',
+  'r',
+  'settings',
+  'static',
+  'u',
+];
+export const LINK_CREATE_THROTTLE_TTL_MS = 60_000;
+export const LINK_CREATE_THROTTLE_LIMIT = 20;
+
 export const JSON_BODY_LIMIT = '100kb';
 
 export const AUDIT_LOG_STRING_MAX_LENGTH = 500;

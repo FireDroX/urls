@@ -16,7 +16,7 @@ Ce dépôt a un graphe de connaissance à `graphify-out/` :
 
 Le plan de référence est `Plan url.addrien.fr.md` (phases 0 à 4, exigences de sécurité transverses) et la maquette `Maquette url.addrien.fr.html` (thème sombre, Montserrat / Noto Sans, accent orange) ; les deux restent hors dépôt (`.gitignore`). Une fonctionnalité n'est terminée qu'avec ses limites, ses codes d'erreur et ses contrôles d'intégrité.
 
-État : **phase 0** (socle : auth admin, stockage, déploiement). Les tables `links`, `files`, `events` arrivent avec les phases 1 à 3.
+État : **phase 1** en cours (redirections `/r/`) : table `links` et API admin en place. Les tables `events` et `files` arrivent avec les phases 1 à 3.
 
 ## Commandes
 
@@ -61,7 +61,7 @@ Ne jamais afficher ni copier les valeurs des `.env` : générer de nouveaux secr
 
 ## Architecture backend (`backend/src`)
 
-NestJS, un module par domaine directement sous `src/` (pas de dossier `modules/`) : `audit`, `auth`, `health`, `security`, `settings`, `storage`, `users`, plus `common/` (filtres, DTOs, exceptions, guards, décorateurs, stratégie JWT, constantes), `config/` (TypeORM, validation de l'environnement) et `database/` (migrations, seed admin). Pour créer un module : skill `new-backend-module`.
+NestJS, un module par domaine directement sous `src/` (pas de dossier `modules/`) : `audit`, `auth`, `health`, `links`, `security`, `settings`, `storage`, `users`, plus `common/` (filtres, DTOs, exceptions, guards, décorateurs, stratégie JWT, constantes), `config/` (TypeORM, validation de l'environnement) et `database/` (migrations, seed admin). Pour créer un module : skill `new-backend-module`.
 
 Même découpage en couches que NestWiki :
 
@@ -83,7 +83,9 @@ Même découpage en couches que NestWiki :
 
 **IP cliente et rate limits** : `resolveClientIp` (`common/client-ip.ts`) lit `CLIENT_IP_HEADER` (`cf-connecting-ip` en prod) sinon `req.ip`, calculé par Express avec `trust proxy = TRUST_PROXY_HOPS`. `ThrottlerBehindProxyGuard` (global, 100 req/min) l'utilise ; `@Throttle` plus strict sur l'auth. Le throttler répond 429 avec `Retry-After`, affiché par le front (`lib/api-errors.ts`).
 
-**Audit** : `AuditLogService.record` (`audit/`) journalise connexions (réussies, échouées, verrouillées) et changements de mot de passe ; les phases suivantes y ajoutent créations, modifications et suppressions de liens (`AuditAction`).
+**Audit** : `AuditLogService.record` (`audit/`) journalise connexions (réussies, échouées, verrouillées), changements de mot de passe et de réglages, et créations, modifications et suppressions de liens (`AuditAction`).
+
+**Liens** (`links/`) : une seule table `links` pour les trois types (`redirect`, puis `share` et `drop`), contrainte `CHECK` sur le type et sur la destination obligatoire d'une redirection. `public_id` = slug choisi ou `generatePublicId()`, unique et en `utf8mb4_bin` (sensible à la casse, comme l'alphabet base62). API admin `GET/POST /api/links`, `GET/PATCH/DELETE /api/links/:id` (`:id` = `public_id`) ; tout est modifiable (destination, slug, expiration, désactivation). Suppression en soft delete (`deleted_at`) : le slug d'un lien supprimé reste pris (409), pour qu'une ancienne URL partagée ne pointe jamais vers une autre destination. Limites (longueurs, alphabet du slug, noms réservés, throttle de création) dans `variables.global.ts`.
 
 **Stockage** : client AWS SDK v3 (`storage/`), `forcePathStyle`, deux clients : interne (`S3_ENDPOINT`) et de signature (`S3_PUBLIC_ENDPOINT`). Bucket privé, accès uniquement par URLs présignées en `Content-Disposition: attachment`. `GET /api/storage/usage` lit `GET /rustfs/admin/v3/quota-stats/<bucket>` signé SigV4 (l'utilisateur de l'app n'a besoin que de `s3:GetBucketQuota`). Le quota RustFS ne suffit pas : avant toute URL présignée d'upload, vérifier aussi la place restante côté SQL, et traduire « Bucket quota exceeded » en 413.
 

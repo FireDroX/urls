@@ -14,6 +14,7 @@ import {
 import { validateEnvironment } from './config/env.validation.js';
 import { typeOrmConfig } from './config/typeorm.config.js';
 import { HealthModule } from './health/health.module.js';
+import { LinksModule } from './links/links.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -37,6 +38,7 @@ import { UsersModule } from './users/users.module.js';
     AuthModule,
     StorageModule,
     SettingsModule,
+    LinksModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerBehindProxyGuard }],
 })
