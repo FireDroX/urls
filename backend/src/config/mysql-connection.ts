@@ -13,7 +13,7 @@ export interface MysqlPoolFactory {
   createPool(options: PoolOptions): Pool;
 }
 
-export type EnvReader = (key: string) => string | undefined;
+type EnvReader = (key: string) => string | undefined;
 
 export const SET_SESSION_TIME_ZONE_SQL = `SET time_zone = '${DB_SESSION_TIME_ZONE}'`;
 
