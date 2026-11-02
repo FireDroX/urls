@@ -7,7 +7,10 @@ export type AuditAction =
   | 'auth.login.failed'
   | 'auth.login.locked'
   | 'auth.password.changed'
-  | 'settings.updated';
+  | 'settings.updated'
+  | 'links.created'
+  | 'links.updated'
+  | 'links.deleted';
 
 export interface AuditEntry {
   action: AuditAction;
