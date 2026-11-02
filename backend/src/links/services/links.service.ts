@@ -11,8 +11,12 @@ import {
   PUBLIC_ID_GENERATION_ATTEMPTS,
 } from '../../common/variables.global.js';
 import type { Visitor } from '../../common/visitor.js';
-import { EventsService } from '../../events/services/events.service.js';
+import {
+  EventsService,
+  type LinkClickStats,
+} from '../../events/services/events.service.js';
 import { createLinkSchema } from '../dto/in/create-link.dto.js';
+import { linkStatsQuerySchema } from '../dto/in/link-stats-query.dto.js';
 import { updateLinkSchema } from '../dto/in/update-link.dto.js';
 import type { Link } from '../entities/link.entity.js';
 import type {
@@ -21,6 +25,12 @@ import type {
 } from '../persistence/link.repository.js';
 
 const REDIRECT = 'redirect';
+
+export interface LinkStats {
+  link: Link;
+  days: number;
+  clicks: LinkClickStats;
+}
 
 function isWellFormedPublicId(publicId: string): boolean {
   return (
@@ -50,6 +60,12 @@ export class LinksService {
       throw new LinkNotFoundException();
     }
     return link;
+  }
+
+  async stats(publicId: string, query: unknown): Promise<LinkStats> {
+    const { days } = parseDto(linkStatsQuerySchema, query);
+    const link = await this.get(publicId);
+    return { link, days, clicks: await this.events.clickStats(link.id, days) };
   }
 
   async resolveRedirect(publicId: string, visitor: Visitor): Promise<string> {

@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { Copy, Ellipsis, Pencil, Power, PowerOff, Trash } from 'lucide-react'
+import { ChartColumn, Copy, Ellipsis, Pencil, Power, PowerOff, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { Link as RouterLink } from 'react-router'
 import { redirectPath } from '#api/redirects'
 import type { Link } from '#api/links'
-import { Badge } from '#components/ui/badge'
+import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { Button } from '#components/ui/button'
 import {
   DropdownMenu,
@@ -13,20 +14,15 @@ import {
   DropdownMenuTrigger,
 } from '#components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '#components/ui/table'
-import { linkState, type LinkState } from '#utils/link-state'
+import { linkDetailPath } from '#utils/link-stats'
 
 export interface LinkActions {
   onCopy: (link: Link) => void
+  onStats: (link: Link) => void
   onEdit: (link: Link) => void
   onToggle: (link: Link) => void
   onDelete: (link: Link) => void
 }
-
-const STATE_BADGE_VARIANTS = {
-  active: 'default',
-  disabled: 'secondary',
-  expired: 'destructive',
-} as const satisfies Record<LinkState, string>
 
 interface LinkRowProps {
   link: Link
@@ -36,13 +32,18 @@ interface LinkRowProps {
 
 function LinkRow({ link, formatDate, actions }: LinkRowProps) {
   const { t } = useTranslation()
-  const state = linkState(link)
 
   return (
     <TableRow>
       <TableCell>
         <div className="flex items-center gap-1">
-          <code className="font-mono text-primary">{redirectPath(link.id)}</code>
+          <RouterLink
+            to={linkDetailPath(link.id)}
+            className="font-mono text-primary underline-offset-4 hover:underline"
+            title={t('links.viewStats', { slug: link.id })}
+          >
+            {redirectPath(link.id)}
+          </RouterLink>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -59,7 +60,7 @@ function LinkRow({ link, formatDate, actions }: LinkRowProps) {
         </span>
       </TableCell>
       <TableCell>
-        <Badge variant={STATE_BADGE_VARIANTS[state]}>{t(`links.state.${state}`)}</Badge>
+        <LinkStateBadge link={link} />
       </TableCell>
       <TableCell className="whitespace-nowrap text-muted-foreground">
         {link.expiresAt ? formatDate(link.expiresAt) : t('links.noExpiry')}
@@ -72,6 +73,10 @@ function LinkRow({ link, formatDate, actions }: LinkRowProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => actions.onStats(link)}>
+              <ChartColumn />
+              {t('links.stats')}
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => actions.onEdit(link)}>
               <Pencil />
               {t('links.edit')}

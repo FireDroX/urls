@@ -110,7 +110,31 @@
       "invalid": "Invalid destination or slug.",
       "notFound": "This redirect no longer exists.",
       "slugTaken": "This slug is already taken."
-    }
+    },
+    "stats": "Statistics",
+    "viewStats": "Statistics for {{slug}}"
+  },
+  "linkStats": {
+    "title": "Clicks",
+    "timeZoneNote": "Days are counted in UTC.",
+    "period": "Period",
+    "lastDays_one": "Last day",
+    "lastDays_other": "Last {{count}} days",
+    "totalLabel_one": "click over the last {{days}} days",
+    "totalLabel_other": "clicks over the last {{days}} days",
+    "clicks": "Clicks",
+    "clicksCount_one": "{{count}} click",
+    "clicksCount_other": "{{count}} clicks",
+    "topSources": "Top sources",
+    "topCountries": "Top countries",
+    "direct": "Direct",
+    "unknownCountry": "Unknown",
+    "emptyTitle": "No clicks over this period",
+    "emptyBody": "Clicks on the short link will show up here, by day, source and country.",
+    "loadFailedTitle": "Could not load the statistics",
+    "notFoundTitle": "Redirect not found",
+    "backToList": "Back to redirects",
+    "destination": "Destination:"
   },
   "settings": {
     "title": "Settings",

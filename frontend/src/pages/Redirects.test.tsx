@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLink, deleteLink, listLinks, updateLink, type Link } from '#api/links'
 import { Redirects } from './Redirects'
@@ -45,7 +46,7 @@ beforeEach(() => {
 
 describe('Redirects page', () => {
   it('lists the redirects with their state and expiry', async () => {
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     const row = (await screen.findByText('/r/docs')).closest('tr')!
     expect(within(row).getByText('https://example.com/docs')).toBeInTheDocument()
@@ -56,7 +57,7 @@ describe('Redirects page', () => {
   it('copies the full public URL', async () => {
     const user = userEvent.setup()
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await user.click(await screen.findByRole('button', { name: 'Copier le lien docs' }))
 
@@ -66,7 +67,7 @@ describe('Redirects page', () => {
   it('creates a redirect and adds it to the list', async () => {
     const user = userEvent.setup()
     vi.mocked(createLink).mockResolvedValue({ ...link, id: 'new-one', destination: 'https://example.org/' })
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
     await user.type(screen.getByLabelText('Destination'), 'https://example.org/')
@@ -78,7 +79,7 @@ describe('Redirects page', () => {
 
   it('validates the form before calling the API', async () => {
     const user = userEvent.setup()
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
     await user.type(screen.getByLabelText('Destination'), 'ftp://example.org')
@@ -93,7 +94,7 @@ describe('Redirects page', () => {
   it('translates a taken slug', async () => {
     const user = userEvent.setup()
     vi.mocked(createLink).mockRejectedValue(apiError(409))
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
     await user.type(screen.getByLabelText('Destination'), 'https://example.org/')
@@ -106,7 +107,7 @@ describe('Redirects page', () => {
   it('edits only the changed fields and updates the row', async () => {
     const user = userEvent.setup()
     vi.mocked(updateLink).mockResolvedValue({ ...link, id: 'guides' })
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
@@ -122,7 +123,7 @@ describe('Redirects page', () => {
   it('disables a redirect from the row menu', async () => {
     const user = userEvent.setup()
     vi.mocked(updateLink).mockResolvedValue({ ...link, disabled: true })
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Désactiver' }))
@@ -134,7 +135,7 @@ describe('Redirects page', () => {
   it('deletes a redirect after confirmation', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteLink).mockResolvedValue()
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Supprimer' }))
@@ -149,11 +150,34 @@ describe('Redirects page', () => {
   it('offers a retry when the list cannot be loaded', async () => {
     const user = userEvent.setup()
     vi.mocked(listLinks).mockRejectedValueOnce(apiError(500))
-    render(<Redirects />)
+    render(<Redirects />, { wrapper: MemoryRouter })
 
     await user.click(await screen.findByRole('button', { name: 'Réessayer' }))
 
     expect(await screen.findByText('/r/docs')).toBeInTheDocument()
     expect(listLinks).toHaveBeenCalledTimes(2)
+  })
+
+  it('links each row to its statistics page', async () => {
+    render(<Redirects />, { wrapper: MemoryRouter })
+
+    expect(await screen.findByRole('link', { name: '/r/docs' })).toHaveAttribute('href', '/redirects/docs')
+  })
+
+  it('opens the statistics page from the row menu', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter initialEntries={['/redirects']}>
+        <Routes>
+          <Route path="/redirects" element={<Redirects />} />
+          <Route path="/redirects/:id" element={<p>stats-page</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Statistiques' }))
+
+    expect(await screen.findByText('stats-page')).toBeInTheDocument()
   })
 })

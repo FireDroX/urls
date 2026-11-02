@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import { AppLayout } from '#components/layout/AppLayout'
 import { AppLayoutSkeleton } from '#components/layout/AppLayoutSkeleton'
 import { ProtectedRoute } from '#components/ProtectedRoute'
+import { Skeleton } from '#components/ui/skeleton'
 import { useAuth } from '#hooks/useAuth'
 import { Dashboard } from '#pages/Dashboard'
 import { Login } from '#pages/Login'
@@ -9,6 +11,10 @@ import { NotFound } from '#pages/NotFound'
 import { Redirects } from '#pages/Redirects'
 import { RedirectUnavailable } from '#pages/RedirectUnavailable'
 import { Settings } from '#pages/Settings'
+
+const RedirectDetail = lazy(() =>
+  import('#pages/RedirectDetail').then(({ RedirectDetail }) => ({ default: RedirectDetail })),
+)
 
 export function App() {
   const { status } = useAuth()
@@ -25,6 +31,14 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="/redirects" element={<Redirects />} />
+          <Route
+            path="/redirects/:id"
+            element={
+              <Suspense fallback={<Skeleton className="h-72 w-full" />}>
+                <RedirectDetail />
+              </Suspense>
+            }
+          />
           <Route path="/settings" element={<Settings />} />
           <Route path="/account" element={<Navigate to="/settings" replace />} />
         </Route>

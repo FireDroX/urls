@@ -110,7 +110,31 @@
       "invalid": "Destination ou slug invalide.",
       "notFound": "Cette redirection n'existe plus.",
       "slugTaken": "Ce slug est déjà pris."
-    }
+    },
+    "stats": "Statistiques",
+    "viewStats": "Statistiques de {{slug}}"
+  },
+  "linkStats": {
+    "title": "Clics",
+    "timeZoneNote": "Jours comptés en UTC.",
+    "period": "Période",
+    "lastDays_one": "Dernier jour",
+    "lastDays_other": "{{count}} derniers jours",
+    "totalLabel_one": "clic sur les {{days}} derniers jours",
+    "totalLabel_other": "clics sur les {{days}} derniers jours",
+    "clicks": "Clics",
+    "clicksCount_one": "{{count}} clic",
+    "clicksCount_other": "{{count}} clics",
+    "topSources": "Principales sources",
+    "topCountries": "Principaux pays",
+    "direct": "Direct",
+    "unknownCountry": "Inconnu",
+    "emptyTitle": "Aucun clic sur cette période",
+    "emptyBody": "Les clics sur le lien court apparaîtront ici, par jour, par source et par pays.",
+    "loadFailedTitle": "Impossible de charger les statistiques",
+    "notFoundTitle": "Redirection introuvable",
+    "backToList": "Retour aux redirections",
+    "destination": "Destination :"
   },
   "settings": {
     "title": "Réglages",

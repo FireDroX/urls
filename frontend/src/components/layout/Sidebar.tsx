@@ -22,7 +22,7 @@ export function Sidebar() {
         <NavLink
           key={to}
           to={to}
-          end
+          end={to === '/'}
           className={({ isActive }) =>
             cn(
               'flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-foreground',

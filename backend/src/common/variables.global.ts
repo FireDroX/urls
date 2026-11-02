@@ -85,6 +85,14 @@ export const COUNTRY_HEADER = 'cf-ipcountry';
 export const COUNTRY_CODE_REGEX = /^[A-Z]{2}$/;
 export const UNKNOWN_COUNTRY_CODES: readonly string[] = ['XX', 'T1'];
 
+export const LINK_STATS_DEFAULT_DAYS = 30;
+export const LINK_STATS_MIN_DAYS = 1;
+export const LINK_STATS_MAX_DAYS = 365;
+export const LINK_STATS_TOP_LIMIT = 10;
+export const LINK_STATS_TIME_ZONE = 'UTC';
+export const UNSIGNED_INTEGER_REGEX = /^\d+$/;
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export const JSON_BODY_LIMIT = '100kb';
 
 export const AUDIT_LOG_STRING_MAX_LENGTH = 500;
