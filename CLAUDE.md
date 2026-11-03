@@ -125,3 +125,5 @@ Pas de commentaires de code : nommage clair, petites fonctions. Les commentaires
 ## Git
 
 Branches `main` (déploiement) et `dev` (intégration) ; une branche par ticket, PR vers `dev`. CI (`.github/workflows/ci.yml`) : lint, tests, build, `pnpm audit`, images Docker (poussées sur GHCR depuis `main`), actions épinglées par commit ; Dependabot mensuel sur `dev` (mineures et correctifs npm groupés en une PR, majeures de `typescript` ignorées tant que typescript-eslint ne supporte pas TS 7). `pnpm-workspace.yaml` porte les `overrides` (`minimatch` >= 11.0.1) et `auditConfig.ignoreGhsas` (chaque entrée justifiée en commentaire) : `pnpm audit` complet doit rester propre.
+
+**Version** : chaque ticket monte le patch d'un cran (`0.0.N` → `0.0.N+1`) dans les trois `package.json` (racine, `backend`, `frontend`, toujours identiques) et ouvre sa section `## <version> — <AAAA-MM-JJ>` en tête de `CHANGELOG.md` (en français, côté utilisateur, ⚠️ si la mise à jour demande une action) ; pas de section « Non publié ». Deux tickets en parallèle : le second à fusionner reprend le numéro suivant au rebase.
