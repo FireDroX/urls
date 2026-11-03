@@ -50,6 +50,8 @@ function buildLink(overrides: Partial<Link> = {}): Link {
     type: 'redirect',
     destination: 'https://example.com/',
     expiresAt: null,
+    maxDownloads: null,
+    downloadCount: 0,
     disabled: false,
     createdAt: new Date('2026-11-01T00:00:00Z'),
     updatedAt: new Date('2026-11-01T00:00:00Z'),

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.8 — 2026-11-03
+
+- API admin des partages de fichiers `/d/` (`/api/shares`) : création avec un slug choisi ou généré, expiration et nombre maximal de téléchargements facultatifs, modification de tous ces réglages, désactivation et suppression. Le slug d'un partage partage l'espace de noms des redirections. La fiche d'un partage liste ses fichiers (nom, taille, type, état) et donne leur taille totale. Créations, modifications et suppressions passent dans le journal d'audit. L'interface du dashboard arrive avec un prochain ticket.
+- Nouvelle table `files` créée par la migration, lancée automatiquement au démarrage du conteneur.
+
 ## 0.0.7 — 2026-11-03
 
 - Principales sources regroupées par site : deux clics depuis deux pages de `news.example` comptent sur une seule ligne. Un referer absent ou qui n'est pas une adresse http(s) compte dans « Direct ». Les clics déjà enregistrés sont regroupés par la migration, qui peut être relancée sans intervention si elle échoue en cours de route.

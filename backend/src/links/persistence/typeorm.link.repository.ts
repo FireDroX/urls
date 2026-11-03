@@ -1,19 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { isDuplicateEntry } from '../../common/database-errors.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { Link, type LinkType } from '../entities/link.entity.js';
 import type { LinkRepository, NewLink } from './link.repository.js';
-
-const MYSQL_DUPLICATE_ENTRY = 'ER_DUP_ENTRY';
-
-function isDuplicateEntry(error: unknown): boolean {
-  return (
-    error instanceof QueryFailedError &&
-    (error.driverError as { code?: string } | undefined)?.code ===
-      MYSQL_DUPLICATE_ENTRY
-  );
-}
 
 @Injectable()
 export class TypeormLinkRepository implements LinkRepository {
