@@ -8,4 +8,5 @@ export interface ShareRepository {
   insert(share: NewShare): Promise<Link>;
   save(share: Link): Promise<Link>;
   softDelete(id: string): Promise<void>;
+  incrementDownloadCount(id: string, now: Date): Promise<boolean>;
 }

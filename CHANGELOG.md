@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.10 — 2026-11-04
+
+- Page publique de téléchargement `/d/<id>` : nom, taille et nombre de fichiers prêts, date d'expiration et un bouton « Télécharger » par fichier, en français ou en anglais. Après le défi Turnstile, le fichier se télécharge directement depuis le stockage par une URL signée valable une minute. Un partage inexistant, désactivé, supprimé ou sans fichier prêt affiche « lien introuvable » ; un partage expiré ou dont tous les téléchargements ont été pris, « lien expiré ». Limites de débit dédiées à l'aperçu et aux téléchargements.
+- Le nombre maximal de téléchargements est garanti même quand deux visiteurs prennent le dernier en même temps. Chaque ouverture de la page et chaque téléchargement sont enregistrés (IP hachée, comme les clics) ; la fiche d'un partage (`GET /api/shares/:id`) donne le nombre de vues à côté du nombre de téléchargements.
+- La migration (lancée automatiquement au démarrage du conteneur) autorise les événements « vue » et « téléchargement ».
+
 ## 0.0.9 — 2026-11-03
 
 - Envoi de fichiers dans un partage, même au-delà de 100 Mo : le fichier est annoncé (nom, taille, empreinte SHA-256), envoyé en parts de 32 Mio qui passent par l'API (jamais directement dans le stockage), une part ratée se renvoie seule, puis il est finalisé. L'API vérifie ensuite en arrière-plan la taille, l'empreinte et le vrai type du fichier : il devient « prêt », ou « rejeté » et effacé s'il ne correspond pas à ce qui a été annoncé. Une vérification interrompue par un redémarrage reprend toute seule.

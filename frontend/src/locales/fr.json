@@ -161,6 +161,20 @@
       "mismatch": "Les deux mots de passe diffèrent"
     }
   },
+  "share": {
+    "title": "Fichiers partagés",
+    "summary_one": "{{count}} fichier · {{size}}",
+    "summary_other": "{{count}} fichiers · {{size}}",
+    "expiresAt": "Disponible jusqu'au {{date}}",
+    "noExpiry": "Sans date d'expiration",
+    "filesRegion": "Fichiers",
+    "download": "Télécharger",
+    "downloadFile": "Télécharger {{name}}",
+    "preparing": "Préparation…",
+    "verifyHint": "Validez la vérification ci-dessous pour télécharger.",
+    "verificationFailed": "La vérification a échoué, réessayez.",
+    "loadFailedTitle": "Impossible d'ouvrir ce partage"
+  },
   "notFound": {
     "title": "Lien introuvable",
     "body": "Ce lien n'existe pas, ou n'est plus disponible."

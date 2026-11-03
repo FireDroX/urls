@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type SelectQueryBuilder } from 'typeorm';
-import { LinkEvent } from '../entities/link-event.entity.js';
+import { type EventType, LinkEvent } from '../entities/link-event.entity.js';
 import type {
   ClickCountByValue,
   ClickStatsQuery,
@@ -27,6 +27,10 @@ export class TypeormLinkEventRepository implements LinkEventRepository {
 
   async insert(event: NewLinkEvent): Promise<void> {
     await this.repository.save(this.repository.create(event));
+  }
+
+  countByType(linkId: string, type: EventType): Promise<number> {
+    return this.repository.countBy({ linkId, type });
   }
 
   async countClicksByDay(query: ClickStatsQuery): Promise<DailyClickCount[]> {

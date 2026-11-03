@@ -40,6 +40,24 @@ export class TypeormShareRepository implements ShareRepository {
     await this.repository.softDelete({ id, type: SHARE });
   }
 
+  async incrementDownloadCount(id: string, now: Date): Promise<boolean> {
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(Link)
+      .set({
+        downloadCount: () => 'download_count + 1',
+        updatedAt: () => 'updated_at',
+      })
+      .where('id = :id', { id })
+      .andWhere('type = :type', { type: SHARE })
+      .andWhere('disabled = :disabled', { disabled: false })
+      .andWhere('deleted_at IS NULL')
+      .andWhere('(expires_at IS NULL OR expires_at > :now)', { now })
+      .andWhere('(max_downloads IS NULL OR download_count < max_downloads)')
+      .execute();
+    return result.affected === 1;
+  }
+
   private async persist(share: Link): Promise<Link> {
     try {
       return await this.repository.save(share);

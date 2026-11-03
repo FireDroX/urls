@@ -8,6 +8,7 @@ import {
   isWellFormedLinkId,
 } from '../../common/public-id.js';
 import { PUBLIC_ID_GENERATION_ATTEMPTS } from '../../common/variables.global.js';
+import { EventsService } from '../../events/services/events.service.js';
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import {
   FilesService,
@@ -25,11 +26,15 @@ export interface ShareSummary extends LinkFilesSummary {
   share: Link;
 }
 
-export interface ShareDetail extends ShareSummary {
+export interface ShareWithFiles extends ShareSummary {
   files: StoredFile[];
 }
 
-function summarize(share: Link, files: StoredFile[]): ShareDetail {
+export interface ShareDetail extends ShareWithFiles {
+  viewCount: number;
+}
+
+export function withFiles(share: Link, files: StoredFile[]): ShareWithFiles {
   return {
     share,
     files,
@@ -44,6 +49,7 @@ export class SharesService {
     @Inject('SharesRepository')
     private readonly repository: ShareRepository,
     private readonly files: FilesService,
+    private readonly events: EventsService,
     private readonly auditLog: AuditLogService,
   ) {}
 
@@ -60,8 +66,7 @@ export class SharesService {
   }
 
   async get(publicId: string): Promise<ShareDetail> {
-    const share = await this.find(publicId);
-    return summarize(share, await this.files.listForLink(share.id));
+    return this.detail(await this.find(publicId));
   }
 
   async create(input: unknown, userId: string): Promise<ShareDetail> {
@@ -79,7 +84,7 @@ export class SharesService {
       targetId: share.publicId,
       metadata: fields,
     });
-    return summarize(share, []);
+    return { ...withFiles(share, []), viewCount: 0 };
   }
 
   async update(
@@ -100,7 +105,7 @@ export class SharesService {
       targetId: saved.publicId,
       metadata: { previousId: publicId, changes: dto },
     });
-    return summarize(saved, await this.files.listForLink(saved.id));
+    return this.detail(saved);
   }
 
   async remove(publicId: string, userId: string): Promise<void> {
@@ -111,6 +116,14 @@ export class SharesService {
       userId,
       targetId: share.publicId,
     });
+  }
+
+  private async detail(share: Link): Promise<ShareDetail> {
+    const [files, viewCount] = await Promise.all([
+      this.files.listForLink(share.id),
+      this.events.countViews(share.id),
+    ]);
+    return { ...withFiles(share, files), viewCount };
   }
 
   async find(publicId: string): Promise<Link> {

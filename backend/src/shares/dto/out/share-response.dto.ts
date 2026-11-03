@@ -23,5 +23,6 @@ export interface ShareFileResponseDto {
 }
 
 export interface ShareDetailResponseDto extends ShareResponseDto {
+  viewCount: number;
   files: ShareFileResponseDto[];
 }

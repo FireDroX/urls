@@ -83,6 +83,11 @@ export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
 export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000;
 export const SHARE_FILES_MAX = 50;
+export const SHARE_VIEW_THROTTLE_TTL_MS = 60_000;
+export const SHARE_VIEW_THROTTLE_LIMIT = 30;
+export const SHARE_DOWNLOAD_THROTTLE_TTL_MS = 60_000;
+export const SHARE_DOWNLOAD_THROTTLE_LIMIT = 10;
+export const SHARE_DOWNLOAD_URL_TTL_SECONDS = 60;
 export const FILE_STATUSES = [
   'uploading',
   'verifying',
@@ -107,7 +112,7 @@ export const FILE_START_THROTTLE_LIMIT = 60;
 export const FILE_PART_THROTTLE_LIMIT = 300;
 export const S3_LIST_PARTS_PAGE_SIZE = 1000;
 
-export const EVENT_TYPES = ['click'] as const;
+export const EVENT_TYPES = ['click', 'view', 'download'] as const;
 export const EVENT_REFERER_MAX_LENGTH = 2048;
 export const EVENT_USER_AGENT_MAX_LENGTH = 512;
 export const EVENT_REFERER_HOST_MAX_LENGTH = 255;
@@ -133,6 +138,7 @@ export const AUDIT_LOG_STRING_MAX_LENGTH = 500;
 export const TURNSTILE_VERIFY_URL =
   'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 export const TURNSTILE_TIMEOUT_MS = 5000;
+export const TURNSTILE_TOKEN_MAX_LENGTH = 2048;
 
 export const S3_ADMIN_TIMEOUT_MS = 5000;
 export const S3_DEFAULT_REGION = 'us-east-1';

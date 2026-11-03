@@ -39,6 +39,7 @@ function visitor(overrides: Partial<Visitor> = {}): Visitor {
 describe('EventsService', () => {
   let repository: {
     insert: ReturnType<typeof vi.fn>;
+    countByType: ReturnType<typeof vi.fn>;
     countClicksByDay: ReturnType<typeof vi.fn>;
     topRefererHosts: ReturnType<typeof vi.fn>;
     topCountries: ReturnType<typeof vi.fn>;
@@ -53,6 +54,7 @@ describe('EventsService', () => {
   beforeEach(() => {
     repository = {
       insert: vi.fn().mockResolvedValue(undefined),
+      countByType: vi.fn().mockResolvedValue(0),
       countClicksByDay: vi.fn().mockResolvedValue([]),
       topRefererHosts: vi.fn().mockResolvedValue([]),
       topCountries: vi.fn().mockResolvedValue([]),
@@ -177,6 +179,31 @@ describe('EventsService', () => {
 
     expect(logError).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(logError.mock.calls)).not.toContain(IP);
+  });
+
+  it.each([
+    ['view', 'recordView'],
+    ['download', 'recordDownload'],
+  ] as const)(
+    'records a %s event with the same visitor details',
+    async (type, method) => {
+      await service[method](LINK_ID, visitor());
+
+      expect(inserted()).toMatchObject({
+        linkId: LINK_ID,
+        type,
+        refererHost: 'news.example',
+        country: 'FR',
+        ipHash: createHmac('sha256', SECRET).update(IP).digest('hex'),
+      });
+    },
+  );
+
+  it('counts the views of a link', async () => {
+    repository.countByType.mockResolvedValue(7);
+
+    await expect(service.countViews(LINK_ID)).resolves.toBe(7);
+    expect(repository.countByType).toHaveBeenCalledWith(LINK_ID, 'view');
   });
 
   describe('clickStats', () => {
