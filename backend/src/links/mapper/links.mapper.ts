@@ -20,7 +20,7 @@ export class LinksMapper {
   }
 
   static toStatsResponse(stats: LinkStats): ResponseDto<LinkStatsResponseDto> {
-    const { since, total, daily, referers, countries } = stats.clicks;
+    const { since, total, daily, refererHosts, countries } = stats.clicks;
     return new ResponseDto({
       id: stats.link.publicId,
       days: stats.days,
@@ -28,8 +28,8 @@ export class LinksMapper {
       timeZone: LINK_STATS_TIME_ZONE,
       total,
       daily: daily.map(({ day, clicks }) => ({ date: day, clicks })),
-      referers: referers.map(({ value, clicks }) => ({
-        referer: value,
+      referers: refererHosts.map(({ value, clicks }) => ({
+        host: value,
         clicks,
       })),
       countries: countries.map(({ value, clicks }) => ({

@@ -1,11 +1,32 @@
 # Changelog
 
-## Non publié
+## 0.0.7 — 2026-11-03
+
+- Principales sources regroupées par site : deux clics depuis deux pages de `news.example` comptent sur une seule ligne. Un referer absent ou qui n'est pas une adresse http(s) compte dans « Direct ». Les clics déjà enregistrés sont regroupés par la migration, qui peut être relancée sans intervention si elle échoue en cours de route.
+- Les dates écrites par MySQL sont en UTC même si le serveur de base est réglé sur un autre fuseau.
+- Dans le menu latéral, « Réglages » n'est surligné que sur la page des réglages.
+- Dépendances à jour (vitest 5, dotenv 18, @hookform/resolvers 6) et `pnpm audit` propre : `minimatch` forcé en 11 (GHSA-g3hv-75wg-m249), `deepmerge` ignoré avec sa justification (CLI shadcn, outil de dev sans correctif). Dependabot regroupe les mises à jour mineures et ignore TypeScript 7 tant que typescript-eslint ne le supporte pas.
+- La version monte désormais à chaque ticket (0.0.2 à 0.0.6 : tickets de la phase 1 déjà livrés).
+
+## 0.0.6 — 2026-11-02
+
+- Fiche de chaque redirection (`/redirects/<slug>`, depuis le slug ou le menu « Statistiques » de la liste) : total et graphique des clics par jour (jours sans clic à 0, jours comptés en UTC), principales sources (« Direct » sans referer) et principaux pays, sur 7, 30, 90 ou 365 jours ; état vide sans clic. API `GET /api/links/:id/stats?days=N` (1 à 365, 30 par défaut).
+
+## 0.0.5 — 2026-11-02
+
+- ⚠️ Chaque redirection réussie enregistre un clic (date, provenance, navigateur, pays Cloudflare, IP hachée en HMAC-SHA-256 : jamais stockée ni journalisée en clair), sans retarder ni bloquer la redirection. Nouveau secret obligatoire `IP_HASH_SECRET` dans `backend/.env`.
+
+## 0.0.4 — 2026-11-02
 
 - Page « Redirections » du dashboard : liste des liens `/r/` (slug, destination, état actif / désactivé / expiré, expiration), copie de l'URL complète, création (slug choisi ou généré), modification de la destination, du slug, de l'expiration et de l'état, désactivation rapide et suppression après confirmation. Mêmes limites que l'API vérifiées dans le formulaire, erreurs traduites (slug pris, valeur invalide, trop de requêtes).
+
+## 0.0.3 — 2026-11-02
+
 - Redirections publiques `/r/<id>` en 302, avec pages « lien introuvable » (404) et « lien expiré » (410) en français ou en anglais, et limite de débit par visiteur.
-- Chaque redirection réussie enregistre un clic (date, provenance, navigateur, pays Cloudflare, IP hachée en HMAC-SHA-256 : jamais stockée ni journalisée en clair), sans retarder ni bloquer la redirection. Nouveau secret obligatoire `IP_HASH_SECRET` dans `backend/.env`.
-- Fiche de chaque redirection (`/redirects/<slug>`, depuis le slug ou le menu « Statistiques » de la liste) : total et graphique des clics par jour (jours sans clic à 0, jours comptés en UTC), principales sources (« Direct » sans referer) et principaux pays, sur 7, 30, 90 ou 365 jours ; état vide sans clic. API `GET /api/links/:id/stats?days=N` (1 à 365, 30 par défaut).
+
+## 0.0.2 — 2026-11-02
+
+- API admin des redirections (`/api/links`) : création avec un slug choisi ou généré, liste, modification (destination, slug, expiration, désactivation) et suppression. Un slug supprimé reste réservé, pour qu'une ancienne URL ne pointe jamais vers une autre destination. Créations, modifications et suppressions passent dans le journal d'audit.
 
 ## 0.0.1 — 2026-11-01
 

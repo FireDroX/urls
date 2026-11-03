@@ -60,7 +60,10 @@ describe('LinksMapper', () => {
           { day: '2026-11-01', clicks: 0 },
           { day: '2026-11-02', clicks: 3 },
         ],
-        referers: [{ value: null, clicks: 3 }],
+        refererHosts: [
+          { value: 'news.example', clicks: 2 },
+          { value: null, clicks: 1 },
+        ],
         countries: [{ value: 'FR', clicks: 3 }],
       },
     });
@@ -75,7 +78,10 @@ describe('LinksMapper', () => {
         { date: '2026-11-01', clicks: 0 },
         { date: '2026-11-02', clicks: 3 },
       ],
-      referers: [{ referer: null, clicks: 3 }],
+      referers: [
+        { host: 'news.example', clicks: 2 },
+        { host: null, clicks: 1 },
+      ],
       countries: [{ country: 'FR', clicks: 3 }],
     });
     expect(JSON.stringify(data)).not.toContain(link.id);

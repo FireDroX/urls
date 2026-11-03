@@ -17,8 +17,8 @@ export interface DailyClicks {
   clicks: number
 }
 
-export interface RefererClicks {
-  referer: string | null
+export interface RefererHostClicks {
+  host: string | null
   clicks: number
 }
 
@@ -34,7 +34,7 @@ export interface LinkStats {
   timeZone: string
   total: number
   daily: DailyClicks[]
-  referers: RefererClicks[]
+  referers: RefererHostClicks[]
   countries: CountryClicks[]
 }
 

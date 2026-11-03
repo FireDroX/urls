@@ -40,7 +40,7 @@ describe('EventsService', () => {
   let repository: {
     insert: ReturnType<typeof vi.fn>;
     countClicksByDay: ReturnType<typeof vi.fn>;
-    topReferers: ReturnType<typeof vi.fn>;
+    topRefererHosts: ReturnType<typeof vi.fn>;
     topCountries: ReturnType<typeof vi.fn>;
   };
   let service: EventsService;
@@ -54,7 +54,7 @@ describe('EventsService', () => {
     repository = {
       insert: vi.fn().mockResolvedValue(undefined),
       countClicksByDay: vi.fn().mockResolvedValue([]),
-      topReferers: vi.fn().mockResolvedValue([]),
+      topRefererHosts: vi.fn().mockResolvedValue([]),
       topCountries: vi.fn().mockResolvedValue([]),
     };
     const config = { getOrThrow: vi.fn().mockReturnValue(SECRET) };
@@ -78,11 +78,37 @@ describe('EventsService', () => {
       linkId: LINK_ID,
       type: 'click',
       referer: 'https://news.example/post',
+      refererHost: 'news.example',
       userAgent: 'Mozilla/5.0',
       country: 'FR',
       ipHash: createHmac('sha256', SECRET).update(IP).digest('hex'),
     });
   });
+
+  it('records the same host for two pages of the same site', async () => {
+    await service.recordClick(
+      LINK_ID,
+      visitor({ referer: 'https://news.example/a' }),
+    );
+    await service.recordClick(
+      LINK_ID,
+      visitor({ referer: 'https://NEWS.example:443/b' }),
+    );
+
+    const hosts = repository.insert.mock.calls.map(
+      ([event]) => (event as NewLinkEvent).refererHost,
+    );
+    expect(hosts).toEqual(['news.example', 'news.example']);
+  });
+
+  it.each(['android-app://com.example.app/', 'not a url'])(
+    'keeps the raw referer but no host for %s',
+    async (referer) => {
+      await service.recordClick(LINK_ID, visitor({ referer }));
+
+      expect(inserted()).toMatchObject({ referer, refererHost: null });
+    },
+  );
 
   it('stores the IP only as a keyed hash', async () => {
     await service.recordClick(LINK_ID, visitor());
@@ -120,7 +146,11 @@ describe('EventsService', () => {
       visitor({ referer: undefined, userAgent: '' }),
     );
 
-    expect(inserted()).toMatchObject({ referer: null, userAgent: null });
+    expect(inserted()).toMatchObject({
+      referer: null,
+      refererHost: null,
+      userAgent: null,
+    });
   });
 
   it('normalises a lowercase country code', async () => {
@@ -160,7 +190,7 @@ describe('EventsService', () => {
         since: new Date('2026-10-27T00:00:00.000Z'),
       };
       expect(repository.countClicksByDay).toHaveBeenCalledWith(query);
-      expect(repository.topReferers).toHaveBeenCalledWith(
+      expect(repository.topRefererHosts).toHaveBeenCalledWith(
         query,
         LINK_STATS_TOP_LIMIT,
       );
@@ -215,25 +245,25 @@ describe('EventsService', () => {
       expect(stats.total).toBe(0);
       expect(stats.daily).toHaveLength(30);
       expect(stats.daily.every((entry) => entry.clicks === 0)).toBe(true);
-      expect(stats.referers).toEqual([]);
+      expect(stats.refererHosts).toEqual([]);
       expect(stats.countries).toEqual([]);
     });
 
-    it('passes the top referers and countries through, direct and unknown as null', async () => {
-      const referers = [
+    it('passes the top referer hosts and countries through, direct and unknown as null', async () => {
+      const refererHosts = [
         { value: null, clicks: 3 },
-        { value: 'https://news.example/', clicks: 1 },
+        { value: 'news.example', clicks: 1 },
       ];
       const countries = [
         { value: 'FR', clicks: 3 },
         { value: null, clicks: 1 },
       ];
-      repository.topReferers.mockResolvedValue(referers);
+      repository.topRefererHosts.mockResolvedValue(refererHosts);
       repository.topCountries.mockResolvedValue(countries);
 
       const stats = await service.clickStats(LINK_ID, 7, NOW);
 
-      expect(stats.referers).toEqual(referers);
+      expect(stats.refererHosts).toEqual(refererHosts);
       expect(stats.countries).toEqual(countries);
     });
   });

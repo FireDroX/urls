@@ -14,7 +14,7 @@ import { Skeleton } from '#components/ui/skeleton'
 import { useCopyLink } from '#hooks/useCopyLink'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
 import { useLink, useLinkStats, type LoadState } from '#hooks/useLinkDetail'
-import { LINK_STATS_DAY_OPTIONS, parseStatsDays, refererLabel } from '#utils/link-stats'
+import { LINK_STATS_DAY_OPTIONS, parseStatsDays } from '#utils/link-stats'
 
 const DAYS_PARAM = 'days'
 
@@ -109,10 +109,9 @@ function useTopEntries(stats: LinkStats): { referers: TopClicksEntry[]; countrie
   return useMemo(() => {
     const regions = new Intl.DisplayNames([i18n.language], { type: 'region' })
     return {
-      referers: stats.referers.map(({ referer, clicks }) => ({
-        key: referer ?? '',
-        label: referer ? refererLabel(referer) : t('linkStats.direct'),
-        title: referer ?? undefined,
+      referers: stats.referers.map(({ host, clicks }) => ({
+        key: host ?? '',
+        label: host ?? t('linkStats.direct'),
         clicks,
       })),
       countries: stats.countries.map(({ country, clicks }) => ({

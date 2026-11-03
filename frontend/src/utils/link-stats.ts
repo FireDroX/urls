@@ -10,10 +10,6 @@ export function utcDayToDate(day: string): Date {
   return new Date(`${day}T00:00:00Z`)
 }
 
-export function refererLabel(referer: string): string {
-  return URL.canParse(referer) ? new URL(referer).host || referer : referer
-}
-
 export function linkDetailPath(id: string): string {
   return `/redirects/${encodeURIComponent(id)}`
 }

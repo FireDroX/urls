@@ -39,11 +39,11 @@ export class TypeormLinkEventRepository implements LinkEventRepository {
     }));
   }
 
-  topReferers(
+  topRefererHosts(
     query: ClickStatsQuery,
     limit: number,
   ): Promise<ClickCountByValue[]> {
-    return this.top(query, "NULLIF(event.referer, '')", limit);
+    return this.top(query, 'event.refererHost', limit);
   }
 
   topCountries(

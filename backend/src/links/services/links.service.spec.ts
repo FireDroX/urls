@@ -39,7 +39,7 @@ const CLICK_STATS: LinkClickStats = {
   since: '2026-10-27',
   total: 0,
   daily: [],
-  referers: [],
+  refererHosts: [],
   countries: [],
 };
 

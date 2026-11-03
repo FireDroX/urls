@@ -81,8 +81,8 @@ describe('RedirectDetail page', () => {
         total: 5,
         daily: [{ date: '2026-11-02', clicks: 5 }],
         referers: [
-          { referer: 'https://news.example/post', clicks: 3 },
-          { referer: null, clicks: 2 },
+          { host: 'news.example', clicks: 3 },
+          { host: null, clicks: 2 },
         ],
         countries: [
           { country: 'FR', clicks: 4 },
@@ -94,7 +94,7 @@ describe('RedirectDetail page', () => {
 
     expect(await screen.findByText('clics sur les 30 derniers jours')).toBeInTheDocument()
     expect(screen.getByText('Principales sources')).toBeInTheDocument()
-    expect(screen.getByText('news.example')).toHaveAttribute('title', 'https://news.example/post')
+    expect(screen.getByText('news.example')).toBeInTheDocument()
     expect(screen.getByText('Direct')).toBeInTheDocument()
     expect(screen.getByText('France')).toBeInTheDocument()
     expect(screen.getByText('Inconnu')).toBeInTheDocument()

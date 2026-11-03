@@ -10,6 +10,7 @@ import {
   MS_PER_DAY,
   UNKNOWN_COUNTRY_CODES,
 } from '../../common/variables.global.js';
+import { refererHost } from '../../common/referer-host.js';
 import type { Visitor } from '../../common/visitor.js';
 import type {
   ClickCountByValue,
@@ -21,7 +22,7 @@ export interface LinkClickStats {
   since: string;
   total: number;
   daily: DailyClickCount[];
-  referers: ClickCountByValue[];
+  refererHosts: ClickCountByValue[];
   countries: ClickCountByValue[];
 }
 
@@ -85,6 +86,7 @@ export class EventsService {
         linkId,
         type: 'click',
         referer: truncate(visitor.referer, EVENT_REFERER_MAX_LENGTH),
+        refererHost: refererHost(visitor.referer),
         userAgent: truncate(visitor.userAgent, EVENT_USER_AGENT_MAX_LENGTH),
         country: normalizeCountry(visitor.country),
         ipHash: visitor.ip ? this.hashIp(visitor.ip) : null,
@@ -104,9 +106,9 @@ export class EventsService {
   ): Promise<LinkClickStats> {
     const since = firstDayOfWindow(days, now);
     const query = { linkId, since };
-    const [counts, referers, countries] = await Promise.all([
+    const [counts, refererHosts, countries] = await Promise.all([
       this.repository.countClicksByDay(query),
-      this.repository.topReferers(query, LINK_STATS_TOP_LIMIT),
+      this.repository.topRefererHosts(query, LINK_STATS_TOP_LIMIT),
       this.repository.topCountries(query, LINK_STATS_TOP_LIMIT),
     ]);
     const daily = fillMissingDays(since, days, counts);
@@ -114,7 +116,7 @@ export class EventsService {
       since: utcDay(since),
       total: daily.reduce((sum, day) => sum + day.clicks, 0),
       daily,
-      referers,
+      refererHosts,
       countries,
     };
   }

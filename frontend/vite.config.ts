@@ -36,10 +36,16 @@ function publicLinkProxy(target: string): { plugin: Plugin; proxy: ProxyOptions 
             return;
           }
           proxyRes.resume();
-          void appShell(req.url ?? "/").then((html) => {
-            res.writeHead(status, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-            res.end(html);
-          });
+          appShell(req.url ?? "/")
+            .then((html) => {
+              res.writeHead(status, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+              res.end(html);
+            })
+            .catch((error: unknown) => {
+              devServer?.config.logger.error(`public-link-proxy: ${String(error)}`);
+              res.writeHead(status, { "Cache-Control": "no-store" });
+              res.end();
+            });
         });
       },
     },

@@ -5,3 +5,16 @@ allowBuilds:
   '@scarf/scarf': false
   esbuild: true
   msw: false
+# eslint, @eslint/config-array, @typescript-eslint/typescript-estree,
+# @nestjs/cli and ts-morph (via shadcn) still pin minimatch 10, affected by
+# GHSA-g3hv-75wg-m249 (fixed in 11.0.1). They only call minimatch() and
+# Minimatch#match, which 11 keeps. Drop this once they depend on >= 11.0.1.
+overrides:
+  'minimatch@<11.0.1': ^11.0.1
+auditConfig:
+  ignoreGhsas:
+    # deepmerge prototype poisoning (low, no patched version): only reached
+    # through the shadcn CLI, a devDependency kept for the
+    # `@import "shadcn/tailwind.css"` in frontend/src/index.css. Never bundled
+    # in the app nor shipped in the images, and never fed untrusted input.
+    - GHSA-gcqx-w48m-w2h4

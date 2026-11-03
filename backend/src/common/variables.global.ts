@@ -39,6 +39,10 @@ export const LOGIN_THROTTLE_LIMIT = 5;
 
 export const DEFAULT_TRUSTED_PROXY_HOPS = 1;
 
+export const DB_DEFAULT_PORT = 3306;
+export const DB_DRIVER_TIME_ZONE = 'Z';
+export const DB_SESSION_TIME_ZONE = '+00:00';
+
 export const PUBLIC_ID_ALPHABET =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 export const PUBLIC_ID_LENGTH = 8;
@@ -80,6 +84,8 @@ export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 export const EVENT_TYPES = ['click'] as const;
 export const EVENT_REFERER_MAX_LENGTH = 2048;
 export const EVENT_USER_AGENT_MAX_LENGTH = 512;
+export const EVENT_REFERER_HOST_MAX_LENGTH = 255;
+export const EVENT_REFERER_PROTOCOLS: readonly string[] = ['http:', 'https:'];
 export const IP_HASH_ALGORITHM = 'sha256';
 export const COUNTRY_HEADER = 'cf-ipcountry';
 export const COUNTRY_CODE_REGEX = /^[A-Z]{2}$/;

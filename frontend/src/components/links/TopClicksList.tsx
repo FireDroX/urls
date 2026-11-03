@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 export interface TopClicksEntry {
   key: string
   label: string
-  title?: string
   clicks: number
 }
 
@@ -27,7 +26,7 @@ export function TopClicksList({ title, entries, total }: TopClicksListProps) {
         {entries.map((entry) => (
           <li key={entry.key} className="flex flex-col gap-1">
             <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate" title={entry.title ?? entry.label}>
+              <span className="truncate" title={entry.label}>
                 {entry.label}
               </span>
               <span className="shrink-0 tabular-nums text-muted-foreground">
