@@ -89,6 +89,23 @@ export const FILE_STATUSES = [
   'ready',
   'rejected',
 ] as const;
+export const FILE_NAME_INPUT_MAX_LENGTH = 1024;
+export const FILE_NAME_MAX_LENGTH = 255;
+export const FILE_MIN_SIZE_BYTES = 1;
+export const FILE_MAX_SIZE_BYTES = 20 * 1024 ** 3;
+export const FILE_PART_SIZE_BYTES = 32 * 1024 ** 2;
+export const FILES_STORAGE_QUOTA_BYTES = 75 * 1024 ** 3;
+export const FILE_SHA256_REGEX = /^[0-9a-f]{64}$/;
+export const FILE_HASH_ALGORITHM = 'sha256';
+export const FILE_S3_KEY_PREFIX = 'files/';
+export const FILE_UNKNOWN_MIME = 'application/octet-stream';
+export const FILE_MIME_SNIFF_BYTES = 64 * 1024;
+export const FILE_PART_UPLOAD_PATH_REGEX =
+  /^\/api\/shares\/[^/?]+\/files\/[^/?]+\/parts\/[^/?]+\/?(?:\?|$)/;
+export const FILE_UPLOAD_THROTTLE_TTL_MS = 60_000;
+export const FILE_START_THROTTLE_LIMIT = 60;
+export const FILE_PART_THROTTLE_LIMIT = 300;
+export const S3_LIST_PARTS_PAGE_SIZE = 1000;
 
 export const EVENT_TYPES = ['click'] as const;
 export const EVENT_REFERER_MAX_LENGTH = 2048;
@@ -109,6 +126,7 @@ export const UNSIGNED_INTEGER_REGEX = /^\d+$/;
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export const JSON_BODY_LIMIT = '100kb';
+export const JSON_CONTENT_TYPE_REGEX = /^application\/json\s*(?:;|$)/i;
 
 export const AUDIT_LOG_STRING_MAX_LENGTH = 500;
 
@@ -118,6 +136,7 @@ export const TURNSTILE_TIMEOUT_MS = 5000;
 
 export const S3_ADMIN_TIMEOUT_MS = 5000;
 export const S3_DEFAULT_REGION = 'us-east-1';
+export const S3_CHECKSUM_MODE = 'WHEN_REQUIRED';
 
 export const SUPPORTED_LOCALES: readonly string[] = ['fr', 'en'];
 export const DEFAULT_LOCALE = 'fr';

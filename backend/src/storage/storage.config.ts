@@ -1,6 +1,9 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
-import { S3_DEFAULT_REGION } from '../common/variables.global.js';
+import {
+  S3_CHECKSUM_MODE,
+  S3_DEFAULT_REGION,
+} from '../common/variables.global.js';
 
 export interface StorageSettings {
   endpoint: string;
@@ -31,6 +34,8 @@ export function s3ClientFor(
     endpoint,
     region: settings.region,
     forcePathStyle: true,
+    requestChecksumCalculation: S3_CHECKSUM_MODE,
+    responseChecksumValidation: S3_CHECKSUM_MODE,
     credentials: {
       accessKeyId: settings.accessKeyId,
       secretAccessKey: settings.secretAccessKey,

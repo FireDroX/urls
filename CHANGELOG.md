@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.9 — 2026-11-03
+
+- Envoi de fichiers dans un partage, même au-delà de 100 Mo : le fichier est annoncé (nom, taille, empreinte SHA-256), envoyé en parts de 32 Mio qui passent par l'API (jamais directement dans le stockage), une part ratée se renvoie seule, puis il est finalisé. L'API vérifie ensuite en arrière-plan la taille, l'empreinte et le vrai type du fichier : il devient « prêt », ou « rejeté » et effacé s'il ne correspond pas à ce qui a été annoncé. Une vérification interrompue par un redémarrage reprend toute seule.
+- Limites appliquées dès l'annonce : 20 Gio par fichier, 50 fichiers par partage et 75 Gio au total (calculé sur les fichiers enregistrés, en plus du quota du stockage) ; un dépassement répond « trop volumineux » (413). Annulation d'un envoi en cours et suppression d'un fichier, inscrites au journal d'audit comme les ajouts. L'interface du dashboard arrive avec un prochain ticket.
+- ⚠️ Le nginx du frontend accepte des requêtes de 33 Mo sur la seule route des parts, sans les mettre en tampon : reconstruire l'image frontend en même temps que le backend.
+
 ## 0.0.8 — 2026-11-03
 
 - API admin des partages de fichiers `/d/` (`/api/shares`) : création avec un slug choisi ou généré, expiration et nombre maximal de téléchargements facultatifs, modification de tous ces réglages, désactivation et suppression. Le slug d'un partage partage l'espace de noms des redirections. La fiche d'un partage liste ses fichiers (nom, taille, type, état) et donne leur taille totale. Créations, modifications et suppressions passent dans le journal d'audit. L'interface du dashboard arrive avec un prochain ticket.

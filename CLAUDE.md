@@ -16,7 +16,7 @@ Ce dépôt a un graphe de connaissance à `graphify-out/` :
 
 Le plan de référence est `Plan url.addrien.fr.md` (phases 0 à 4, exigences de sécurité transverses) et la maquette `Maquette url.addrien.fr.html` (thème sombre, Montserrat / Noto Sans, accent orange) ; les deux restent hors dépôt (`.gitignore`). Une fonctionnalité n'est terminée qu'avec ses limites, ses codes d'erreur et ses contrôles d'intégrité.
 
-État : phase 1 (redirections `/r/`) livrée. **Phase 2** en cours (partages `/d/`) : table `files` et API admin des partages en place ; upload, page publique et purge à venir.
+État : phase 1 (redirections `/r/`) livrée. **Phase 2** en cours (partages `/d/`) : table `files`, API admin des partages et upload multipart via le backend en place ; page publique, interface d'upload et purge à venir.
 
 ## Commandes
 
@@ -43,7 +43,7 @@ Frontend (`frontend/`) : `pnpm run lint` (oxlint), `pnpm run test` (vitest + jsd
 
 ## Environnement
 
-Dev : la base et le S3 tournent sur la VM docker de dev `192.168.2.64` (stack `/opt/nestwiki-dev` : MySQL 8.4 sur `:3306`, RustFS sur `:9000`), partagés avec NestWiki : base `urls`, utilisateur MySQL `urls` limité à `urls.*`, bucket `urls` et utilisateur S3 `urls` limité à ce bucket. `infra/rustfs/setup.sh` (local, **hors dépôt** : `infra/` est dans `.gitignore`) crée bucket, utilisateur, politique, quota et CORS (idempotent, avec le compte admin RustFS — jamais celui de l'app).
+Dev : la base et le S3 tournent sur la VM docker de dev `192.168.2.64` (stack `/opt/nestwiki-dev` : MySQL 8.4 sur `:3306`, RustFS sur `:9000`), partagés avec NestWiki : base `urls`, utilisateur MySQL `urls` limité à `urls.*`, bucket `urls` et utilisateur S3 `urls` limité à ce bucket. `infra/rustfs/setup.sh` (local, **hors dépôt** : `infra/` est dans `.gitignore`) crée bucket, utilisateur, politique, quota et CORS (le CORS du bucket ne sert plus à l'upload, qui passe par le backend ; idempotent, avec le compte admin RustFS — jamais celui de l'app).
 
 Config : trois `.env`, chacun avec un `.env.example` à copier.
 
@@ -57,7 +57,7 @@ Ne jamais afficher ni copier les valeurs des `.env` : générer de nouveaux secr
 
 - `docker-compose.yml` : stack complète (mysql + rustfs + backend + frontend, plus `storage-init` en profil `setup`, qui monte `infra/rustfs`), pour un serveur vierge ou un essai local. Réseaux `database` et `storage` en `internal`, partagés seulement avec le backend ; seul le frontend publie un port (`127.0.0.1:8081`), servi par le Cloudflare Tunnel.
 - `docker-compose.external.yml` : prod, la base et le RustFS existent déjà (ceux de NestWiki, S3 exposé sur `cdn.addrien.fr`). Images `ghcr.io/firedrox/urls-{backend,frontend}` poussées par la CI sur `main`, réseaux externes `DATABASE_NETWORK`/`STORAGE_NETWORK` (réseaux `--internal` dédiés).
-- Backend : utilisateur `node` (non root), `mem_limit`, `read_only`, `no-new-privileges`. `entrypoint.sh` lance migrations, seed admin puis l'API. Le frontend nginx proxifie `/api/` et `/r/` vers `backend:3000` et envoie la CSP (scripts du site + Turnstile seulement), `nosniff`, `X-Frame-Options`.
+- Backend : utilisateur `node` (non root), `mem_limit`, `read_only`, `no-new-privileges`. `entrypoint.sh` lance migrations, seed admin puis l'API. Le frontend nginx proxifie `/api/` et `/r/` vers `backend:3000` (la route des parts d'upload a sa propre `location` : `client_max_body_size 33m`, `proxy_request_buffering off`, le reste de `/api/` garde la limite de 1 Mo) et envoie la CSP (scripts du site + Turnstile seulement), `nosniff`, `X-Frame-Options`.
 
 ## Architecture backend (`backend/src`)
 
@@ -93,7 +93,15 @@ Même découpage en couches que NestWiki :
 
 **Partages** (`shares/`, port `'SharesRepository'` sur l'entité `Link` limitée au type `share`) : API admin `GET/POST /api/shares`, `GET/PATCH/DELETE /api/shares/:id` (`:id` = `public_id`), mêmes règles de slug que les redirections (`slugSchema`, `expiresAtSchema` de `links/dto/in/link-fields.schema.ts`, id mal formé → 404 avant SQL via `isWellFormedLinkId` de `common/public-id.ts`, 409 si pris), `maxDownloads` facultatif (1 à `SHARE_MAX_DOWNLOADS_LIMIT`, `CHECK` en base : seulement pour un `share`), `downloadCount` en lecture seule, `SHARE_FILES_MAX` fichiers au plus par partage (appliqué à l'upload) ; tout est modifiable, soft delete, audit `shares.*`. La liste donne `fileCount`/`totalSize` par partage (agrégés en SQL), la fiche ajoute `files` (`publicId`, nom, taille, MIME, statut). **Fichiers** (`files/`, entité `StoredFile`, port `'FilesRepository'`, `FilesService` exporté) : table `files` (`link_id` → `links.id` en `ON DELETE RESTRICT` : un lien ne se supprime jamais en dur avant la purge de ses objets ; `s3_key` unique, `size` en `bigint` converti en nombre, `sha256` annoncé contrôlé par `CHECK`, `status` ∈ `FILE_STATUSES` (`uploading` → `verifying` → `ready` | `rejected`), `upload_id` multipart, soft delete). `isDuplicateEntry` (`common/database-errors.ts`) traduit `ER_DUP_ENTRY`.
 
-**Stockage** : client AWS SDK v3 (`storage/`), `forcePathStyle`, deux clients : interne (`S3_ENDPOINT`) et de signature (`S3_PUBLIC_ENDPOINT`). Bucket privé, accès uniquement par URLs présignées en `Content-Disposition: attachment`. `GET /api/storage/usage` lit `GET /rustfs/admin/v3/quota-stats/<bucket>` signé SigV4 (l'utilisateur de l'app n'a besoin que de `s3:GetBucketQuota`). Le quota RustFS ne suffit pas : avant toute URL présignée d'upload, vérifier aussi la place restante côté SQL, et traduire « Bucket quota exceeded » en 413.
+**Upload multipart via le backend** (`shares/share-files.controller.ts` → `ShareFilesService` → `files/services/file-uploads.service.ts`, admin, `JwtAuthGuard`, filtre `ShareFilesExceptionFilter`) : le navigateur n'écrit jamais dans S3, il envoie ses parts au backend qui les transmet en flux à `UploadPart` par le client interne : pas d'URL d'upload présignée, pas de CORS sur le bucket, pas de CSP à élargir.
+
+- `POST /api/shares/:id/files` (`{ name, size, sha256 }`, `files/dto/in/start-upload.dto.ts` : nom réduit à son nom de base, sans caractères de contrôle ni invisibles, 1 à `FILE_NAME_MAX_LENGTH` ; SHA-256 hex normalisé en minuscules) : `size` > `FILE_MAX_SIZE_BYTES` → 413 ; puis `CreateMultipartUpload` sous une clé opaque `files/<uuid>` et `insertWithinLimits` (adapter : transaction, `SELECT … FOR UPDATE` sur le lien, plus de `SHARE_FILES_MAX` fichiers → 413, somme SQL des tailles non rejetées ni supprimées + taille annoncée > `FILES_STORAGE_QUOTA_BYTES` → 413) ; un refus annule l'upload multipart. Réponse : `fileId`, `partSize` (`FILE_PART_SIZE_BYTES`, 32 Mio), `partCount`, `file`.
+- `PUT …/files/:fileId/parts/:n` : `n` de 1 à `partCount` et `Content-Length` égal à la taille attendue de la part, `Transfer-Encoding` refusé (400) ; le corps (jamais en mémoire) passe par `measuredPart` (`files/file-streams.ts` : coupe en 413 au-delà, 400 si plus court ou client parti) puis `UploadPart`. Le parseur JSON ignore cette route (`common/json-body.ts`, option `type` de `useBodyParser` dans `main.ts`). `@Throttle` dédié (`FILE_PART_THROTTLE_LIMIT`). Une part se renvoie seule.
+- `POST …/files/:fileId/complete` : `ListParts` (nombre et taille de chaque part, sinon 409), `CompleteMultipartUpload` (« Bucket quota exceeded » → `StorageQuotaExceededException`, 413), passage conditionnel `uploading` → `verifying` (sinon 409), 202. `FileVerificationService` vérifie en tâche de fond (`HeadObject` pour la taille, SHA-256 recalculé en relisant l'objet en flux, MIME détecté par `file-type` sur les `FILE_MIME_SNIFF_BYTES` premiers octets, `application/octet-stream` à défaut) → `ready`, sinon `rejected` et objet supprimé ; une erreur de stockage laisse le fichier en `verifying`, repris au démarrage suivant (`onApplicationBootstrap`).
+- `DELETE …/files/:fileId` : annule l'upload en cours (`AbortMultipartUpload`, `upload_id` gardé si l'annulation échoue), soft delete ; l'objet d'un fichier terminé reste à purger (#23). Audit `files.created` / `files.deleted`.
+- Fichier inconnu ou d'un autre partage → 404, plus en `uploading` (ou upload inconnu de S3, `NoSuchUpload`) → 409, stockage injoignable → 503. Le client S3 est réglé en `requestChecksumCalculation`/`responseChecksumValidation` `WHEN_REQUIRED` (`S3_CHECKSUM_MODE`) : pas d'encodage `aws-chunked` sur les parts envoyées en flux.
+
+**Stockage** : client AWS SDK v3 (`storage/`), `forcePathStyle`, deux clients : interne (`S3_ENDPOINT`) et de signature (`S3_PUBLIC_ENDPOINT`). Bucket privé, accès uniquement par URLs présignées en `Content-Disposition: attachment`. `GET /api/storage/usage` lit `GET /rustfs/admin/v3/quota-stats/<bucket>` signé SigV4 (l'utilisateur de l'app n'a besoin que de `s3:GetBucketQuota`). Le quota RustFS ne suffit pas : avant d'ouvrir un upload, vérifier aussi la place restante côté SQL, et traduire « Bucket quota exceeded » en 413.
 
 ## Architecture frontend (`frontend/src`)
 
@@ -112,7 +120,7 @@ Comme NestWiki : l'interface est en français ou en anglais, au choix de l'admin
 - Redirections en **302** uniquement (destination modifiable), jamais 301.
 - Même 404 pour un lien inexistant, désactivé ou supprimé ; 410 + page « lien expiré » pour un lien expiré.
 - Destinations en `http`/`https` uniquement, longueur max ; slugs limités à un alphabet, hors noms réservés.
-- Uploads multipart du navigateur vers S3, parts < 100 Mo (limite du Cloudflare Tunnel) ; taille et SHA-256 vérifiés en fin d'upload, MIME détecté côté serveur, refus pendant l'envoi (413).
+- Uploads multipart du navigateur vers le backend, qui les transmet en flux à S3, parts < 100 Mo (limite du Cloudflare Tunnel) ; taille et SHA-256 vérifiés en fin d'upload, MIME détecté côté serveur, refus pendant l'envoi (413).
 - Opérations multi-étapes en transaction ; contraintes en base (FK, unicité des IDs publics, `NOT NULL`).
 - Tout est modifiable après création (destination, limites, expiration).
 
