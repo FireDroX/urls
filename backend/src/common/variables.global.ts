@@ -82,6 +82,7 @@ export const LINK_REDIRECT_THROTTLE_LIMIT = 30;
 export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
 export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000;
+export const SHARE_FILES_MAX = 50;
 export const FILE_STATUSES = [
   'uploading',
   'verifying',
