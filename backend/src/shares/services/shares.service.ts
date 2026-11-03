@@ -126,7 +126,7 @@ export class SharesService {
     return { ...withFiles(share, files), viewCount };
   }
 
-  private async find(publicId: string): Promise<Link> {
+  async find(publicId: string): Promise<Link> {
     if (!isWellFormedLinkId(publicId)) {
       throw new ShareNotFoundException();
     }

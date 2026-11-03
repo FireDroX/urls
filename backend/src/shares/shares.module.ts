@@ -9,7 +9,9 @@ import { StorageModule } from '../storage/storage.module.js';
 import { TypeormShareRepository } from './persistence/typeorm.share.repository.js';
 import { PublicSharesController } from './public-shares.controller.js';
 import { PublicSharesService } from './services/public-shares.service.js';
+import { ShareFilesController } from './share-files.controller.js';
 import { SharesController } from './shares.controller.js';
+import { ShareFilesService } from './services/share-files.service.js';
 import { SharesService } from './services/shares.service.js';
 
 @Module({
@@ -21,10 +23,11 @@ import { SharesService } from './services/shares.service.js';
     SecurityModule,
     StorageModule,
   ],
-  controllers: [SharesController, PublicSharesController],
+  controllers: [SharesController, ShareFilesController, PublicSharesController],
   providers: [
     { provide: 'SharesRepository', useClass: TypeormShareRepository },
     SharesService,
+    ShareFilesService,
     PublicSharesService,
   ],
 })

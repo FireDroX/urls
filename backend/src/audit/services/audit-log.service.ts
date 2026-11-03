@@ -13,7 +13,9 @@ export type AuditAction =
   | 'links.deleted'
   | 'shares.created'
   | 'shares.updated'
-  | 'shares.deleted';
+  | 'shares.deleted'
+  | 'files.created'
+  | 'files.deleted';
 
 export interface AuditEntry {
   action: AuditAction;

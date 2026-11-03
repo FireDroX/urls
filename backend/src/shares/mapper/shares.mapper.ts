@@ -74,7 +74,7 @@ export class SharesMapper {
     };
   }
 
-  private static toFileDto(file: StoredFile): ShareFileResponseDto {
+  static toFileDto(file: StoredFile): ShareFileResponseDto {
     return {
       id: file.publicId,
       name: file.name,

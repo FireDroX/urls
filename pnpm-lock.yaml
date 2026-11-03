@@ -61,6 +61,9 @@ importers:
       dotenv:
         specifier: ^18.0.9
         version: 18.0.9
+      file-type:
+        specifier: ^22.2.0
+        version: 22.2.0
       helmet:
         specifier: ^8.3.0
         version: 8.3.0
