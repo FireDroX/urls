@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import mysql, {
   type Pool,
   type PoolConnection,
@@ -17,9 +18,14 @@ type EnvReader = (key: string) => string | undefined;
 
 export const SET_SESSION_TIME_ZONE_SQL = `SET time_zone = '${DB_SESSION_TIME_ZONE}'`;
 
+const logger = new Logger('MysqlConnection');
+
 export function setSessionTimeZone(connection: PoolConnection): void {
   connection.query(SET_SESSION_TIME_ZONE_SQL, (error) => {
     if (error) {
+      logger.error(
+        `Could not set the session time zone, closing the connection: ${error.message}`,
+      );
       connection.destroy();
     }
   });

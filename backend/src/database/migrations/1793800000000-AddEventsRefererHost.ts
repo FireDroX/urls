@@ -24,8 +24,14 @@ function groupIdsByHost(rows: RefererRow[]): Map<string, string[]> {
   const idsByHost = new Map<string, string[]>();
   for (const { id, referer } of rows) {
     const host = hostOf(referer);
-    if (host) {
-      idsByHost.set(host, [...(idsByHost.get(host) ?? []), id]);
+    if (!host) {
+      continue;
+    }
+    const ids = idsByHost.get(host);
+    if (ids) {
+      ids.push(id);
+    } else {
+      idsByHost.set(host, [id]);
     }
   }
   return idsByHost;
@@ -35,11 +41,13 @@ export class AddEventsRefererHost1793800000000 implements MigrationInterface {
   name = 'AddEventsRefererHost1793800000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE \`events\` ADD \`referer_host\` varchar(255) NULL AFTER \`referer\``,
-    );
+    if (!(await queryRunner.hasColumn('events', 'referer_host'))) {
+      await queryRunner.query(
+        `ALTER TABLE \`events\` ADD \`referer_host\` varchar(255) NULL AFTER \`referer\``,
+      );
+    }
     const rows = (await queryRunner.query(
-      `SELECT \`id\`, \`referer\` FROM \`events\` WHERE \`referer\` IS NOT NULL`,
+      `SELECT \`id\`, \`referer\` FROM \`events\` WHERE \`referer\` IS NOT NULL AND \`referer_host\` IS NULL`,
     )) as RefererRow[];
     for (const [host, ids] of groupIdsByHost(rows)) {
       for (let start = 0; start < ids.length; start += UPDATE_BATCH_SIZE) {

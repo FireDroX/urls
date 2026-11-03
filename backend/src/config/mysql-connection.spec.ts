@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { Logger } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Pool, PoolConnection } from 'mysql2';
 import { describe, expect, it, vi } from 'vitest';
@@ -44,14 +45,19 @@ describe('mysql connection', () => {
     expect(connection.destroy).not.toHaveBeenCalled();
   });
 
-  it('destroys a connection whose time zone could not be set', () => {
+  it('logs and destroys a connection whose time zone could not be set', () => {
     const connection = fakeConnection();
+    const logError = vi
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
 
     setSessionTimeZone(connection as unknown as PoolConnection);
     const callback = connection.query.mock.calls[0][1] as QueryCallback;
     callback(new Error('denied'));
 
     expect(connection.destroy).toHaveBeenCalledTimes(1);
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining('denied'));
+    logError.mockRestore();
   });
 
   it('hooks every pooled connection created by the driver', () => {
