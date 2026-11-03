@@ -1,4 +1,4 @@
-import type { LinkEvent } from '../entities/link-event.entity.js';
+import type { EventType, LinkEvent } from '../entities/link-event.entity.js';
 
 export type NewLinkEvent = Pick<
   LinkEvent,
@@ -28,6 +28,7 @@ export interface ClickStatsQuery {
 
 export interface LinkEventRepository {
   insert(event: NewLinkEvent): Promise<void>;
+  countByType(linkId: string, type: EventType): Promise<number>;
   countClicksByDay(query: ClickStatsQuery): Promise<DailyClickCount[]>;
   topRefererHosts(
     query: ClickStatsQuery,

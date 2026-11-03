@@ -161,6 +161,20 @@
       "mismatch": "The two passwords differ"
     }
   },
+  "share": {
+    "title": "Shared files",
+    "summary_one": "{{count}} file · {{size}}",
+    "summary_other": "{{count}} files · {{size}}",
+    "expiresAt": "Available until {{date}}",
+    "noExpiry": "No expiration date",
+    "filesRegion": "Files",
+    "download": "Download",
+    "downloadFile": "Download {{name}}",
+    "preparing": "Preparing…",
+    "verifyHint": "Complete the check below to download.",
+    "verificationFailed": "The check failed, please try again.",
+    "loadFailedTitle": "Could not open this share"
+  },
   "notFound": {
     "title": "Link not found",
     "body": "This link does not exist, or is no longer available."

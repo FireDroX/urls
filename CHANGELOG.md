@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.9 — 2026-11-03
+
+- Page publique de téléchargement `/d/<id>` : nom, taille et nombre de fichiers prêts, date d'expiration et un bouton « Télécharger » par fichier, en français ou en anglais. Après le défi Turnstile, le fichier se télécharge directement depuis le stockage par une URL signée valable une minute. Un partage inexistant, désactivé, supprimé ou sans fichier prêt affiche « lien introuvable » ; un partage expiré ou dont tous les téléchargements ont été pris, « lien expiré ». Limites de débit dédiées à l'aperçu et aux téléchargements.
+- Le nombre maximal de téléchargements est garanti même quand deux visiteurs prennent le dernier en même temps. Chaque ouverture de la page et chaque téléchargement sont enregistrés (IP hachée, comme les clics) ; la fiche d'un partage (`GET /api/shares/:id`) donne le nombre de vues à côté du nombre de téléchargements.
+- La migration (lancée automatiquement au démarrage du conteneur) autorise les événements « vue » et « téléchargement ».
+
 ## 0.0.8 — 2026-11-03
 
 - API admin des partages de fichiers `/d/` (`/api/shares`) : création avec un slug choisi ou généré, expiration et nombre maximal de téléchargements facultatifs, modification de tous ces réglages, désactivation et suppression. Le slug d'un partage partage l'espace de noms des redirections. La fiche d'un partage liste ses fichiers (nom, taille, type, état) et donne leur taille totale. Créations, modifications et suppressions passent dans le journal d'audit. L'interface du dashboard arrive avec un prochain ticket.

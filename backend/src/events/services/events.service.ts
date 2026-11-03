@@ -12,6 +12,7 @@ import {
 } from '../../common/variables.global.js';
 import { refererHost } from '../../common/referer-host.js';
 import type { Visitor } from '../../common/visitor.js';
+import type { EventType } from '../entities/link-event.entity.js';
 import type {
   ClickCountByValue,
   DailyClickCount,
@@ -80,11 +81,31 @@ export class EventsService {
     this.ipHashSecret = configService.getOrThrow<string>('IP_HASH_SECRET');
   }
 
-  async recordClick(linkId: string, visitor: Visitor): Promise<void> {
+  recordClick(linkId: string, visitor: Visitor): Promise<void> {
+    return this.record(linkId, 'click', visitor);
+  }
+
+  recordView(linkId: string, visitor: Visitor): Promise<void> {
+    return this.record(linkId, 'view', visitor);
+  }
+
+  recordDownload(linkId: string, visitor: Visitor): Promise<void> {
+    return this.record(linkId, 'download', visitor);
+  }
+
+  countViews(linkId: string): Promise<number> {
+    return this.repository.countByType(linkId, 'view');
+  }
+
+  private async record(
+    linkId: string,
+    type: EventType,
+    visitor: Visitor,
+  ): Promise<void> {
     try {
       await this.repository.insert({
         linkId,
-        type: 'click',
+        type,
         referer: truncate(visitor.referer, EVENT_REFERER_MAX_LENGTH),
         refererHost: refererHost(visitor.referer),
         userAgent: truncate(visitor.userAgent, EVENT_USER_AGENT_MAX_LENGTH),
@@ -93,7 +114,7 @@ export class EventsService {
       });
     } catch (error) {
       this.logger.error(
-        'Could not record click event',
+        `Could not record ${type} event`,
         error instanceof Error ? error.stack : undefined,
       );
     }

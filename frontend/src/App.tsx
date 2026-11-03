@@ -11,6 +11,7 @@ import { NotFound } from '#pages/NotFound'
 import { Redirects } from '#pages/Redirects'
 import { RedirectUnavailable } from '#pages/RedirectUnavailable'
 import { Settings } from '#pages/Settings'
+import { ShareDownload } from '#pages/ShareDownload'
 
 const RedirectDetail = lazy(() =>
   import('#pages/RedirectDetail').then(({ RedirectDetail }) => ({ default: RedirectDetail })),
@@ -27,6 +28,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/r/:id" element={<RedirectUnavailable />} />
+      <Route path="/d/:id" element={<ShareDownload />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />

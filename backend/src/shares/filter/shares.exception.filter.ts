@@ -9,7 +9,9 @@ import { HttpExceptionFilter } from '../../common/filters/http-exception.filter.
 
 const STATUS_BY_EXCEPTION: Record<string, number> = {
   ValidationException: HttpStatus.BAD_REQUEST,
+  InvalidTurnstileTokenException: HttpStatus.BAD_REQUEST,
   ShareNotFoundException: HttpStatus.NOT_FOUND,
+  ShareExpiredException: HttpStatus.GONE,
   SlugAlreadyTakenException: HttpStatus.CONFLICT,
 };
 

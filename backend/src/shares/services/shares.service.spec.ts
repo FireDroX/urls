@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuditLogService } from '../../audit/services/audit-log.service.js';
+import type { EventsService } from '../../events/services/events.service.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { ShareNotFoundException } from '../../common/exceptions/shares/share-not-found.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
@@ -70,6 +71,7 @@ describe('SharesService', () => {
     listForLink: ReturnType<typeof vi.fn>;
     summarizeLinks: ReturnType<typeof vi.fn>;
   };
+  let events: { countViews: ReturnType<typeof vi.fn> };
   let audit: { record: ReturnType<typeof vi.fn> };
   let service: SharesService;
 
@@ -87,10 +89,12 @@ describe('SharesService', () => {
       listForLink: vi.fn().mockResolvedValue([]),
       summarizeLinks: vi.fn().mockResolvedValue(new Map()),
     };
+    events = { countViews: vi.fn().mockResolvedValue(0) };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     service = new SharesService(
       repository as unknown as ShareRepository,
       files as unknown as FilesService,
+      events as unknown as EventsService,
       audit as unknown as AuditLogService,
     );
   });
@@ -118,7 +122,7 @@ describe('SharesService', () => {
   });
 
   describe('get', () => {
-    it('returns the share with its files and their total size', async () => {
+    it('returns the share with its files, their total size and its views', async () => {
       const share = buildShare();
       const fileList = [
         buildFile({ size: 150_000_000 }),
@@ -126,15 +130,18 @@ describe('SharesService', () => {
       ];
       repository.findByPublicId.mockResolvedValue(share);
       files.listForLink.mockResolvedValue(fileList);
+      events.countViews.mockResolvedValue(12);
 
       const detail = await service.get('share123');
 
       expect(files.listForLink).toHaveBeenCalledWith('share-uuid');
+      expect(events.countViews).toHaveBeenCalledWith('share-uuid');
       expect(detail).toEqual({
         share,
         files: fileList,
         fileCount: 2,
         totalSize: 150_000_050,
+        viewCount: 12,
       });
     });
 
@@ -167,7 +174,12 @@ describe('SharesService', () => {
         expiresAt: null,
         maxDownloads: null,
       });
-      expect(detail).toMatchObject({ files: [], fileCount: 0, totalSize: 0 });
+      expect(detail).toMatchObject({
+        files: [],
+        fileCount: 0,
+        totalSize: 0,
+        viewCount: 0,
+      });
       expect(audit.record).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'shares.created',

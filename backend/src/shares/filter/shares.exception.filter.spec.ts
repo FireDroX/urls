@@ -1,7 +1,9 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import type { Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
+import { InvalidTurnstileTokenException } from '../../common/exceptions/auth/invalid-turnstile-token.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
+import { ShareExpiredException } from '../../common/exceptions/shares/share-expired.exception.js';
 import { ShareNotFoundException } from '../../common/exceptions/shares/share-not-found.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
 import { SharesExceptionFilter } from './shares.exception.filter.js';
@@ -29,6 +31,17 @@ describe('SharesExceptionFilter', () => {
       status: 404,
       body: { error: 'Share not found' },
     });
+  });
+
+  it('answers 410 for an expired or used up share', () => {
+    expect(respondTo(new ShareExpiredException())).toEqual({
+      status: 410,
+      body: { error: 'Share expired' },
+    });
+  });
+
+  it('answers 400 for a refused Turnstile challenge', () => {
+    expect(respondTo(new InvalidTurnstileTokenException()).status).toBe(400);
   });
 
   it('answers 409 for a slug already taken', () => {

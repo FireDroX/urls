@@ -3,9 +3,8 @@ import {
   EMAIL_MAX_LENGTH,
   EMAIL_REGEX,
   PASSWORD_MAX_LENGTH,
+  TURNSTILE_TOKEN_MAX_LENGTH,
 } from '../../../common/variables.global.js';
-
-const TURNSTILE_TOKEN_MAX_LENGTH = 2048;
 
 export const loginSchema = z.strictObject({
   email: z
