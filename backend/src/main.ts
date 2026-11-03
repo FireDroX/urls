@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
+import { parsesAsJson } from './common/json-body.js';
 import {
   DEFAULT_TRUSTED_PROXY_HOPS,
   JSON_BODY_LIMIT,
@@ -39,7 +40,7 @@ async function bootstrap() {
   });
 
   app.set('trust proxy', trustedProxyHops());
-  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
+  app.useBodyParser('json', { limit: JSON_BODY_LIMIT, type: parsesAsJson });
   app.setGlobalPrefix('api', {
     exclude: [{ path: 'r/:id', method: RequestMethod.GET }],
   });
