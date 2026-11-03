@@ -4,12 +4,11 @@ import { LinkExpiredException } from '../../common/exceptions/links/link-expired
 import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { parseDto } from '../../common/parse-dto.js';
-import { generatePublicId } from '../../common/public-id.js';
 import {
-  LINK_SLUG_MAX_LENGTH,
-  LINK_SLUG_REGEX,
-  PUBLIC_ID_GENERATION_ATTEMPTS,
-} from '../../common/variables.global.js';
+  generatePublicId,
+  isWellFormedLinkId,
+} from '../../common/public-id.js';
+import { PUBLIC_ID_GENERATION_ATTEMPTS } from '../../common/variables.global.js';
 import type { Visitor } from '../../common/visitor.js';
 import {
   EventsService,
@@ -32,12 +31,6 @@ export interface LinkStats {
   clicks: LinkClickStats;
 }
 
-function isWellFormedPublicId(publicId: string): boolean {
-  return (
-    publicId.length <= LINK_SLUG_MAX_LENGTH && LINK_SLUG_REGEX.test(publicId)
-  );
-}
-
 @Injectable()
 export class LinksService {
   constructor(
@@ -52,7 +45,7 @@ export class LinksService {
   }
 
   async get(publicId: string): Promise<Link> {
-    if (!isWellFormedPublicId(publicId)) {
+    if (!isWellFormedLinkId(publicId)) {
       throw new LinkNotFoundException();
     }
     const link = await this.repository.findByPublicId(publicId);

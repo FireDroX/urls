@@ -14,10 +14,12 @@ import {
 import { validateEnvironment } from './config/env.validation.js';
 import { typeOrmConfig } from './config/typeorm.config.js';
 import { EventsModule } from './events/events.module.js';
+import { FilesModule } from './files/files.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LinksModule } from './links/links.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SettingsModule } from './settings/settings.module.js';
+import { SharesModule } from './shares/shares.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -41,6 +43,8 @@ import { UsersModule } from './users/users.module.js';
     SettingsModule,
     EventsModule,
     LinksModule,
+    FilesModule,
+    SharesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerBehindProxyGuard }],
 })

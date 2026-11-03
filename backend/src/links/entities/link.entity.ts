@@ -41,6 +41,17 @@ export class Link {
   })
   expiresAt: Date | null;
 
+  @Column({
+    type: 'int',
+    unsigned: true,
+    name: 'max_downloads',
+    nullable: true,
+  })
+  maxDownloads: number | null;
+
+  @Column({ type: 'int', unsigned: true, name: 'download_count', default: 0 })
+  downloadCount: number;
+
   @Column({ type: 'boolean', default: false })
   disabled: boolean;
 

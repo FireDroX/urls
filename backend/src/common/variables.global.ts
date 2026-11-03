@@ -81,6 +81,14 @@ export const LINK_REDIRECT_THROTTLE_TTL_MS = 60_000;
 export const LINK_REDIRECT_THROTTLE_LIMIT = 30;
 export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
+export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000;
+export const FILE_STATUSES = [
+  'uploading',
+  'verifying',
+  'ready',
+  'rejected',
+] as const;
+
 export const EVENT_TYPES = ['click'] as const;
 export const EVENT_REFERER_MAX_LENGTH = 2048;
 export const EVENT_USER_AGENT_MAX_LENGTH = 512;

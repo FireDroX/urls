@@ -10,7 +10,10 @@ export type AuditAction =
   | 'settings.updated'
   | 'links.created'
   | 'links.updated'
-  | 'links.deleted';
+  | 'links.deleted'
+  | 'shares.created'
+  | 'shares.updated'
+  | 'shares.deleted';
 
 export interface AuditEntry {
   action: AuditAction;
