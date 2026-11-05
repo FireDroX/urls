@@ -18,6 +18,7 @@ import { FILE_STATUS_POLL_MS } from '#hooks/useShareDetail'
 import { DifferentFileError, UploadCanceledError } from '#lib/share-errors'
 import { resumeFile, uploadNewFile, type UploadRequest } from '#lib/share-upload'
 import { FILE_MAX_SIZE_BYTES } from '#schemas/share.schema'
+import { recallUpload, rememberUpload } from '#utils/pending-uploads'
 import { ShareDetail } from './ShareDetail'
 
 vi.mock('#api/shares', async (importOriginal) => ({
@@ -334,6 +335,24 @@ describe('ShareDetail page', () => {
       expect(await screen.findByText(message)).toBeInTheDocument()
       await user.click(screen.getByRole('button', { name: "Fermer l'erreur de a.bin" }))
       expect(screen.queryByText(message)).not.toBeInTheDocument()
+    })
+
+    it('keeps the local memory of an upload cut before the page listed its file', async () => {
+      const user = userEvent.setup()
+      startUpload(({ shareId, file, observer }) => {
+        const { name, size, lastModified } = file
+        rememberUpload({ shareId, fileId: 'file1234', name, size, lastModified, sha256: 'ab' })
+        observer.onOpened('file1234')
+        return Promise.reject(new Error('network down'))
+      })
+      renderPage()
+      await screen.findByRole('heading', { name: '/d/photos' })
+      vi.mocked(getShare).mockResolvedValue(shareWith(shareFile('uploading', { name: 'a.bin' })))
+
+      await user.upload(dropInput(), new File(['abcd'], 'a.bin'))
+
+      expect(await screen.findByRole('button', { name: 'Reprendre' })).toBeInTheDocument()
+      expect(recallUpload('file1234')).toBeDefined()
     })
 
     it('refuses an empty file before hashing anything', async () => {

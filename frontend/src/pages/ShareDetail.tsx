@@ -189,8 +189,9 @@ function ShareView({ share, uploads, onChanged }: { share: ShareDetailData; uplo
 
   useEffect(() => {
     const uploadingIds = share.files.filter((file) => file.status === 'uploading').map((file) => file.id)
-    forgetShareUploads(share.id, new Set([...uploadingIds, ...activeFileIds]))
-  }, [share, activeFileIds])
+    const queuedIds = uploads.items.flatMap(({ fileId }) => fileId ?? [])
+    forgetShareUploads(share.id, new Set([...uploadingIds, ...queuedIds]))
+  }, [share, uploads.items])
 
   function closeDialog() {
     setDialog({ kind: 'closed' })
