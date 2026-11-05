@@ -23,6 +23,7 @@
     "navigation": "Navigation",
     "allLinks": "All links",
     "redirects": "Redirects",
+    "shares": "Shares",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
     "account": "My account",
@@ -159,6 +160,108 @@
       "minLength": "At least {{count}} characters",
       "complexity": "An uppercase letter, a lowercase letter, a digit and a symbol",
       "mismatch": "The two passwords differ"
+    }
+  },
+  "shares": {
+    "title": "Shares",
+    "subtitle": "/d/ links to share one or more files.",
+    "new": "New share",
+    "emptyTitle": "No shares yet",
+    "emptyBody": "Create a share to drop files into it and get a link to send.",
+    "loadFailedTitle": "Could not load the shares",
+    "notFoundTitle": "Share not found",
+    "backToList": "Back to shares",
+    "open": "Open share {{slug}}",
+    "fileSummary_one": "{{count}} file · {{size}}",
+    "fileSummary_other": "{{count}} files · {{size}}",
+    "downloadsOfMax": "{{current}} / {{max}}",
+    "created": "Share created.",
+    "updated": "Share updated.",
+    "deleted": "Share deleted.",
+    "disabledToast": "Share disabled.",
+    "enabledToast": "Share enabled.",
+    "columns": {
+      "files": "Files",
+      "downloads": "Downloads"
+    },
+    "form": {
+      "createTitle": "New share",
+      "createDescription": "You will drop the files on the share's page.",
+      "editTitle": "Edit share",
+      "editDescription": "Slug, expiry, downloads and state can be changed at any time.",
+      "slugEditHelp": "Changing the slug invalidates the share's old address.",
+      "slugLocked": "The slug cannot change during an upload.",
+      "expiresAtHelp": "Leave empty for a share that never expires.",
+      "maxDownloads": "Maximum downloads (optional)",
+      "maxDownloadsHelp": "Leave empty for unlimited downloads."
+    },
+    "delete": {
+      "title": "Delete this share?",
+      "description": "The link /d/{{slug}} will stop working and its files will no longer be available. Its slug stays reserved."
+    },
+    "detail": {
+      "views": "Views",
+      "downloads": "Downloads",
+      "totalSize": "Total size"
+    },
+    "fileStatus": {
+      "uploading": "Upload unfinished",
+      "verifying": "Verifying",
+      "ready": "Ready",
+      "rejected": "Rejected"
+    },
+    "files": {
+      "title": "Files",
+      "emptyTitle": "No files in this share",
+      "emptyBody": "Drop a file above: it will be available on the link once verified.",
+      "name": "Name",
+      "size": "Size",
+      "status": "Status",
+      "resume": "Resume",
+      "resumeInput": "Resume the upload of {{name}}",
+      "delete": "Delete {{name}}",
+      "deleted": "File deleted.",
+      "deleteTitle": "Delete this file?",
+      "deleteDescription": "{{name}} will no longer be downloadable from this share."
+    },
+    "upload": {
+      "dropTitle": "Drop your files here, or click to choose them",
+      "dropHelp": "Up to 20 GiB per file and 50 files per share.",
+      "region": "Uploads in progress",
+      "percent": "{{percent}}%",
+      "hashProgress": "Computing the fingerprint",
+      "sendProgress": "Upload",
+      "cancel": "Cancel the upload of {{name}}",
+      "cancelHelp": "Cancels the upload and deletes what was already received.",
+      "dismiss": "Dismiss the error for {{name}}",
+      "phase": {
+        "queued": "Waiting",
+        "hashing": "Computing the fingerprint",
+        "uploading": "Uploading",
+        "completing": "Finishing",
+        "canceling": "Canceling",
+        "failed": "Failed"
+      }
+    },
+    "validation": {
+      "maxDownloads": "Whole number from 1 to {{max}}",
+      "fileNameTooLong": "name limited to {{max}} characters",
+      "fileEmpty": "empty file",
+      "fileTooLarge": "{{max}} maximum per file",
+      "fileRefused": "{{name}} refused: {{reason}}"
+    },
+    "errors": {
+      "invalid": "Invalid slug, expiry or limit.",
+      "notFound": "This share no longer exists.",
+      "slugTaken": "This slug is already taken.",
+      "fileInvalid": "This file was refused: invalid name, size or part.",
+      "fileNotFound": "This file or share no longer exists.",
+      "fileConflict": "This upload is no longer in progress, or parts are still missing.",
+      "fileTooLarge": "Too large: the file, share or storage limit was reached.",
+      "storageUnavailable": "Storage is unreachable, try again in a moment.",
+      "differentFile": "This is not the file of the interrupted upload: nothing was sent.",
+      "hashFailed": "This file could not be read.",
+      "uploadInterrupted": "Upload interrupted: check your connection, then resume it."
     }
   },
   "share": {

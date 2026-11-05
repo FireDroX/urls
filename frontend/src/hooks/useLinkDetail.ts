@@ -6,7 +6,7 @@ const NOT_FOUND = 404
 
 export type LoadState<T> = { status: 'loading' } | { status: 'notFound' } | { status: 'error' } | { status: 'ready'; value: T }
 
-function failureState(error: unknown): LoadState<never> {
+export function failureState(error: unknown): LoadState<never> {
   return isAxiosError(error) && error.response?.status === NOT_FOUND ? { status: 'notFound' } : { status: 'error' }
 }
 

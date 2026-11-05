@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.11 — 2026-11-05
+
+- Page « Partages » du dashboard (`/shares`) : liste des liens `/d/` (fichiers, téléchargements, état, expiration), copie de l'URL complète, création (slug choisi ou généré, expiration et nombre maximal de téléchargements facultatifs), modification, désactivation et suppression après confirmation. Mêmes limites que l'API vérifiées dans le formulaire, erreurs traduites.
+- Fiche d'un partage (`/shares/<slug>`) : vues, téléchargements, taille totale et fichiers (nom, taille, état), ajout par glisser-déposer ou sélection, suppression d'un fichier après confirmation.
+- Envoi de fichiers jusqu'à 20 Gio depuis le navigateur : l'empreinte SHA-256 est calculée par tranches en arrière-plan (la page reste utilisable, la mémoire reste bornée), puis les parts partent trois par trois, une part ratée est renvoyée seule, plusieurs fois au plus. Progression de l'empreinte et de l'envoi affichées séparément, annulation à tout moment (ce qui a été reçu est supprimé), puis suivi de l'état jusqu'à « prêt » ou « rejeté ». L'envoi continue quand on change de page dans le dashboard, et le navigateur prévient avant de fermer l'onglet.
+- Reprise d'un envoi interrompu (onglet fermé, coupure réseau) : sur la fiche du partage, « Reprendre » demande de re-sélectionner le fichier, et seules les parts manquantes repartent. Un autre fichier est refusé sans rien envoyer. Depuis un autre navigateur, l'empreinte est recalculée et comparée à celle annoncée au départ. API `GET /api/shares/:id/files/:fileId/parts`.
+
 ## 0.0.10 — 2026-11-04
 
 - Page publique de téléchargement `/d/<id>` : nom, taille et nombre de fichiers prêts, date d'expiration et un bouton « Télécharger » par fichier, en français ou en anglais. Après le défi Turnstile, le fichier se télécharge directement depuis le stockage par une URL signée valable une minute. Un partage inexistant, désactivé, supprimé ou sans fichier prêt affiche « lien introuvable » ; un partage expiré ou dont tous les téléchargements ont été pris, « lien expiré ». Limites de débit dédiées à l'aperçu et aux téléchargements.

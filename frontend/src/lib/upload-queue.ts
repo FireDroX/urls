@@ -1,0 +1,200 @@
+import { deleteShareFile } from '#api/shares'
+import { UploadCanceledError } from '#lib/share-errors'
+import { resumeFile, uploadNewFile, type TransferPhase, type UploadObserver } from '#lib/share-upload'
+import { forgetUpload } from '#utils/pending-uploads'
+
+export type UploadPhase = 'queued' | TransferPhase | 'canceling' | 'failed'
+
+export interface UploadItem {
+  key: string
+  shareId: string
+  fileId: string | null
+  name: string
+  size: number
+  phase: UploadPhase
+  hashedBytes: number
+  sentBytes: number
+  error: unknown
+}
+
+export interface UploadQueueSnapshot {
+  items: readonly UploadItem[]
+  revision: number
+}
+
+export interface ResumeTarget {
+  shareId: string
+  fileId: string
+}
+
+type UploadJob = (signal: AbortSignal, observer: UploadObserver) => Promise<void>
+
+export function isActiveUpload(item: UploadItem): boolean {
+  return item.phase !== 'failed'
+}
+
+export class UploadQueue {
+  private snapshot: UploadQueueSnapshot = { items: [], revision: 0 }
+  private readonly listeners = new Set<() => void>()
+  private readonly jobs = new Map<string, UploadJob>()
+  private readonly controllers = new Map<string, AbortController>()
+  private nextKey = 1
+  private draining = false
+
+  subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  getSnapshot = (): UploadQueueSnapshot => this.snapshot
+
+  addFiles(shareId: string, files: readonly File[]): void {
+    for (const file of files) {
+      this.enqueue(shareId, null, file, (signal, observer) => uploadNewFile({ shareId, file, signal, observer }))
+    }
+  }
+
+  resume({ shareId, fileId }: ResumeTarget, file: File): void {
+    this.setItems(this.snapshot.items.filter((item) => item.fileId !== fileId))
+    this.enqueue(shareId, fileId, file, (signal, observer) => resumeFile({ shareId, fileId, file, signal, observer }))
+  }
+
+  cancel(key: string): void {
+    const controller = this.controllers.get(key)
+    if (controller) {
+      this.update(key, { phase: 'canceling' })
+      controller.abort()
+      return
+    }
+    this.jobs.delete(key)
+    this.remove(key)
+  }
+
+  dismiss(key: string): void {
+    this.remove(key)
+  }
+
+  stop(): void {
+    this.jobs.clear()
+    this.setItems([])
+    for (const controller of this.controllers.values()) {
+      controller.abort()
+    }
+  }
+
+  private enqueue(shareId: string, fileId: string | null, file: File, job: UploadJob): void {
+    const key = String(this.nextKey)
+    this.nextKey += 1
+    this.jobs.set(key, job)
+    this.setItems([
+      ...this.snapshot.items,
+      {
+        key,
+        shareId,
+        fileId,
+        name: file.name,
+        size: file.size,
+        phase: 'queued',
+        hashedBytes: 0,
+        sentBytes: 0,
+        error: null,
+      },
+    ])
+    void this.drain()
+  }
+
+  private nextJob(): [string, UploadJob] | undefined {
+    const [next] = this.jobs
+    return next
+  }
+
+  private async drain(): Promise<void> {
+    if (this.draining) {
+      return
+    }
+    this.draining = true
+    for (let next = this.nextJob(); next; next = this.nextJob()) {
+      const [key, job] = next
+      this.jobs.delete(key)
+      await this.run(key, job)
+    }
+    this.draining = false
+  }
+
+  private async run(key: string, job: UploadJob): Promise<void> {
+    const controller = new AbortController()
+    this.controllers.set(key, controller)
+    try {
+      await job(controller.signal, this.observerOf(key, controller.signal))
+      this.remove(key)
+      this.bumpRevision()
+    } catch (error) {
+      await this.settle(key, error)
+    } finally {
+      this.controllers.delete(key)
+    }
+  }
+
+  private async settle(key: string, error: unknown): Promise<void> {
+    const item = this.find(key)
+    if (!item) {
+      return
+    }
+    if (!(error instanceof UploadCanceledError)) {
+      this.update(key, { phase: 'failed', error })
+    } else if (item.fileId === null) {
+      this.remove(key)
+    } else {
+      await this.discard(item, item.fileId)
+    }
+    this.bumpRevision()
+  }
+
+  private async discard({ key, shareId }: UploadItem, fileId: string): Promise<void> {
+    try {
+      await deleteShareFile(shareId, fileId)
+      forgetUpload(fileId)
+      this.remove(key)
+    } catch (error) {
+      this.update(key, { phase: 'failed', error })
+    }
+  }
+
+  private observerOf(key: string, signal: AbortSignal): UploadObserver {
+    return {
+      onPhase: (phase) => {
+        if (!signal.aborted) this.update(key, { phase })
+      },
+      onHashed: (hashedBytes) => this.update(key, { hashedBytes }),
+      onSent: (sentBytes) => this.update(key, { sentBytes }),
+      onOpened: (fileId) => this.update(key, { fileId }),
+    }
+  }
+
+  private find(key: string): UploadItem | undefined {
+    return this.snapshot.items.find((item) => item.key === key)
+  }
+
+  private update(key: string, changes: Partial<UploadItem>): void {
+    this.setItems(this.snapshot.items.map((item) => (item.key === key ? { ...item, ...changes } : item)))
+  }
+
+  private remove(key: string): void {
+    this.setItems(this.snapshot.items.filter((item) => item.key !== key))
+  }
+
+  private setItems(items: readonly UploadItem[]): void {
+    this.publish({ ...this.snapshot, items })
+  }
+
+  private bumpRevision(): void {
+    this.publish({ ...this.snapshot, revision: this.snapshot.revision + 1 })
+  }
+
+  private publish(snapshot: UploadQueueSnapshot): void {
+    this.snapshot = snapshot
+    for (const listener of this.listeners) {
+      listener()
+    }
+  }
+}
