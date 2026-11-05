@@ -228,6 +228,7 @@ function ShareView({ share, uploads, onChanged }: { share: ShareDetailData; uplo
 
   async function confirmDeleteFile(file: ShareFile) {
     await deleteShareFile(share.id, file.id)
+    uploads.dismissFailed(file.id)
     onChanged({
       ...share,
       files: share.files.filter((item) => item.id !== file.id),

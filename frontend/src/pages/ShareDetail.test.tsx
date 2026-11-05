@@ -217,6 +217,23 @@ describe('ShareDetail page', () => {
     expect(screen.getByRole('button', { name: 'Reprendre' })).toBeInTheDocument()
   })
 
+  it('clears a refused resume when its file is deleted', async () => {
+    const user = userEvent.setup()
+    const refusal = "Ce n'est pas le fichier de l'envoi interrompu : rien n'a été envoyé."
+    vi.mocked(getShare).mockResolvedValue(shareWith(shareFile('uploading')))
+    vi.mocked(resumeFile).mockRejectedValue(new DifferentFileError())
+    renderPage()
+
+    await user.upload(await screen.findByLabelText("Reprendre l'envoi de video.mp4"), new File(['x'], 'other.mp4'))
+    expect(await screen.findByText(refusal)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Supprimer video.mp4' }))
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Supprimer' }))
+
+    await waitFor(() => expect(deleteShareFile).toHaveBeenCalledWith('photos', 'file1234'))
+    await waitFor(() => expect(screen.queryByText(refusal)).not.toBeInTheDocument())
+  })
+
   describe('upload', () => {
     function startUpload(run: (request: UploadRequest) => Promise<void>) {
       vi.mocked(uploadNewFile).mockImplementation(run)

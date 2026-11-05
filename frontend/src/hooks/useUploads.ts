@@ -11,6 +11,7 @@ export interface UseUploads {
   resume: (fileId: string, file: File) => void
   cancel: (key: string) => void
   dismiss: (key: string) => void
+  dismissFailed: (fileId: string) => void
 }
 
 export function useUploads(shareId: string): UseUploads {
@@ -30,6 +31,7 @@ export function useUploads(shareId: string): UseUploads {
       resume: (fileId, file) => queue.resume({ shareId, fileId }, file),
       cancel: (key) => queue.cancel(key),
       dismiss: (key) => queue.dismiss(key),
+      dismissFailed: (fileId) => queue.dismissFailed(fileId),
     }
   }, [allItems, revision, queue, shareId])
 }

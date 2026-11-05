@@ -74,6 +74,10 @@ export class UploadQueue {
     this.remove(key)
   }
 
+  dismissFailed(fileId: string): void {
+    this.setItems(this.snapshot.items.filter((item) => item.fileId !== fileId || isActiveUpload(item)))
+  }
+
   stop(): void {
     this.jobs.clear()
     this.setItems([])

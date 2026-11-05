@@ -108,6 +108,28 @@ describe('UploadQueue', () => {
     expect(items(queue)).toEqual([])
   })
 
+  it('dismisses the failed uploads of a file', async () => {
+    vi.mocked(resumeFile).mockRejectedValue(new Error('boom'))
+    const queue = new UploadQueue()
+
+    queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
+    await vi.waitFor(() => expect(items(queue)[0].phase).toBe('failed'))
+    queue.dismissFailed(FILE_ID)
+
+    expect(items(queue)).toEqual([])
+  })
+
+  it('keeps a running upload when dismissing the failures of its file', async () => {
+    vi.mocked(resumeFile).mockReturnValue(new Promise(() => {}))
+    const queue = new UploadQueue()
+
+    queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
+    await vi.waitFor(() => expect(resumeFile).toHaveBeenCalled())
+    queue.dismissFailed(FILE_ID)
+
+    expect(items(queue)).toHaveLength(1)
+  })
+
   describe('cancel', () => {
     it('deletes a file already opened on the server and forgets it', async () => {
       rememberUpload({ shareId: SHARE_ID, fileId: FILE_ID, name: 'a', size: 3, lastModified: 1, sha256: 'ab' })
