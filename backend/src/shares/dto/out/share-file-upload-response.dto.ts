@@ -11,3 +11,12 @@ export interface ReceivedPartResponseDto {
   partNumber: number;
   size: number;
 }
+
+export interface UploadPartsResponseDto {
+  fileId: string;
+  size: number;
+  sha256: string;
+  partSize: number;
+  partCount: number;
+  parts: ReceivedPartResponseDto[];
+}

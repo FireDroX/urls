@@ -8,7 +8,7 @@ vi.mock('#api/storage', () => ({
   getStorageUsage: vi.fn(),
 }))
 
-const ENTRIES = ['Tous les liens', 'Redirections', 'Réglages']
+const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Réglages']
 
 function renderAt(path: string) {
   render(
@@ -31,6 +31,8 @@ describe('Sidebar', () => {
     ['/', ['Tous les liens']],
     ['/redirects', ['Redirections']],
     ['/redirects/docs', ['Redirections']],
+    ['/shares', ['Partages']],
+    ['/shares/photos', ['Partages']],
     ['/settings', ['Réglages']],
     ['/settings/extra', []],
     ['/unknown', []],
@@ -45,6 +47,7 @@ describe('Sidebar', () => {
 
     expect(screen.getByRole('link', { name: 'Tous les liens' })).toHaveAttribute('href', '/')
     expect(screen.getByRole('link', { name: 'Redirections' })).toHaveAttribute('href', '/redirects')
+    expect(screen.getByRole('link', { name: 'Partages' })).toHaveAttribute('href', '/shares')
     expect(screen.getByRole('link', { name: 'Réglages' })).toHaveAttribute('href', '/settings')
   })
 })

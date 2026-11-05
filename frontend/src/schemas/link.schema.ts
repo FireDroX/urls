@@ -43,7 +43,7 @@ function destinationField(t: TFunction) {
     .refine(isHttpUrl, t('links.validation.destinationInvalid'))
 }
 
-function slugField(t: TFunction, optional: boolean) {
+export function slugField(t: TFunction, optional: boolean) {
   return z
     .string()
     .trim()
@@ -59,7 +59,7 @@ function slugField(t: TFunction, optional: boolean) {
     .refine((value) => !isReservedSlug(value), t('links.validation.slugReserved'))
 }
 
-function expiresAtField(t: TFunction, unchangedValue: string) {
+export function expiresAtField(t: TFunction, unchangedValue: string) {
   return z
     .string()
     .refine(

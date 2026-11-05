@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -38,6 +39,7 @@ import {
 } from '../common/variables.global.js';
 import type {
   ReceivedPartResponseDto,
+  UploadPartsResponseDto,
   UploadStartedResponseDto,
 } from './dto/out/share-file-upload-response.dto.js';
 import type { ShareFileResponseDto } from './dto/out/share-response.dto.js';
@@ -92,6 +94,31 @@ export class ShareFilesController {
   ): Promise<ResponseDto<UploadStartedResponseDto>> {
     return ShareFilesMapper.toUploadStartedResponse(
       await this.shareFilesService.start(id, body, user.id),
+    );
+  }
+
+  @Get(':fileId/parts')
+  @ApiOperation({
+    summary: 'Lister les parts déjà reçues pour reprendre un upload',
+  })
+  @ApiNotFoundResponse({
+    description: 'Partage ou fichier inconnu.',
+    type: ErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Le fichier n’est plus en cours d’upload.',
+    type: ErrorResponseDto,
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'Stockage injoignable.',
+    type: ErrorResponseDto,
+  })
+  async listParts(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+  ): Promise<ResponseDto<UploadPartsResponseDto>> {
+    return ShareFilesMapper.toUploadPartsResponse(
+      await this.shareFilesService.listParts(id, fileId),
     );
   }
 

@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { Link } from '#api/links'
 import { Badge } from '#components/ui/badge'
-import { linkState, type LinkState } from '#utils/link-state'
+import { linkState, type LinkState, type LinkStatus } from '#utils/link-state'
 
 const STATE_BADGE_VARIANTS = {
   active: 'default',
@@ -9,7 +8,7 @@ const STATE_BADGE_VARIANTS = {
   expired: 'destructive',
 } as const satisfies Record<LinkState, string>
 
-export function LinkStateBadge({ link }: { link: Link }) {
+export function LinkStateBadge({ link }: { link: LinkStatus }) {
   const { t } = useTranslation()
   const state = linkState(link)
 

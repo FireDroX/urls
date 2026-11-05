@@ -342,6 +342,68 @@ describe('FileUploadsService', () => {
     });
   });
 
+  describe('listParts', () => {
+    it('returns the part plan and the received parts without their etags', async () => {
+      storage.listParts.mockResolvedValue([
+        part(1, FILE_PART_SIZE_BYTES),
+        part(3, 10),
+      ]);
+
+      await expect(service.listParts(share, 'file1234')).resolves.toEqual({
+        file: buildFile(),
+        partSize: FILE_PART_SIZE_BYTES,
+        partCount: 3,
+        parts: [
+          { partNumber: 1, size: FILE_PART_SIZE_BYTES },
+          { partNumber: 3, size: 10 },
+        ],
+      });
+      expect(storage.listParts).toHaveBeenCalledWith(
+        'files/opaque',
+        'upload-1',
+      );
+    });
+
+    it('answers 404 for an unknown, deleted or foreign file', async () => {
+      repository.findInLink.mockResolvedValue(null);
+
+      await expect(service.listParts(share, 'file1234')).rejects.toBeInstanceOf(
+        FileNotFoundException,
+      );
+      expect(repository.findInLink).toHaveBeenCalledWith(share.id, 'file1234');
+      expect(storage.listParts).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for a malformed id before any SQL', async () => {
+      await expect(service.listParts(share, '../etc')).rejects.toBeInstanceOf(
+        FileNotFoundException,
+      );
+      expect(repository.findInLink).not.toHaveBeenCalled();
+    });
+
+    it.each(['verifying', 'ready', 'rejected'] as const)(
+      'answers 409 for a %s file',
+      async (status) => {
+        repository.findInLink.mockResolvedValue(
+          buildFile({ status, uploadId: null }),
+        );
+
+        await expect(
+          service.listParts(share, 'file1234'),
+        ).rejects.toBeInstanceOf(FileNotUploadingException);
+        expect(storage.listParts).not.toHaveBeenCalled();
+      },
+    );
+
+    it('answers 409 when storage no longer knows the upload', async () => {
+      storage.listParts.mockRejectedValue(new UploadNotFoundException());
+
+      await expect(service.listParts(share, 'file1234')).rejects.toBeInstanceOf(
+        FileNotUploadingException,
+      );
+    });
+  });
+
   describe('complete', () => {
     const allParts = [
       part(1, FILE_PART_SIZE_BYTES),

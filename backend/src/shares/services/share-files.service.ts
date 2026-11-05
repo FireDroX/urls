@@ -4,6 +4,7 @@ import {
   FileUploadsService,
   type IncomingPart,
   type ReceivedPart,
+  type UploadParts,
   type UploadStart,
 } from '../../files/services/file-uploads.service.js';
 import { SharesService } from './shares.service.js';
@@ -32,6 +33,14 @@ export class ShareFilesService {
   ): Promise<ReceivedPart> {
     const share = await this.shares.find(sharePublicId);
     return this.uploads.uploadPart(share, filePublicId, partNumber, part);
+  }
+
+  async listParts(
+    sharePublicId: string,
+    filePublicId: string,
+  ): Promise<UploadParts> {
+    const share = await this.shares.find(sharePublicId);
+    return this.uploads.listParts(share, filePublicId);
   }
 
   async complete(

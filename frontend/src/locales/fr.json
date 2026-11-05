@@ -23,6 +23,7 @@
     "navigation": "Navigation",
     "allLinks": "Tous les liens",
     "redirects": "Redirections",
+    "shares": "Partages",
     "settings": "Réglages",
     "toggleTheme": "Changer de thème",
     "account": "Mon compte",
@@ -159,6 +160,108 @@
       "minLength": "Au moins {{count}} caractères",
       "complexity": "Une majuscule, une minuscule, un chiffre et un symbole",
       "mismatch": "Les deux mots de passe diffèrent"
+    }
+  },
+  "shares": {
+    "title": "Partages",
+    "subtitle": "Des liens /d/ pour partager un ou plusieurs fichiers.",
+    "new": "Nouveau partage",
+    "emptyTitle": "Aucun partage pour l'instant",
+    "emptyBody": "Créez un partage pour y déposer des fichiers et obtenir un lien à envoyer.",
+    "loadFailedTitle": "Impossible de charger les partages",
+    "notFoundTitle": "Partage introuvable",
+    "backToList": "Retour aux partages",
+    "open": "Ouvrir le partage {{slug}}",
+    "fileSummary_one": "{{count}} fichier · {{size}}",
+    "fileSummary_other": "{{count}} fichiers · {{size}}",
+    "downloadsOfMax": "{{current}} / {{max}}",
+    "created": "Partage créé.",
+    "updated": "Partage mis à jour.",
+    "deleted": "Partage supprimé.",
+    "disabledToast": "Partage désactivé.",
+    "enabledToast": "Partage réactivé.",
+    "columns": {
+      "files": "Fichiers",
+      "downloads": "Téléchargements"
+    },
+    "form": {
+      "createTitle": "Nouveau partage",
+      "createDescription": "Vous déposerez les fichiers sur la fiche du partage.",
+      "editTitle": "Modifier le partage",
+      "editDescription": "Slug, expiration, téléchargements et état restent modifiables à tout moment.",
+      "slugEditHelp": "Changer le slug invalide l'ancienne adresse du partage.",
+      "slugLocked": "Le slug ne peut pas changer pendant un envoi.",
+      "expiresAtHelp": "Laissez vide pour un partage qui n'expire jamais.",
+      "maxDownloads": "Téléchargements maximum (facultatif)",
+      "maxDownloadsHelp": "Laissez vide pour ne pas limiter les téléchargements."
+    },
+    "delete": {
+      "title": "Supprimer ce partage ?",
+      "description": "Le lien /d/{{slug}} cessera de fonctionner et ses fichiers ne seront plus accessibles. Son slug restera réservé."
+    },
+    "detail": {
+      "views": "Vues",
+      "downloads": "Téléchargements",
+      "totalSize": "Taille totale"
+    },
+    "fileStatus": {
+      "uploading": "Envoi inachevé",
+      "verifying": "Vérification",
+      "ready": "Prêt",
+      "rejected": "Rejeté"
+    },
+    "files": {
+      "title": "Fichiers",
+      "emptyTitle": "Aucun fichier dans ce partage",
+      "emptyBody": "Déposez un fichier ci-dessus : il sera disponible sur le lien une fois vérifié.",
+      "name": "Nom",
+      "size": "Taille",
+      "status": "État",
+      "resume": "Reprendre",
+      "resumeInput": "Reprendre l'envoi de {{name}}",
+      "delete": "Supprimer {{name}}",
+      "deleted": "Fichier supprimé.",
+      "deleteTitle": "Supprimer ce fichier ?",
+      "deleteDescription": "{{name}} ne sera plus téléchargeable depuis ce partage."
+    },
+    "upload": {
+      "dropTitle": "Déposez vos fichiers ici, ou cliquez pour les choisir",
+      "dropHelp": "Jusqu'à 20 Gio par fichier et 50 fichiers par partage.",
+      "region": "Envois en cours",
+      "percent": "{{percent}} %",
+      "hashProgress": "Calcul de l'empreinte",
+      "sendProgress": "Envoi",
+      "cancel": "Annuler l'envoi de {{name}}",
+      "cancelHelp": "Annule l'envoi et supprime ce qui a déjà été reçu.",
+      "dismiss": "Fermer l'erreur de {{name}}",
+      "phase": {
+        "queued": "En attente",
+        "hashing": "Calcul de l'empreinte",
+        "uploading": "Envoi",
+        "completing": "Finalisation",
+        "canceling": "Annulation",
+        "failed": "Échec"
+      }
+    },
+    "validation": {
+      "maxDownloads": "Nombre entier de 1 à {{max}}",
+      "fileNameTooLong": "nom de {{max}} caractères maximum",
+      "fileEmpty": "fichier vide",
+      "fileTooLarge": "{{max}} maximum par fichier",
+      "fileRefused": "{{name}} refusé : {{reason}}"
+    },
+    "errors": {
+      "invalid": "Slug, expiration ou limite invalide.",
+      "notFound": "Ce partage n'existe plus.",
+      "slugTaken": "Ce slug est déjà pris.",
+      "fileInvalid": "Ce fichier a été refusé : nom, taille ou part invalide.",
+      "fileNotFound": "Ce fichier ou ce partage n'existe plus.",
+      "fileConflict": "Cet envoi n'est plus en cours, ou des parts manquent encore.",
+      "fileTooLarge": "Trop volumineux : limite du fichier, du partage ou du stockage atteinte.",
+      "storageUnavailable": "Le stockage est injoignable, réessayez dans un instant.",
+      "differentFile": "Ce n'est pas le fichier de l'envoi interrompu : rien n'a été envoyé.",
+      "hashFailed": "Impossible de lire ce fichier.",
+      "uploadInterrupted": "Envoi interrompu : vérifiez votre connexion, puis reprenez-le."
     }
   },
   "share": {

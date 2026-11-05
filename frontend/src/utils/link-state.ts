@@ -1,6 +1,6 @@
 export type LinkState = 'active' | 'disabled' | 'expired'
 
-interface LinkStatus {
+export interface LinkStatus {
   disabled: boolean
   expiresAt: string | null
 }

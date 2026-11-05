@@ -55,6 +55,10 @@ export interface IncomingPart extends Readable {
   headers: IncomingHttpHeaders;
 }
 
+export interface UploadParts extends UploadStart {
+  parts: ReceivedPart[];
+}
+
 const UPLOAD_LIMITS = {
   maxFiles: SHARE_FILES_MAX,
   quotaBytes: FILES_STORAGE_QUOTA_BYTES,
@@ -133,6 +137,19 @@ export class FileUploadsService {
       ),
     );
     return { partNumber, size };
+  }
+
+  async listParts(link: Link, filePublicId: string): Promise<UploadParts> {
+    const file = await this.findUploading(link, filePublicId);
+    const parts = await this.whileUploading(() =>
+      this.storage.listParts(file.s3Key, file.uploadId!),
+    );
+    return {
+      file,
+      partSize: FILE_PART_SIZE_BYTES,
+      partCount: partCountOf(file.size),
+      parts: parts.map(({ partNumber, size }) => ({ partNumber, size })),
+    };
   }
 
   async complete(link: Link, filePublicId: string): Promise<StoredFile> {
