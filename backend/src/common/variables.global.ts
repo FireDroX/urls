@@ -88,6 +88,7 @@ export const SHARE_VIEW_THROTTLE_LIMIT = 30;
 export const SHARE_DOWNLOAD_THROTTLE_TTL_MS = 60_000;
 export const SHARE_DOWNLOAD_THROTTLE_LIMIT = 10;
 export const SHARE_DOWNLOAD_URL_TTL_SECONDS = 60;
+export const FILE_DOWNLOAD_URL_TTL_SECONDS = 60;
 export const FILE_STATUSES = [
   'uploading',
   'verifying',

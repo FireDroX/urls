@@ -42,6 +42,7 @@ interface RustfsQuotaStats {
 
 const QUOTA_EXCEEDED_PATTERN = /quota exceeded/i;
 const NO_SUCH_UPLOAD = 'NoSuchUpload';
+const NO_SUCH_KEY = 'NoSuchKey';
 
 @Injectable()
 export class S3StorageService
@@ -219,11 +220,17 @@ export class S3StorageService
   }
 
   async deleteObject(key: string): Promise<void> {
-    await this.run('DeleteObject', () =>
-      this.internalClient.send(
-        new DeleteObjectCommand({ Bucket: this.settings.bucket, Key: key }),
-      ),
-    );
+    await this.run('DeleteObject', async () => {
+      try {
+        await this.internalClient.send(
+          new DeleteObjectCommand({ Bucket: this.settings.bucket, Key: key }),
+        );
+      } catch (error) {
+        if (!isAbsentObject(error)) {
+          throw error;
+        }
+      }
+    });
   }
 
   private async run<Output>(
@@ -299,6 +306,10 @@ function isQuotaExceeded(error: unknown): boolean {
 
 function isNoSuchUpload(error: unknown): boolean {
   return error instanceof Error && error.name === NO_SUCH_UPLOAD;
+}
+
+function isAbsentObject(error: unknown): boolean {
+  return error instanceof Error && error.name === NO_SUCH_KEY;
 }
 
 function contentDisposition(filename: string): string {

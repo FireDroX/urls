@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.12 — 2026-11-06
+
+- Liste des fichiers stockés (`GET /api/files`) : chaque fichier avec son lien, s'il est encore utilisé ou orphelin (partage supprimé), et un résumé de la place occupée (quota, fichiers orphelins, usage réel du stockage). `?orphans=true` ne garde que les orphelins.
+- Téléchargement direct d'un fichier prêt par l'administrateur (`POST /api/files/<id>/download`), sans passer par la page publique ni compter dans les téléchargements du partage.
+- Suppression d'un fichier orphelin (`DELETE /api/files/<id>`) : l'espace est libéré tout de suite. Un fichier encore attaché à un partage, même désactivé ou expiré, ne peut pas être supprimé ainsi.
+- Retirer un fichier d'un partage l'efface désormais immédiatement du stockage. Si le stockage est injoignable, le retrait échoue (erreur 503) et peut être relancé, alors qu'avant le fichier restait dans le stockage.
+
 ## 0.0.11 — 2026-11-05
 
 - Page « Partages » du dashboard (`/shares`) : liste des liens `/d/` (fichiers, téléchargements, état, expiration), copie de l'URL complète, création (slug choisi ou généré, expiration et nombre maximal de téléchargements facultatifs), modification, désactivation et suppression après confirmation. Mêmes limites que l'API vérifiées dans le formulaire, erreurs traduites.

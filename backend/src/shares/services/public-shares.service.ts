@@ -3,6 +3,7 @@ import { InvalidTurnstileTokenException } from '../../common/exceptions/auth/inv
 import { ShareExpiredException } from '../../common/exceptions/shares/share-expired.exception.js';
 import { ShareNotFoundException } from '../../common/exceptions/shares/share-not-found.exception.js';
 import { parseDto } from '../../common/parse-dto.js';
+import { isLinkUsedUp } from '../../common/link-expiry.js';
 import { isWellFormedLinkId } from '../../common/public-id.js';
 import { SHARE_DOWNLOAD_URL_TTL_SECONDS } from '../../common/variables.global.js';
 import type { Visitor } from '../../common/visitor.js';
@@ -15,14 +16,6 @@ import type { StorageService } from '../../storage/services/storage.service.js';
 import { downloadShareFileSchema } from '../dto/in/download-share-file.dto.js';
 import type { ShareRepository } from '../persistence/share.repository.js';
 import { withFiles, type ShareWithFiles } from './shares.service.js';
-
-function isUsedUp(share: Link, now: Date): boolean {
-  const expired =
-    share.expiresAt !== null && share.expiresAt.getTime() <= now.getTime();
-  const exhausted =
-    share.maxDownloads !== null && share.downloadCount >= share.maxDownloads;
-  return expired || exhausted;
-}
 
 @Injectable()
 export class PublicSharesService {
@@ -86,7 +79,7 @@ export class PublicSharesService {
     if (files.length === 0) {
       throw new ShareNotFoundException();
     }
-    if (isUsedUp(share, now)) {
+    if (isLinkUsedUp(share, now)) {
       throw new ShareExpiredException();
     }
     return { share, files };
