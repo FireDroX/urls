@@ -156,6 +156,75 @@ describe('TypeormStoredFileRepository', () => {
     ).resolves.toBe(false);
   });
 
+  describe('with link', () => {
+    function linkQuery(result: unknown) {
+      const builder = {
+        withDeleted: vi.fn(),
+        innerJoinAndSelect: vi.fn(),
+        where: vi.fn(),
+        andWhere: vi.fn(),
+        orderBy: vi.fn(),
+        addOrderBy: vi.fn(),
+        getMany: vi.fn().mockResolvedValue(result),
+        getOne: vi.fn().mockResolvedValue(result),
+      };
+      for (const method of Object.keys(builder)) {
+        if (!method.startsWith('get')) {
+          builder[method as keyof typeof builder].mockReturnValue(builder);
+        }
+      }
+      return builder;
+    }
+
+    it('loads deleted links but not deleted files, newest first', async () => {
+      const builder = linkQuery([{ publicId: 'a' }]);
+      ormRepository.createQueryBuilder.mockReturnValue(builder);
+
+      await expect(repository.findAllWithLink()).resolves.toEqual([
+        { publicId: 'a' },
+      ]);
+
+      expect(builder.withDeleted).toHaveBeenCalled();
+      expect(builder.innerJoinAndSelect).toHaveBeenCalledWith(
+        'file.link',
+        'link',
+      );
+      expect(builder.where).toHaveBeenCalledWith('file.deletedAt IS NULL');
+      expect(builder.orderBy).toHaveBeenCalledWith('file.createdAt', 'DESC');
+      expect(builder.addOrderBy).toHaveBeenCalledWith('file.publicId', 'ASC');
+    });
+
+    it('finds one non-deleted file by public id with its link', async () => {
+      const builder = linkQuery({ publicId: 'file1234' });
+      ormRepository.createQueryBuilder.mockReturnValue(builder);
+
+      await expect(
+        repository.findByPublicIdWithLink('file1234'),
+      ).resolves.toEqual({ publicId: 'file1234' });
+
+      expect(builder.withDeleted).toHaveBeenCalled();
+      expect(builder.where).toHaveBeenCalledWith('file.deletedAt IS NULL');
+      expect(builder.andWhere).toHaveBeenCalledWith(
+        'file.publicId = :publicId',
+        { publicId: 'file1234' },
+      );
+    });
+  });
+
+  it('sums the bytes counted in the quota with the same rule as the insert', async () => {
+    const sum = vi.fn().mockResolvedValue('1234');
+    Object.assign(ormRepository, { sum });
+
+    await expect(repository.sumCountedBytes()).resolves.toBe(1234);
+
+    const [column, where] = sum.mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(column).toBe('size');
+    expect(Object.keys(where).sort()).toEqual(['deletedAt', 'status']);
+  });
+
   it('lists the files of a link oldest first', async () => {
     await repository.findByLinkId('a');
 

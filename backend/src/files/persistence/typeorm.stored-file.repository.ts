@@ -60,6 +60,23 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
     }));
   }
 
+  findAllWithLink(): Promise<StoredFile[]> {
+    return this.withLink()
+      .orderBy('file.createdAt', 'DESC')
+      .addOrderBy('file.publicId', 'ASC')
+      .getMany();
+  }
+
+  findByPublicIdWithLink(publicId: string): Promise<StoredFile | null> {
+    return this.withLink()
+      .andWhere('file.publicId = :publicId', { publicId })
+      .getOne();
+  }
+
+  sumCountedBytes(): Promise<number> {
+    return this.sumCounted(this.repository);
+  }
+
   findInLink(linkId: string, publicId: string): Promise<StoredFile | null> {
     return this.repository.findOneBy({ linkId, publicId });
   }
@@ -91,7 +108,7 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
         if (linkFiles >= limits.maxFiles) {
           throw new TooManyFilesException();
         }
-        const usedBytes = Number((await files.sum('size', COUNTED_FILES)) ?? 0);
+        const usedBytes = await this.sumCounted(files);
         if (usedBytes + file.size > limits.quotaBytes) {
           throw new StorageQuotaExceededException();
         }
@@ -126,5 +143,17 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
 
   async softDelete(id: string): Promise<void> {
     await this.repository.softDelete({ id });
+  }
+
+  private withLink() {
+    return this.repository
+      .createQueryBuilder('file')
+      .withDeleted()
+      .innerJoinAndSelect('file.link', 'link')
+      .where('file.deletedAt IS NULL');
+  }
+
+  private async sumCounted(files: Repository<StoredFile>): Promise<number> {
+    return Number((await files.sum('size', COUNTED_FILES)) ?? 0);
   }
 }

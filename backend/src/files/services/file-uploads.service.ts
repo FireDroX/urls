@@ -38,6 +38,7 @@ import type {
   NewStoredFile,
   StoredFileRepository,
 } from '../persistence/stored-file.repository.js';
+import { FileDeletionService } from './file-deletion.service.js';
 import { FileVerificationService } from './file-verification.service.js';
 
 export interface UploadStart {
@@ -74,6 +75,7 @@ export class FileUploadsService {
     @Inject('StorageService') private readonly storage: StorageService,
     private readonly verification: FileVerificationService,
     private readonly auditLog: AuditLogService,
+    private readonly deletion: FileDeletionService,
   ) {}
 
   async start(
@@ -185,16 +187,7 @@ export class FileUploadsService {
     userId: string,
   ): Promise<void> {
     const file = await this.find(link, filePublicId);
-    if (file.status === 'uploading' && file.uploadId) {
-      await this.abortQuietly(file.s3Key, file.uploadId);
-    }
-    await this.repository.softDelete(file.id);
-    await this.auditLog.record({
-      action: 'files.deleted',
-      userId,
-      targetId: file.publicId,
-      metadata: { shareId: link.publicId, status: file.status },
-    });
+    await this.deletion.erase(file, link, userId);
   }
 
   private async find(link: Link, filePublicId: string): Promise<StoredFile> {

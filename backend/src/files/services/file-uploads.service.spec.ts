@@ -9,6 +9,7 @@ import { PartTooLargeException } from '../../common/exceptions/files/part-too-la
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
 import { UploadIncompleteException } from '../../common/exceptions/files/upload-incomplete.exception.js';
 import { StorageQuotaExceededException } from '../../common/exceptions/storage/storage-quota-exceeded.exception.js';
+import { StorageUnavailableException } from '../../common/exceptions/storage/storage-unavailable.exception.js';
 import { UploadNotFoundException } from '../../common/exceptions/storage/upload-not-found.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
 import {
@@ -27,6 +28,7 @@ import type {
   NewStoredFile,
   StoredFileRepository,
 } from '../persistence/stored-file.repository.js';
+import { FileDeletionService } from './file-deletion.service.js';
 import type { FileVerificationService } from './file-verification.service.js';
 import {
   FileUploadsService,
@@ -86,6 +88,9 @@ describe('FileUploadsService', () => {
     repository = {
       findByLinkId: vi.fn(),
       summarizeByLinkIds: vi.fn(),
+      findAllWithLink: vi.fn(),
+      findByPublicIdWithLink: vi.fn(),
+      sumCountedBytes: vi.fn(),
       findInLink: vi.fn().mockResolvedValue(buildFile()),
       findByStatus: vi.fn(),
       insertWithinLimits: vi.fn((file: NewStoredFile) =>
@@ -113,6 +118,11 @@ describe('FileUploadsService', () => {
       storage as unknown as StorageService,
       verification as unknown as FileVerificationService,
       audit as unknown as AuditLogService,
+      new FileDeletionService(
+        repository as unknown as StoredFileRepository,
+        storage as unknown as StorageService,
+        audit as unknown as AuditLogService,
+      ),
     );
   });
 
@@ -491,7 +501,7 @@ describe('FileUploadsService', () => {
       );
     });
 
-    it('soft-deletes a finished file without touching storage', async () => {
+    it('deletes the object of a finished file, then soft-deletes it', async () => {
       repository.findInLink.mockResolvedValue(
         buildFile({ status: 'ready', uploadId: null }),
       );
@@ -499,15 +509,19 @@ describe('FileUploadsService', () => {
       await service.remove(share, 'file1234', USER_ID);
 
       expect(storage.abortMultipartUpload).not.toHaveBeenCalled();
+      expect(storage.deleteObject).toHaveBeenCalledWith('files/opaque');
       expect(repository.softDelete).toHaveBeenCalledWith('file-uuid');
     });
 
-    it('still deletes the row when the abort fails', async () => {
-      storage.abortMultipartUpload.mockRejectedValue(new Error('timeout'));
+    it('keeps the row and fails when the abort fails', async () => {
+      storage.abortMultipartUpload.mockRejectedValue(
+        new StorageUnavailableException(),
+      );
 
-      await service.remove(share, 'file1234', USER_ID);
-
-      expect(repository.softDelete).toHaveBeenCalledWith('file-uuid');
+      await expect(
+        service.remove(share, 'file1234', USER_ID),
+      ).rejects.toBeInstanceOf(StorageUnavailableException);
+      expect(repository.softDelete).not.toHaveBeenCalled();
     });
 
     it('answers 404 for an unknown file', async () => {
