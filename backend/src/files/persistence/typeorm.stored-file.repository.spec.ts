@@ -1,4 +1,4 @@
-import type { Repository } from 'typeorm';
+import { IsNull, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
 import { StorageQuotaExceededException } from '../../common/exceptions/storage/storage-quota-exceeded.exception.js';
@@ -165,6 +165,20 @@ describe('TypeormStoredFileRepository', () => {
     await expect(
       repository.transition('file-uuid', 'uploading', { status: 'verifying' }),
     ).resolves.toBe(false);
+  });
+
+  it('never moves a soft-deleted file', async () => {
+    const update = vi.fn().mockResolvedValue({ affected: 1 });
+    Object.assign(ormRepository, { update });
+
+    await expect(
+      repository.transition('file-uuid', 'uploading', { status: 'verifying' }),
+    ).resolves.toBe(true);
+
+    expect(update).toHaveBeenCalledWith(
+      { id: 'file-uuid', status: 'uploading', deletedAt: IsNull() },
+      { status: 'verifying' },
+    );
   });
 
   describe('with link', () => {

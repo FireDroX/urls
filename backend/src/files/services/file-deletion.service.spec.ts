@@ -79,26 +79,47 @@ describe('FileDeletionService', () => {
     );
   });
 
-  it('logs and still audits when the deletion after the abort fails', async () => {
-    const warn = vi
-      .spyOn(Logger.prototype, 'warn')
-      .mockImplementation(() => undefined);
-    storage.deleteObject.mockRejectedValue(new StorageUnavailableException());
+  it.each([
+    [
+      'the abort succeeds',
+      () => undefined,
+      (deleteObject: ReturnType<typeof vi.fn>) =>
+        deleteObject.mockRejectedValue(new StorageUnavailableException()),
+    ],
+    [
+      'the upload is already gone',
+      (abort: ReturnType<typeof vi.fn>) =>
+        abort.mockRejectedValue(new UploadNotFoundException()),
+      (deleteObject: ReturnType<typeof vi.fn>) =>
+        deleteObject
+          .mockResolvedValueOnce(undefined)
+          .mockRejectedValueOnce(new StorageUnavailableException()),
+    ],
+  ])(
+    'logs and still audits when the deletion after the soft delete fails and %s',
+    async (_label, setupAbort, setupDelete) => {
+      const warn = vi
+        .spyOn(Logger.prototype, 'warn')
+        .mockImplementation(() => undefined);
+      setupAbort(storage.abortMultipartUpload);
+      setupDelete(storage.deleteObject);
 
-    await expect(
-      service.erase(
-        buildFile({ status: 'uploading', uploadId: 'upload-1' }),
-        link,
-        'user-1',
-      ),
-    ).resolves.toBeUndefined();
+      await expect(
+        service.erase(
+          buildFile({ status: 'uploading', uploadId: 'upload-1' }),
+          link,
+          'user-1',
+        ),
+      ).resolves.toBeUndefined();
 
-    expect(warn).toHaveBeenCalledWith(
-      'Object files/opaque may be orphaned after a concurrent upload completion',
-    );
-    expect(audit.record).toHaveBeenCalled();
-    warn.mockRestore();
-  });
+      expect(warn).toHaveBeenCalledWith(
+        'Object files/opaque may be orphaned after a concurrent upload completion',
+      );
+      expect(repository.softDelete).toHaveBeenCalledOnce();
+      expect(audit.record).toHaveBeenCalledOnce();
+      warn.mockRestore();
+    },
+  );
 
   it('throws before the soft delete when the abort fails for another reason', async () => {
     storage.abortMultipartUpload.mockRejectedValue(
@@ -116,7 +137,7 @@ describe('FileDeletionService', () => {
     expect(repository.softDelete).not.toHaveBeenCalled();
   });
 
-  it('falls back to deleting the object when the upload is already gone', async () => {
+  it('deletes the object before and after the soft delete when the upload is already gone', async () => {
     storage.abortMultipartUpload.mockRejectedValue(
       new UploadNotFoundException(),
     );
@@ -127,11 +148,35 @@ describe('FileDeletionService', () => {
       'user-1',
     );
 
-    expect(storage.deleteObject).toHaveBeenCalledOnce();
-    expect(storage.deleteObject).toHaveBeenCalledWith('files/opaque');
-    expect(storage.deleteObject.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(storage.deleteObject).toHaveBeenCalledTimes(2);
+    expect(storage.deleteObject).toHaveBeenNthCalledWith(1, 'files/opaque');
+    expect(storage.deleteObject).toHaveBeenNthCalledWith(2, 'files/opaque');
+    const [first, second] = storage.deleteObject.mock.invocationCallOrder;
+    expect(first).toBeLessThan(
       repository.softDelete.mock.invocationCallOrder[0],
     );
+    expect(repository.softDelete.mock.invocationCallOrder[0]).toBeLessThan(
+      second,
+    );
+    expect(second).toBeLessThan(audit.record.mock.invocationCallOrder[0]);
+  });
+
+  it('throws before the soft delete when the first deletion fails after a gone upload', async () => {
+    storage.abortMultipartUpload.mockRejectedValue(
+      new UploadNotFoundException(),
+    );
+    storage.deleteObject.mockRejectedValue(new StorageUnavailableException());
+
+    await expect(
+      service.erase(
+        buildFile({ status: 'uploading', uploadId: 'upload-1' }),
+        link,
+        'user-1',
+      ),
+    ).rejects.toBeInstanceOf(StorageUnavailableException);
+    expect(storage.deleteObject).toHaveBeenCalledOnce();
+    expect(repository.softDelete).not.toHaveBeenCalled();
+    expect(audit.record).not.toHaveBeenCalled();
   });
 
   it.each(['ready', 'verifying', 'rejected'] as const)(

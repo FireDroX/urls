@@ -18,9 +18,9 @@ export class FileDeletionService {
   ) {}
 
   async erase(file: StoredFile, link: Link, userId: string): Promise<void> {
-    const aborted = await this.removeFromStorage(file);
+    await this.removeFromStorage(file);
     await this.repository.softDelete(file.id);
-    if (aborted) {
+    if (file.status === 'uploading') {
       await this.removeObjectQuietly(file.s3Key);
     }
     await this.auditLog.record({
@@ -35,11 +35,11 @@ export class FileDeletionService {
     });
   }
 
-  private async removeFromStorage(file: StoredFile): Promise<boolean> {
+  private async removeFromStorage(file: StoredFile): Promise<void> {
     if (file.status === 'uploading' && file.uploadId) {
       try {
         await this.storage.abortMultipartUpload(file.s3Key, file.uploadId);
-        return true;
+        return;
       } catch (error) {
         if (!(error instanceof UploadNotFoundException)) {
           throw error;
@@ -47,7 +47,6 @@ export class FileDeletionService {
       }
     }
     await this.storage.deleteObject(file.s3Key);
-    return false;
   }
 
   private async removeObjectQuietly(key: string): Promise<void> {
