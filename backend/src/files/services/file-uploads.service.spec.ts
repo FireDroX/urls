@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Logger } from '@nestjs/common';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuditLogService } from '../../audit/services/audit-log.service.js';
 import { FileIdTakenException } from '../../common/exceptions/files/file-id-taken.exception.js';
 import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
@@ -92,6 +93,7 @@ describe('FileUploadsService', () => {
       findByPublicIdWithLink: vi.fn(),
       sumCountedBytes: vi.fn(),
       findInLink: vi.fn().mockResolvedValue(buildFile()),
+      findByIdWithDeleted: vi.fn(),
       findByStatus: vi.fn(),
       insertWithinLimits: vi.fn((file: NewStoredFile) =>
         Promise.resolve(buildFile({ ...file })),
@@ -481,6 +483,89 @@ describe('FileUploadsService', () => {
         FileNotUploadingException,
       );
       expect(verification.schedule).not.toHaveBeenCalled();
+    });
+
+    describe('when the transition is refused', () => {
+      beforeEach(() => {
+        storage.listParts.mockResolvedValue(allParts);
+        repository.transition.mockResolvedValue(false);
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      async function expectConflict(): Promise<void> {
+        await expect(
+          service.complete(share, 'file1234'),
+        ).rejects.toBeInstanceOf(FileNotUploadingException);
+        expect(verification.schedule).not.toHaveBeenCalled();
+      }
+
+      it('deletes the object when the row was soft-deleted meanwhile', async () => {
+        repository.findByIdWithDeleted.mockResolvedValue(
+          buildFile({ deletedAt: new Date('2026-11-06T00:00:00Z') }),
+        );
+
+        await expectConflict();
+        expect(repository.findByIdWithDeleted).toHaveBeenCalledWith(
+          'file-uuid',
+        );
+        expect(storage.deleteObject).toHaveBeenCalledTimes(1);
+        expect(storage.deleteObject).toHaveBeenCalledWith('files/opaque');
+      });
+
+      it('never touches the object of a concurrent complete on a live row', async () => {
+        repository.findByIdWithDeleted.mockResolvedValue(
+          buildFile({ status: 'verifying', uploadId: null }),
+        );
+
+        await expectConflict();
+        expect(storage.deleteObject).not.toHaveBeenCalled();
+      });
+
+      it('never touches the object when the row is gone', async () => {
+        repository.findByIdWithDeleted.mockResolvedValue(null);
+
+        await expectConflict();
+        expect(storage.deleteObject).not.toHaveBeenCalled();
+      });
+
+      it('answers 409 and logs the key when the cleanup fails', async () => {
+        const warn = vi
+          .spyOn(Logger.prototype, 'warn')
+          .mockImplementation(() => undefined);
+        repository.findByIdWithDeleted.mockResolvedValue(
+          buildFile({ deletedAt: new Date('2026-11-06T00:00:00Z') }),
+        );
+        storage.deleteObject.mockRejectedValue(
+          new StorageUnavailableException(),
+        );
+
+        await expectConflict();
+        expect(warn).toHaveBeenCalledTimes(1);
+        const [message] = warn.mock.calls[0] as [string];
+        expect(message).toContain('files/opaque');
+        expect(message).not.toContain(
+          new StorageUnavailableException().message,
+        );
+      });
+
+      it('answers 409 without deleting when the re-read fails', async () => {
+        vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+        repository.findByIdWithDeleted.mockRejectedValue(new Error('db down'));
+
+        await expectConflict();
+        expect(storage.deleteObject).not.toHaveBeenCalled();
+      });
+    });
+
+    it('does not re-read the row when the transition succeeds', async () => {
+      storage.listParts.mockResolvedValue(allParts);
+
+      await service.complete(share, 'file1234');
+
+      expect(repository.findByIdWithDeleted).not.toHaveBeenCalled();
     });
   });
 
