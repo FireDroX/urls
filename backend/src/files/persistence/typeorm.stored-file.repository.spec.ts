@@ -189,6 +189,9 @@ describe('TypeormStoredFileRepository', () => {
         'file.link',
         'link',
       );
+      expect(builder.withDeleted.mock.invocationCallOrder[0]).toBeLessThan(
+        builder.innerJoinAndSelect.mock.invocationCallOrder[0],
+      );
       expect(builder.where).toHaveBeenCalledWith('file.deletedAt IS NULL');
       expect(builder.orderBy).toHaveBeenCalledWith('file.createdAt', 'DESC');
       expect(builder.addOrderBy).toHaveBeenCalledWith('file.publicId', 'ASC');

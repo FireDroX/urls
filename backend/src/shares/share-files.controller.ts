@@ -188,9 +188,13 @@ export class ShareFilesController {
   @Delete(':fileId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Annuler l’upload ou supprimer le fichier (soft delete)',
+    summary: 'Annuler l’upload ou supprimer le fichier et son objet S3',
   })
   @ApiNoContentResponse({ description: 'Fichier supprimé.' })
+  @ApiServiceUnavailableResponse({
+    description: 'Stockage injoignable : le fichier est conservé.',
+    type: ErrorResponseDto,
+  })
   @ApiNotFoundResponse({
     description: 'Partage ou fichier inconnu.',
     type: ErrorResponseDto,

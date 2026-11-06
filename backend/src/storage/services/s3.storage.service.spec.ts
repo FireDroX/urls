@@ -1,5 +1,6 @@
 import { Readable } from 'node:stream';
 import type {
+  DeleteObjectCommand,
   ListPartsCommand,
   S3Client,
   UploadPartCommand,
@@ -138,6 +139,33 @@ describe('S3StorageService', () => {
       send.mockRejectedValue(new Error('connect ECONNREFUSED'));
 
       await expect(storage.getObjectSize('files/k')).rejects.toBeInstanceOf(
+        StorageUnavailableException,
+      );
+    });
+
+    it('deletes an object with DeleteObject on the bucket', async () => {
+      send.mockResolvedValue({});
+
+      await expect(storage.deleteObject('files/k')).resolves.toBeUndefined();
+      expect((send.mock.calls[0][0] as DeleteObjectCommand).input).toEqual({
+        Bucket: 'urls',
+        Key: 'files/k',
+      });
+    });
+
+    it.each(['NoSuchKey', 'NotFound'])(
+      'treats an absent object (%s) as already deleted',
+      async (name) => {
+        send.mockRejectedValue(s3Error(name, 'not here'));
+
+        await expect(storage.deleteObject('files/k')).resolves.toBeUndefined();
+      },
+    );
+
+    it('turns any other delete failure into StorageUnavailableException', async () => {
+      send.mockRejectedValue(new Error('connect ECONNREFUSED'));
+
+      await expect(storage.deleteObject('files/k')).rejects.toBeInstanceOf(
         StorageUnavailableException,
       );
     });
