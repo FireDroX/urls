@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.14 — 2026-11-06
+
+- Page « Fichiers » du dashboard (`/files`) : tous les fichiers stockés, du plus récent au plus ancien, avec leur taille, leur type, leur état et leur origine (lien vers le partage, ou mention « partage supprimé »). Filtre « Tous / Orphelins » conservé dans l'adresse de la page.
+- Barre de place occupée : quota utilisé, part des fichiers orphelins et usage réel du stockage (une mention s'affiche s'il est indisponible).
+- Téléchargement d'un fichier prêt et suppression après confirmation depuis cette page, avec la liste et la barre de place mises à jour ensuite. Un fichier encore attaché à un partage ne peut pas être supprimé de là.
+
 ## 0.0.13 — 2026-11-06
 
 - Supprimer un fichier au moment précis où son envoi se termine efface désormais son objet du stockage. Avant, cet objet pouvait rester invisible dans le dashboard, sans pouvoir être supprimé, tout en occupant de la place.

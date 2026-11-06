@@ -1,4 +1,4 @@
-import { ArrowRightLeft, FolderUp, LayoutDashboard, Settings } from 'lucide-react'
+import { ArrowRightLeft, Files, FolderUp, LayoutDashboard, Settings } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router'
 import { StorageMeter } from '#components/layout/StorageMeter'
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/', labelKey: 'layout.allLinks', icon: LayoutDashboard, end: true },
   { to: '/redirects', labelKey: 'layout.redirects', icon: ArrowRightLeft, end: false },
   { to: '/shares', labelKey: 'layout.shares', icon: FolderUp, end: false },
+  { to: '/files', labelKey: 'layout.files', icon: Files, end: false },
   { to: '/settings', labelKey: 'layout.settings', icon: Settings, end: true },
 ] as const
 

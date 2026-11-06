@@ -24,6 +24,7 @@
     "allLinks": "All links",
     "redirects": "Redirects",
     "shares": "Shares",
+    "files": "Files",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
     "account": "My account",
@@ -160,6 +161,57 @@
       "minLength": "At least {{count}} characters",
       "complexity": "An uppercase letter, a lowercase letter, a digit and a symbol",
       "mismatch": "The two passwords differ"
+    }
+  },
+  "files": {
+    "title": "Files",
+    "subtitle": "Every stored file, where it comes from and how much space it takes.",
+    "emptyTitle": "No stored files",
+    "emptyBody": "Files dropped into a share will show up here.",
+    "emptyOrphansTitle": "No orphan files",
+    "emptyOrphansBody": "Every file belongs to an existing share.",
+    "loadFailedTitle": "Could not load the files",
+    "loadFailedBody": "Check your connection, then try again.",
+    "deleted": "File deleted.",
+    "deleteTitle": "Delete this file?",
+    "deleteDescription": "{{name}} ({{size}}) will be permanently removed from storage.",
+    "download": "Download {{name}}",
+    "delete": "Delete {{name}}",
+    "inUseHint": "This file is still attached to a share: remove it from the share instead.",
+    "filter": {
+      "label": "Filter",
+      "all": "All",
+      "orphans": "Orphans"
+    },
+    "columns": {
+      "name": "Name",
+      "size": "Size",
+      "mime": "Type",
+      "status": "Status",
+      "origin": "Origin",
+      "date": "Date"
+    },
+    "origin": {
+      "redirect": "Redirect",
+      "share": "Share",
+      "drop": "Drop box",
+      "shareDeleted": "share deleted",
+      "linkDeleted": "link deleted"
+    },
+    "usage": {
+      "title": "Space used",
+      "label": "Quota used",
+      "used": "{{used}} used of {{total}}",
+      "orphans": "including {{size}} of orphan files",
+      "storage": "Actual storage usage: {{size}}",
+      "storageUnavailable": "Actual storage usage unavailable"
+    },
+    "errors": {
+      "invalid": "Invalid request.",
+      "notFound": "File not found.",
+      "storageUnavailable": "Storage is unreachable, try again in a moment.",
+      "inUse": "This file is still attached to a share.",
+      "notReady": "This file is not ready yet."
     }
   },
   "shares": {

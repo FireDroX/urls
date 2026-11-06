@@ -1,14 +1,15 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getStorageUsage } from '#api/storage'
+import { refreshStorageUsage } from '#lib/storage-usage-refresh'
 import { Sidebar } from './Sidebar'
 
 vi.mock('#api/storage', () => ({
   getStorageUsage: vi.fn(),
 }))
 
-const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Réglages']
+const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Fichiers', 'Réglages']
 
 function renderAt(path: string) {
   render(
@@ -33,6 +34,7 @@ describe('Sidebar', () => {
     ['/redirects/docs', ['Redirections']],
     ['/shares', ['Partages']],
     ['/shares/photos', ['Partages']],
+    ['/files', ['Fichiers']],
     ['/settings', ['Réglages']],
     ['/settings/extra', []],
     ['/unknown', []],
@@ -40,6 +42,19 @@ describe('Sidebar', () => {
     renderAt(path)
 
     expect(activeEntries()).toEqual(expected)
+  })
+
+  it('reloads the storage gauge when a refresh is requested', async () => {
+    vi.mocked(getStorageUsage)
+      .mockResolvedValueOnce({ usedBytes: 1024, quotaBytes: 4096 })
+      .mockResolvedValueOnce({ usedBytes: 2048, quotaBytes: 4096 })
+    renderAt('/')
+
+    expect(await screen.findByText('1 Ko / 4 Ko')).toBeInTheDocument()
+    act(() => refreshStorageUsage())
+
+    expect(await screen.findByText('2 Ko / 4 Ko')).toBeInTheDocument()
+    expect(getStorageUsage).toHaveBeenCalledTimes(2)
   })
 
   it('links every entry to its page', () => {
