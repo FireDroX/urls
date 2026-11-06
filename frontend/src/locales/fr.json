@@ -24,6 +24,7 @@
     "allLinks": "Tous les liens",
     "redirects": "Redirections",
     "shares": "Partages",
+    "files": "Fichiers",
     "settings": "Réglages",
     "toggleTheme": "Changer de thème",
     "account": "Mon compte",
@@ -160,6 +161,57 @@
       "minLength": "Au moins {{count}} caractères",
       "complexity": "Une majuscule, une minuscule, un chiffre et un symbole",
       "mismatch": "Les deux mots de passe diffèrent"
+    }
+  },
+  "files": {
+    "title": "Fichiers",
+    "subtitle": "Tous les fichiers stockés, leur origine et la place qu'ils occupent.",
+    "emptyTitle": "Aucun fichier stocké",
+    "emptyBody": "Les fichiers déposés dans un partage apparaîtront ici.",
+    "emptyOrphansTitle": "Aucun fichier orphelin",
+    "emptyOrphansBody": "Tous les fichiers appartiennent à un partage existant.",
+    "loadFailedTitle": "Impossible de charger les fichiers",
+    "loadFailedBody": "Vérifiez votre connexion, puis réessayez.",
+    "deleted": "Fichier supprimé.",
+    "deleteTitle": "Supprimer ce fichier ?",
+    "deleteDescription": "{{name}} ({{size}}) sera supprimé définitivement du stockage.",
+    "download": "Télécharger {{name}}",
+    "delete": "Supprimer {{name}}",
+    "inUseHint": "Ce fichier est encore attaché à un partage : retirez-le depuis le partage.",
+    "filter": {
+      "label": "Filtre",
+      "all": "Tous",
+      "orphans": "Orphelins"
+    },
+    "columns": {
+      "name": "Nom",
+      "size": "Taille",
+      "mime": "Type",
+      "status": "État",
+      "origin": "Origine",
+      "date": "Date"
+    },
+    "origin": {
+      "redirect": "Redirection",
+      "share": "Partage",
+      "drop": "Dépôt",
+      "shareDeleted": "partage supprimé",
+      "linkDeleted": "lien supprimé"
+    },
+    "usage": {
+      "title": "Place occupée",
+      "label": "Quota utilisé",
+      "used": "{{used}} utilisés sur {{total}}",
+      "orphans": "dont {{size}} de fichiers orphelins",
+      "storage": "Usage réel du stockage : {{size}}",
+      "storageUnavailable": "Usage réel du stockage indisponible"
+    },
+    "errors": {
+      "invalid": "Requête invalide.",
+      "notFound": "Fichier introuvable.",
+      "storageUnavailable": "Stockage injoignable, réessayez dans un instant.",
+      "inUse": "Ce fichier est encore attaché à un partage.",
+      "notReady": "Ce fichier n'est pas encore prêt."
     }
   },
   "shares": {

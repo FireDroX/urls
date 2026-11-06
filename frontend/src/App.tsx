@@ -13,6 +13,7 @@ import { RedirectUnavailable } from '#pages/RedirectUnavailable'
 import { Settings } from '#pages/Settings'
 import { ShareDetail } from '#pages/ShareDetail'
 import { ShareDownload } from '#pages/ShareDownload'
+import { Files } from '#pages/Files'
 import { Shares } from '#pages/Shares'
 
 const RedirectDetail = lazy(() =>
@@ -45,6 +46,7 @@ export function App() {
           />
           <Route path="/shares" element={<Shares />} />
           <Route path="/shares/:id" element={<ShareDetail />} />
+          <Route path="/files" element={<Files />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/account" element={<Navigate to="/settings" replace />} />
         </Route>

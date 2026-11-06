@@ -8,7 +8,7 @@ vi.mock('#api/storage', () => ({
   getStorageUsage: vi.fn(),
 }))
 
-const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Réglages']
+const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Fichiers', 'Réglages']
 
 function renderAt(path: string) {
   render(
@@ -33,6 +33,7 @@ describe('Sidebar', () => {
     ['/redirects/docs', ['Redirections']],
     ['/shares', ['Partages']],
     ['/shares/photos', ['Partages']],
+    ['/files', ['Fichiers']],
     ['/settings', ['Réglages']],
     ['/settings/extra', []],
     ['/unknown', []],
