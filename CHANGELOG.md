@@ -2,7 +2,7 @@
 
 ## 0.0.13 — 2026-11-06
 
-- Supprimer un fichier au moment précis où son envoi se termine ne laisse plus d'objet dans le stockage. Avant, cet objet pouvait rester invisible dans le dashboard, sans pouvoir être supprimé, tout en occupant de la place.
+- Supprimer un fichier au moment précis où son envoi se termine efface désormais son objet du stockage dans presque tous les cas. Avant, cet objet pouvait rester invisible dans le dashboard, sans pouvoir être supprimé, tout en occupant de la place.
 
 ## 0.0.12 — 2026-11-06
 
