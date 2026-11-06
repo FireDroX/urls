@@ -27,6 +27,7 @@ export interface StoredFileRepository {
   findByPublicIdWithLink(publicId: string): Promise<StoredFile | null>;
   sumCountedBytes(): Promise<number>;
   findInLink(linkId: string, publicId: string): Promise<StoredFile | null>;
+  findByIdWithDeleted(id: string): Promise<StoredFile | null>;
   findByStatus(status: FileStatus): Promise<StoredFile[]>;
   insertWithinLimits(
     file: NewStoredFile,

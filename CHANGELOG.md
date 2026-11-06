@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.13 — 2026-11-06
+
+- Supprimer un fichier au moment précis où son envoi se termine efface désormais son objet du stockage. Avant, cet objet pouvait rester invisible dans le dashboard, sans pouvoir être supprimé, tout en occupant de la place.
+
 ## 0.0.12 — 2026-11-06
 
 - Liste des fichiers stockés (`GET /api/files`) : chaque fichier avec son lien, s'il est encore utilisé ou orphelin (partage supprimé), et un résumé de la place occupée (quota, fichiers orphelins, usage réel du stockage). `?orphans=true` ne garde que les orphelins.

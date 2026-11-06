@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AuditLogService } from '../../audit/services/audit-log.service.js';
 import { UploadNotFoundException } from '../../common/exceptions/storage/upload-not-found.exception.js';
 import type { Link } from '../../links/entities/link.entity.js';
@@ -8,6 +8,8 @@ import type { StoredFileRepository } from '../persistence/stored-file.repository
 
 @Injectable()
 export class FileDeletionService {
+  private readonly logger = new Logger(FileDeletionService.name);
+
   constructor(
     @Inject('FilesRepository')
     private readonly repository: StoredFileRepository,
@@ -18,6 +20,9 @@ export class FileDeletionService {
   async erase(file: StoredFile, link: Link, userId: string): Promise<void> {
     await this.removeFromStorage(file);
     await this.repository.softDelete(file.id);
+    if (file.status === 'uploading') {
+      await this.removeObjectQuietly(file.s3Key);
+    }
     await this.auditLog.record({
       action: 'files.deleted',
       userId,
@@ -42,5 +47,15 @@ export class FileDeletionService {
       }
     }
     await this.storage.deleteObject(file.s3Key);
+  }
+
+  private async removeObjectQuietly(key: string): Promise<void> {
+    try {
+      await this.storage.deleteObject(key);
+    } catch {
+      this.logger.warn(
+        `Object ${key} may be orphaned after a concurrent upload completion`,
+      );
+    }
   }
 }

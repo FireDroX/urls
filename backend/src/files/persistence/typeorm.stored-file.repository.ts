@@ -81,6 +81,10 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
     return this.repository.findOneBy({ linkId, publicId });
   }
 
+  findByIdWithDeleted(id: string): Promise<StoredFile | null> {
+    return this.repository.findOne({ where: { id }, withDeleted: true });
+  }
+
   findByStatus(status: FileStatus): Promise<StoredFile[]> {
     return this.repository.find({
       where: { status },

@@ -174,6 +174,7 @@ export class FileUploadsService {
       completedAt: new Date(),
     };
     if (!(await this.repository.transition(file.id, 'uploading', changes))) {
+      await this.removeObjectOfDeletedFile(file);
       throw new FileNotUploadingException();
     }
     const verifying = { ...file, ...changes };
@@ -222,6 +223,19 @@ export class FileUploadsService {
         throw new FileNotUploadingException();
       }
       throw error;
+    }
+  }
+
+  private async removeObjectOfDeletedFile(file: StoredFile): Promise<void> {
+    try {
+      const current = await this.repository.findByIdWithDeleted(file.id);
+      if (current?.deletedAt) {
+        await this.storage.deleteObject(file.s3Key);
+      }
+    } catch {
+      this.logger.warn(
+        `Object ${file.s3Key} may be orphaned after a concurrent deletion`,
+      );
     }
   }
 

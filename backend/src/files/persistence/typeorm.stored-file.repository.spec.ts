@@ -1,4 +1,4 @@
-import type { Repository } from 'typeorm';
+import { IsNull, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
 import { StorageQuotaExceededException } from '../../common/exceptions/storage/storage-quota-exceeded.exception.js';
@@ -25,6 +25,7 @@ function queryBuilder(rows: unknown[]) {
 describe('TypeormStoredFileRepository', () => {
   let ormRepository: {
     find: ReturnType<typeof vi.fn>;
+    findOne: ReturnType<typeof vi.fn>;
     createQueryBuilder: ReturnType<typeof vi.fn>;
   };
   let repository: TypeormStoredFileRepository;
@@ -32,11 +33,21 @@ describe('TypeormStoredFileRepository', () => {
   beforeEach(() => {
     ormRepository = {
       find: vi.fn().mockResolvedValue([]),
+      findOne: vi.fn().mockResolvedValue(null),
       createQueryBuilder: vi.fn(),
     };
     repository = new TypeormStoredFileRepository(
       ormRepository as unknown as Repository<StoredFile>,
     );
+  });
+
+  it('finds a file by id including soft-deleted rows', async () => {
+    await repository.findByIdWithDeleted('file-uuid');
+
+    expect(ormRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 'file-uuid' },
+      withDeleted: true,
+    });
   });
 
   it('skips the query when no link is requested', async () => {
@@ -154,6 +165,20 @@ describe('TypeormStoredFileRepository', () => {
     await expect(
       repository.transition('file-uuid', 'uploading', { status: 'verifying' }),
     ).resolves.toBe(false);
+  });
+
+  it('never moves a soft-deleted file', async () => {
+    const update = vi.fn().mockResolvedValue({ affected: 1 });
+    Object.assign(ormRepository, { update });
+
+    await expect(
+      repository.transition('file-uuid', 'uploading', { status: 'verifying' }),
+    ).resolves.toBe(true);
+
+    expect(update).toHaveBeenCalledWith(
+      { id: 'file-uuid', status: 'uploading', deletedAt: IsNull() },
+      { status: 'verifying' },
+    );
   });
 
   describe('with link', () => {
