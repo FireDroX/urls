@@ -15,7 +15,7 @@ export class CreateFiles1793900000000 implements MigrationInterface {
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE \`files\``);
     await queryRunner.query(
-      `ALTER TABLE \`links\` DROP CHECK \`CHK_links_max_downloads\`, DROP COLUMN \`download_count\`, DROP COLUMN \`max_downloads\``,
+      `ALTER TABLE \`links\` DROP CONSTRAINT \`CHK_links_max_downloads\`, DROP COLUMN \`download_count\`, DROP COLUMN \`max_downloads\``,
     );
   }
 }

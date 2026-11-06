@@ -14,7 +14,7 @@ cd backend && pnpm run migration:run && pnpm run start:dev
 cd frontend && pnpm run dev              # http://localhost:5174
 ```
 
-Base et S3 : ceux de la VM de dev, ou la stack complète `docker compose up -d mysql rustfs` (voir `.env.example`).
+Base et S3 : ceux de la VM de dev, ou la stack complète `docker compose up -d mariadb rustfs` (voir `.env.example`).
 
 ## Déployer
 
