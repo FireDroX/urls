@@ -42,7 +42,7 @@ interface RustfsQuotaStats {
 
 const QUOTA_EXCEEDED_PATTERN = /quota exceeded/i;
 const NO_SUCH_UPLOAD = 'NoSuchUpload';
-const ABSENT_OBJECT_ERRORS = ['NoSuchKey', 'NotFound'];
+const NO_SUCH_KEY = 'NoSuchKey';
 
 @Injectable()
 export class S3StorageService
@@ -309,7 +309,7 @@ function isNoSuchUpload(error: unknown): boolean {
 }
 
 function isAbsentObject(error: unknown): boolean {
-  return error instanceof Error && ABSENT_OBJECT_ERRORS.includes(error.name);
+  return error instanceof Error && error.name === NO_SUCH_KEY;
 }
 
 function contentDisposition(filename: string): string {

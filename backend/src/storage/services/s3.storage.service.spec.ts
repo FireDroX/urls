@@ -153,17 +153,19 @@ describe('S3StorageService', () => {
       });
     });
 
-    it.each(['NoSuchKey', 'NotFound'])(
-      'treats an absent object (%s) as already deleted',
-      async (name) => {
-        send.mockRejectedValue(s3Error(name, 'not here'));
+    it('treats an absent object (NoSuchKey) as already deleted', async () => {
+      send.mockRejectedValue(s3Error('NoSuchKey', 'not here'));
 
-        await expect(storage.deleteObject('files/k')).resolves.toBeUndefined();
-      },
-    );
+      await expect(storage.deleteObject('files/k')).resolves.toBeUndefined();
+    });
 
-    it('turns any other delete failure into StorageUnavailableException', async () => {
-      send.mockRejectedValue(new Error('connect ECONNREFUSED'));
+    it.each([
+      ['NoSuchBucket', s3Error('NoSuchBucket', 'no bucket')],
+      ['AccessDenied', s3Error('AccessDenied', 'denied')],
+      ['NotFound without an S3 code', s3Error('NotFound', 'UnknownError')],
+      ['a network failure', new Error('connect ECONNREFUSED')],
+    ])('turns %s into StorageUnavailableException', async (_label, failure) => {
+      send.mockRejectedValue(failure);
 
       await expect(storage.deleteObject('files/k')).rejects.toBeInstanceOf(
         StorageUnavailableException,
