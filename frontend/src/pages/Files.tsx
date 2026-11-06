@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isAxiosError } from 'axios'
 import { Files as FilesIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
@@ -15,10 +16,12 @@ import { useFileSize } from '#hooks/useFileSize'
 import { useFiles, type FilesState } from '#hooks/useFiles'
 import { extractErrorMessage } from '#lib/api-errors'
 import { fileDeleteErrorMessages, fileDownloadErrorMessages } from '#lib/file-errors'
+import { refreshStorageUsage } from '#lib/storage-usage-refresh'
 import { startDownload } from '#utils/start-download'
 
 const SKELETON_ROWS = 3
 const ORPHANS_PARAM = 'orphans'
+const STALE_DELETE_STATUSES = [404, 409]
 
 interface FilesContentProps {
   state: FilesState
@@ -96,10 +99,19 @@ export function Files() {
   }
 
   async function confirmDelete(file: StoredFile) {
-    await deleteFile(file.publicId)
+    try {
+      await deleteFile(file.publicId)
+    } catch (error) {
+      if (isAxiosError(error) && STALE_DELETE_STATUSES.includes(error.response?.status ?? 0)) {
+        refresh()
+        refreshStorageUsage()
+      }
+      throw error
+    }
     toast.success(t('files.deleted'))
     setDeleteOpen(false)
     refresh()
+    refreshStorageUsage()
   }
 
   const actions: FileActions = {

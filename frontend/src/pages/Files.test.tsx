@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFileDownloadUrl, deleteFile, listFiles, type FilesList, type StoredFile } from '#api/files'
+import { refreshStorageUsage } from '#lib/storage-usage-refresh'
 import { startDownload } from '#utils/start-download'
 import { Files } from './Files'
 
@@ -20,6 +21,7 @@ vi.mock('sonner', async (importOriginal) => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }))
 vi.mock('#utils/start-download', () => ({ startDownload: vi.fn() }))
+vi.mock('#lib/storage-usage-refresh', () => ({ refreshStorageUsage: vi.fn() }))
 
 const file: StoredFile = {
   publicId: 'f1',
@@ -216,7 +218,19 @@ describe('Files page', () => {
     expect(await screen.findByText('512 o utilisés sur 4 Ko')).toBeInTheDocument()
   })
 
-  it('translates a conflict on deletion', async () => {
+  it('refreshes the sidebar gauge after a deletion', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteFile).mockResolvedValue()
+    renderAt('/files')
+
+    await user.click(await screen.findByRole('button', { name: 'Supprimer old.zip' }))
+    const dialog = await screen.findByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
+
+    await waitFor(() => expect(refreshStorageUsage).toHaveBeenCalledTimes(1))
+  })
+
+  it('translates a conflict on deletion and refreshes the list', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteFile).mockRejectedValue(apiError(409))
     renderAt('/files')
@@ -226,6 +240,39 @@ describe('Files page', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
 
     expect(await within(dialog).findByText('Ce fichier est encore attaché à un partage.')).toBeInTheDocument()
+    await waitFor(() => expect(listFiles).toHaveBeenCalledTimes(2))
+  })
+
+  it('translates a 404 on deletion, then refreshes the list and the gauge', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteFile).mockRejectedValue(apiError(404))
+    vi.mocked(listFiles)
+      .mockResolvedValueOnce(list([file, orphan]))
+      .mockResolvedValueOnce(list([file]))
+    renderAt('/files')
+
+    await user.click(await screen.findByRole('button', { name: 'Supprimer old.zip' }))
+    const dialog = await screen.findByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
+
+    expect(await within(dialog).findByText('Fichier introuvable.')).toBeInTheDocument()
+    await waitFor(() => expect(listFiles).toHaveBeenCalledTimes(2))
+    expect(refreshStorageUsage).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(screen.queryByText('old.zip')).not.toBeInTheDocument())
+  })
+
+  it('does not refresh after a 503 on deletion', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteFile).mockRejectedValue(apiError(503))
+    renderAt('/files')
+
+    await user.click(await screen.findByRole('button', { name: 'Supprimer old.zip' }))
+    const dialog = await screen.findByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
+
+    await within(dialog).findByText(/Stockage injoignable/)
+    expect(listFiles).toHaveBeenCalledTimes(1)
+    expect(refreshStorageUsage).not.toHaveBeenCalled()
   })
 
   it('translates an unreachable storage on deletion', async () => {
