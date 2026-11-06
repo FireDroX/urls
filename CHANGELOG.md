@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.15 — 2026-11-06
+
+- Correction : la mise à jour de la base échouait sur un serveur MariaDB, ce qui empêchait le backend de démarrer.
+- ⚠️ La stack complète de `docker-compose.yml` passe de MySQL à MariaDB 11, comme la prod : elle démarre sur un volume neuf (`mariadb-data`), et l'ancien `mysql-data` n'est pas repris. Si elle contient des données à garder, exportez-les avant de mettre à jour.
+
 ## 0.0.14 — 2026-11-06
 
 - Page « Fichiers » du dashboard (`/files`) : tous les fichiers stockés, du plus récent au plus ancien, avec leur taille, leur type, leur état et leur origine (lien vers le partage, ou mention « partage supprimé »). Filtre « Tous / Orphelins » conservé dans l'adresse de la page.

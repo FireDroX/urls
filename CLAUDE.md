@@ -55,8 +55,8 @@ Ne jamais afficher ni copier les valeurs des `.env` : générer de nouveaux secr
 
 ## Déploiement
 
-- `docker-compose.yml` : stack complète (mysql + rustfs + backend + frontend, plus `storage-init` en profil `setup`, qui monte `infra/rustfs`), pour un serveur vierge ou un essai local. Réseaux `database` et `storage` en `internal`, partagés seulement avec le backend ; seul le frontend publie un port (`127.0.0.1:8081`), servi par le Cloudflare Tunnel.
-- `docker-compose.external.yml` : prod, la base et le RustFS existent déjà (ceux de NestWiki, S3 exposé sur `cdn.addrien.fr`). Images `ghcr.io/firedrox/urls-{backend,frontend}` poussées par la CI sur `main`, réseaux externes `DATABASE_NETWORK`/`STORAGE_NETWORK` (réseaux `--internal` dédiés).
+- `docker-compose.yml` : stack complète (mariadb + rustfs + backend + frontend, plus `storage-init` en profil `setup`, qui monte `infra/rustfs`), pour un serveur vierge ou un essai local. Réseaux `database` et `storage` en `internal`, partagés seulement avec le backend ; seul le frontend publie un port (`127.0.0.1:8081`), servi par le Cloudflare Tunnel.
+- `docker-compose.external.yml` : prod, la base et le RustFS existent déjà (ceux de NestWiki, S3 exposé sur `cdn.addrien.fr`). La base de prod est un `mariadb:11` (comme `docker-compose.yml`), celle de la VM de dev un MySQL 8.4 : les migrations doivent passer sur les deux (`DROP CONSTRAINT`, jamais `DROP CHECK`, contrôlé par `migrations-portability.spec.ts`). Images `ghcr.io/firedrox/urls-{backend,frontend}` poussées par la CI sur `main`, réseaux externes `DATABASE_NETWORK`/`STORAGE_NETWORK` (réseaux `--internal` dédiés).
 - Backend : utilisateur `node` (non root), `mem_limit`, `read_only`, `no-new-privileges`. `entrypoint.sh` lance migrations, seed admin puis l'API. Le frontend nginx proxifie `/api/` et `/r/` vers `backend:3000` (la route des parts d'upload a sa propre `location` : `client_max_body_size 33m`, `proxy_request_buffering off`, le reste de `/api/` garde la limite de 1 Mo) et envoie la CSP (scripts du site + Turnstile seulement), `nosniff`, `X-Frame-Options`.
 
 ## Architecture backend (`backend/src`)
