@@ -1,10 +1,14 @@
 # Changelog
 
-## 0.1.0 — 2026-11-07
+## 0.1.1 — 2026-11-07
 
 - Nouveau : les dépôts. On les gère via `/api/drops` (liste, création, détail, modification, suppression), avec un titre et une expiration facultatifs et deux limites obligatoires : le nombre de fichiers (de 1 à 50) et la taille totale reçue.
 - Chaque dépôt indique le nombre et la taille des fichiers reçus (hors fichiers refusés ou supprimés) et son état : ouvert, plein, expiré ou désactivé. Abaisser une limite sous ce qui a déjà été reçu ne supprime rien, le dépôt devient simplement plein.
 - Les adresses d’un dépôt suivent les mêmes règles que celles des partages et des redirections, et un dépôt n’est jamais accessible par les adresses des redirections ou des partages.
+
+## 0.1.0 — 2026-11-07
+
+- Aucun changement visible : l'envoi de fichiers depuis les partages fonctionne comme avant, reprise, annulation et relance comprises.
 
 ## 0.0.15 — 2026-11-06
 

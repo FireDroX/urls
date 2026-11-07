@@ -30,6 +30,18 @@ describe('pending uploads', () => {
     expect(recallUpload('unknown1')).toBeUndefined()
   })
 
+  it('keeps the upload token of an upload', () => {
+    rememberUpload({ ...upload, uploadToken: 'token-123' })
+
+    expect(recallUpload('file1234')?.uploadToken).toBe('token-123')
+  })
+
+  it('still reads an entry stored without a token', () => {
+    localStorage.setItem('pending-uploads', JSON.stringify([upload]))
+
+    expect(recallUpload('file1234')).toEqual(upload)
+  })
+
   it('replaces the entry of a file remembered twice', () => {
     rememberUpload(upload)
     rememberUpload({ ...upload, sha256: 'cd'.repeat(32) })

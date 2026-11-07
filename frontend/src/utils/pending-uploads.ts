@@ -10,6 +10,7 @@ const pendingUploadsSchema = z.array(
     size: z.number(),
     lastModified: z.number(),
     sha256: z.string(),
+    uploadToken: z.string().optional(),
   }),
 )
 
