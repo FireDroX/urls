@@ -21,8 +21,10 @@ interface SummaryRow {
   totalSize: string | number | null;
 }
 
+const REJECTED: FileStatus = 'rejected';
+
 const COUNTED_FILES = {
-  status: Not<FileStatus>('rejected'),
+  status: Not<FileStatus>(REJECTED),
   deletedAt: IsNull(),
 };
 
@@ -40,19 +42,32 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
     });
   }
 
-  async summarizeByLinkIds(linkIds: string[]): Promise<FilesSummary[]> {
+  summarizeByLinkIds(linkIds: string[]): Promise<FilesSummary[]> {
+    return this.summarize(linkIds, false);
+  }
+
+  summarizeCountedByLinkIds(linkIds: string[]): Promise<FilesSummary[]> {
+    return this.summarize(linkIds, true);
+  }
+
+  private async summarize(
+    linkIds: string[],
+    countedOnly: boolean,
+  ): Promise<FilesSummary[]> {
     if (linkIds.length === 0) {
       return [];
     }
-    const rows = await this.repository
+    const query = this.repository
       .createQueryBuilder('file')
       .select('file.linkId', 'linkId')
       .addSelect('COUNT(*)', 'fileCount')
       .addSelect('SUM(file.size)', 'totalSize')
       .where('file.linkId IN (:...linkIds)', { linkIds })
-      .andWhere('file.deletedAt IS NULL')
-      .groupBy('file.linkId')
-      .getRawMany<SummaryRow>();
+      .andWhere('file.deletedAt IS NULL');
+    if (countedOnly) {
+      query.andWhere('file.status <> :rejected', { rejected: REJECTED });
+    }
+    const rows = await query.groupBy('file.linkId').getRawMany<SummaryRow>();
     return rows.map((row) => ({
       linkId: row.linkId,
       fileCount: Number(row.fileCount),

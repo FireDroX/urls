@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { bigintToNumber } from '../../common/bigint-to-number.js';
 import type { LINK_TYPES } from '../../common/variables.global.js';
 
 export type LinkType = (typeof LINK_TYPES)[number];
@@ -33,6 +34,9 @@ export class Link {
   @Column({ type: 'varchar', length: 2048, nullable: true })
   destination: string | null;
 
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  title: string | null;
+
   @Column({
     type: 'datetime',
     precision: 6,
@@ -51,6 +55,18 @@ export class Link {
 
   @Column({ type: 'int', unsigned: true, name: 'download_count', default: 0 })
   downloadCount: number;
+
+  @Column({
+    type: 'bigint',
+    unsigned: true,
+    name: 'max_total_bytes',
+    nullable: true,
+    transformer: bigintToNumber,
+  })
+  maxTotalBytes: number | null;
+
+  @Column({ type: 'int', unsigned: true, name: 'max_files', nullable: true })
+  maxFiles: number | null;
 
   @Column({ type: 'boolean', default: false })
   disabled: boolean;

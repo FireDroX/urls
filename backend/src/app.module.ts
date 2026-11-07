@@ -19,6 +19,7 @@ import { HealthModule } from './health/health.module.js';
 import { LinksModule } from './links/links.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SettingsModule } from './settings/settings.module.js';
+import { DropsModule } from './drops/drops.module.js';
 import { SharesModule } from './shares/shares.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -45,6 +46,7 @@ import { UsersModule } from './users/users.module.js';
     LinksModule,
     FilesModule,
     SharesModule,
+    DropsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerBehindProxyGuard }],
 })

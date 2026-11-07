@@ -89,6 +89,7 @@ describe('FileUploadsService', () => {
     repository = {
       findByLinkId: vi.fn(),
       summarizeByLinkIds: vi.fn(),
+      summarizeCountedByLinkIds: vi.fn(),
       findAllWithLink: vi.fn(),
       findByPublicIdWithLink: vi.fn(),
       sumCountedBytes: vi.fn(),

@@ -72,6 +72,31 @@ describe('TypeormStoredFileRepository', () => {
     ]);
   });
 
+  describe('summarizeCountedByLinkIds', () => {
+    it('skips the query when no link is requested', async () => {
+      await expect(repository.summarizeCountedByLinkIds([])).resolves.toEqual(
+        [],
+      );
+      expect(ormRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('leaves rejected and deleted files out', async () => {
+      const builder = queryBuilder([
+        { linkId: 'a', fileCount: '1', totalSize: '40' },
+      ]);
+      ormRepository.createQueryBuilder.mockReturnValue(builder);
+
+      const summaries = await repository.summarizeCountedByLinkIds(['a']);
+
+      expect(builder.andWhere).toHaveBeenCalledWith('file.deletedAt IS NULL');
+      expect(builder.andWhere).toHaveBeenCalledWith(
+        'file.status <> :rejected',
+        { rejected: 'rejected' },
+      );
+      expect(summaries).toEqual([{ linkId: 'a', fileCount: 1, totalSize: 40 }]);
+    });
+  });
+
   describe('insertWithinLimits', () => {
     const limits = { maxFiles: 2, quotaBytes: 1000 };
     const file = {

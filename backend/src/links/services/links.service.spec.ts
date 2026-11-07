@@ -52,6 +52,9 @@ function buildLink(overrides: Partial<Link> = {}): Link {
     expiresAt: null,
     maxDownloads: null,
     downloadCount: 0,
+    title: null,
+    maxTotalBytes: null,
+    maxFiles: null,
     disabled: false,
     createdAt: new Date('2026-11-01T00:00:00Z'),
     updatedAt: new Date('2026-11-01T00:00:00Z'),
@@ -369,6 +372,7 @@ describe('LinksService', () => {
       ['missing or deleted', null],
       ['disabled', buildLink({ disabled: true })],
       ['not a redirect', buildLink({ type: 'share', destination: null })],
+      ['a drop', buildLink({ type: 'drop' })],
       [
         'disabled and expired',
         buildLink({ disabled: true, expiresAt: new Date(PAST) }),
@@ -491,6 +495,7 @@ describe('LinksService', () => {
     it.each([
       ['missing or deleted', null],
       ['not a redirect', buildLink({ type: 'share', destination: null })],
+      ['a drop', buildLink({ type: 'drop' })],
     ])('throws not found for a %s link', async (_label, link) => {
       repository.findByPublicId.mockResolvedValue(link);
 
