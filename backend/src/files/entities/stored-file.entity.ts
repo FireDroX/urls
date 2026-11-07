@@ -7,17 +7,12 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  type ValueTransformer,
 } from 'typeorm';
+import { bigintToNumber } from '../../common/bigint-to-number.js';
 import type { FILE_STATUSES } from '../../common/variables.global.js';
 import { Link } from '../../links/entities/link.entity.js';
 
 export type FileStatus = (typeof FILE_STATUSES)[number];
-
-const bigintToNumber: ValueTransformer = {
-  to: (value: number) => value,
-  from: (value: string | number) => Number(value),
-};
 
 @Entity('files')
 @Index('UQ_files_public_id', ['publicId'], { unique: true })

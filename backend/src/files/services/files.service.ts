@@ -23,7 +23,25 @@ export class FilesService {
   async summarizeLinks(
     linkIds: string[],
   ): Promise<Map<string, LinkFilesSummary>> {
-    const rows = await this.repository.summarizeByLinkIds(linkIds);
+    return this.toMap(
+      linkIds,
+      await this.repository.summarizeByLinkIds(linkIds),
+    );
+  }
+
+  async summarizeCountedLinks(
+    linkIds: string[],
+  ): Promise<Map<string, LinkFilesSummary>> {
+    return this.toMap(
+      linkIds,
+      await this.repository.summarizeCountedByLinkIds(linkIds),
+    );
+  }
+
+  private toMap(
+    linkIds: string[],
+    rows: FilesSummary[],
+  ): Map<string, LinkFilesSummary> {
     const byLink = new Map(
       rows.map(({ linkId, fileCount, totalSize }) => [
         linkId,

@@ -6,6 +6,7 @@ describe('FilesService', () => {
   let repository: {
     findByLinkId: ReturnType<typeof vi.fn>;
     summarizeByLinkIds: ReturnType<typeof vi.fn>;
+    summarizeCountedByLinkIds: ReturnType<typeof vi.fn>;
   };
   let service: FilesService;
 
@@ -13,8 +14,25 @@ describe('FilesService', () => {
     repository = {
       findByLinkId: vi.fn().mockResolvedValue([]),
       summarizeByLinkIds: vi.fn().mockResolvedValue([]),
+      summarizeCountedByLinkIds: vi.fn().mockResolvedValue([]),
     };
     service = new FilesService(repository as unknown as StoredFileRepository);
+  });
+
+  it('summarizes the counted files only, with zero for links without any', async () => {
+    repository.summarizeCountedByLinkIds.mockResolvedValue([
+      { linkId: 'a', fileCount: 1, totalSize: 40 },
+    ]);
+
+    const summaries = await service.summarizeCountedLinks(['a', 'b']);
+
+    expect(repository.summarizeByLinkIds).not.toHaveBeenCalled();
+    expect(summaries).toEqual(
+      new Map([
+        ['a', { fileCount: 1, totalSize: 40 }],
+        ['b', { fileCount: 0, totalSize: 0 }],
+      ]),
+    );
   });
 
   it('lists the files of a link', async () => {

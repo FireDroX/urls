@@ -14,6 +14,9 @@ export type AuditAction =
   | 'shares.created'
   | 'shares.updated'
   | 'shares.deleted'
+  | 'drops.created'
+  | 'drops.updated'
+  | 'drops.deleted'
   | 'files.created'
   | 'files.deleted';
 

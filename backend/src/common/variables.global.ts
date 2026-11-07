@@ -83,6 +83,9 @@ export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
 export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000;
 export const SHARE_FILES_MAX = 50;
+export const DROP_TITLE_MAX_LENGTH = 120;
+export const DROP_STATES = ['open', 'full', 'expired', 'disabled'] as const;
+export type DropState = (typeof DROP_STATES)[number];
 export const SHARE_VIEW_THROTTLE_TTL_MS = 60_000;
 export const SHARE_VIEW_THROTTLE_LIMIT = 30;
 export const SHARE_DOWNLOAD_THROTTLE_TTL_MS = 60_000;

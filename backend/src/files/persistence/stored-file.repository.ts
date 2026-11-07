@@ -23,6 +23,7 @@ export type FileTransition = Partial<
 export interface StoredFileRepository {
   findByLinkId(linkId: string): Promise<StoredFile[]>;
   summarizeByLinkIds(linkIds: string[]): Promise<FilesSummary[]>;
+  summarizeCountedByLinkIds(linkIds: string[]): Promise<FilesSummary[]>;
   findAllWithLink(): Promise<StoredFile[]>;
   findByPublicIdWithLink(publicId: string): Promise<StoredFile | null>;
   sumCountedBytes(): Promise<number>;
