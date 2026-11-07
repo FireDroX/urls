@@ -1,8 +1,8 @@
 import { isAxiosError, isCancel } from 'axios'
-import { completeFileUpload, listFileParts, startFileUpload, uploadFilePart } from '#api/shares'
 import { retryAfterSeconds } from '#lib/api-errors'
 import { hashFile } from '#lib/file-hash'
 import { DifferentFileError, UploadCanceledError } from '#lib/share-errors'
+import type { UploadHandle, UploadTarget } from '#lib/upload-target'
 import { missingParts, partSizeOf, splitIntoParts, type FilePart } from '#utils/file-parts'
 import { forgetUpload, isSameFile, recallUpload, rememberUpload } from '#utils/pending-uploads'
 
@@ -21,11 +21,13 @@ export interface UploadObserver {
   onPhase: (phase: TransferPhase) => void
   onHashed: (hashedBytes: number) => void
   onSent: (sentBytes: number) => void
+  onTokenIssued: (uploadToken: string) => void
   onOpened: (fileId: string) => void
 }
 
 export interface UploadRequest {
   shareId: string
+  target: UploadTarget
   file: File
   signal: AbortSignal
   observer: UploadObserver
@@ -33,6 +35,7 @@ export interface UploadRequest {
 
 export interface ResumeRequest extends UploadRequest {
   fileId: string
+  uploadToken?: string
 }
 
 interface PartsTransfer extends ResumeRequest {
@@ -75,17 +78,41 @@ function waitBeforeRetry(delayMs: number, signal: AbortSignal): Promise<void> {
   })
 }
 
+function handleOf({ fileId, uploadToken }: ResumeRequest): UploadHandle {
+  return { fileId, uploadToken }
+}
+
+function untilCanceled<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const cancel = () => reject(new UploadCanceledError())
+    signal.addEventListener('abort', cancel, { once: true })
+    promise
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener('abort', cancel))
+  })
+}
+
+async function proofBeforeAnnounce(target: UploadTarget, signal: AbortSignal): Promise<string | undefined> {
+  if (!target.beforeAnnounce) {
+    return undefined
+  }
+  const proof = await untilCanceled(target.beforeAnnounce(signal), signal)
+  throwIfCanceled(signal)
+  return proof
+}
+
 async function sendPart(
-  { shareId, fileId, file }: PartsTransfer,
+  transfer: PartsTransfer,
   part: FilePart,
   signal: AbortSignal,
   onProgress: (loadedBytes: number) => void,
 ): Promise<void> {
+  const { target, file } = transfer
   const body = file.slice(part.start, part.end)
   for (let attempt = 1; ; attempt += 1) {
     throwIfCanceled(signal)
     try {
-      await uploadFilePart(shareId, fileId, part.partNumber, body, { signal, onProgress })
+      await target.sendPart(handleOf(transfer), part.partNumber, body, { signal, onProgress })
       return
     } catch (error) {
       if (signal.aborted || attempt >= PART_MAX_ATTEMPTS || !isRetryable(error)) {
@@ -132,17 +159,25 @@ async function sendParts(transfer: PartsTransfer): Promise<void> {
 }
 
 async function transferAndComplete(transfer: PartsTransfer): Promise<void> {
-  const { shareId, fileId, signal, observer } = transfer
+  const { target, signal, observer } = transfer
   observer.onPhase('uploading')
   await sendParts(transfer)
   throwIfCanceled(signal)
   observer.onPhase('completing')
-  await completeFileUpload(shareId, fileId)
-  forgetUpload(fileId)
+  await target.complete(handleOf(transfer))
+  forgetUpload(transfer.fileId)
 }
 
-function remember({ shareId, fileId, file }: ResumeRequest, sha256: string): void {
-  rememberUpload({ shareId, fileId, name: file.name, size: file.size, lastModified: file.lastModified, sha256 })
+function remember({ shareId, fileId, uploadToken, file }: ResumeRequest, sha256: string): void {
+  rememberUpload({
+    shareId,
+    fileId,
+    name: file.name,
+    size: file.size,
+    lastModified: file.lastModified,
+    sha256,
+    uploadToken,
+  })
 }
 
 function canceledOr(error: unknown, signal: AbortSignal): unknown {
@@ -150,17 +185,26 @@ function canceledOr(error: unknown, signal: AbortSignal): unknown {
 }
 
 export async function uploadNewFile(request: UploadRequest): Promise<void> {
-  const { shareId, file, signal, observer } = request
+  const { target, file, signal, observer } = request
   try {
     observer.onPhase('hashing')
     const sha256 = await hashFile(file, observer.onHashed, signal)
-    const { fileId, partSize } = await startFileUpload(shareId, { name: file.name, size: file.size, sha256 })
-    remember({ ...request, fileId }, sha256)
+    throwIfCanceled(signal)
+    const proof = await proofBeforeAnnounce(target, signal)
+    const { fileId, partSize, uploadToken } = await target.announce(
+      { name: file.name, size: file.size, sha256 },
+      proof,
+    )
+    remember({ ...request, fileId, uploadToken }, sha256)
+    if (uploadToken) {
+      observer.onTokenIssued(uploadToken)
+    }
     observer.onOpened(fileId)
     throwIfCanceled(signal)
     await transferAndComplete({
       ...request,
       fileId,
+      uploadToken,
       parts: splitIntoParts(file.size, partSize),
       alreadySent: 0,
     })
@@ -189,9 +233,9 @@ async function checkSameFile(request: ResumeRequest, size: number, sha256: strin
 }
 
 export async function resumeFile(request: ResumeRequest): Promise<void> {
-  const { shareId, fileId, signal } = request
+  const { target, signal } = request
   try {
-    const { size, sha256, partSize, parts: received } = await listFileParts(shareId, fileId)
+    const { size, sha256, partSize, parts: received } = await target.listParts(handleOf(request))
     await checkSameFile(request, size, sha256)
     throwIfCanceled(signal)
     const parts = missingParts(size, partSize, received)

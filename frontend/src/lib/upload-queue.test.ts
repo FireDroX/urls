@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { deleteShareFile } from '#api/shares'
+import { shareUploadTarget } from '#lib/share-upload-target'
+import type { UploadTarget } from '#lib/upload-target'
 import { UploadCanceledError } from '#lib/share-errors'
 import { resumeFile, uploadNewFile, type UploadRequest } from '#lib/share-upload'
 import { rememberUpload, recallUpload } from '#utils/pending-uploads'
@@ -39,7 +41,7 @@ beforeEach(() => {
 describe('UploadQueue', () => {
   it('removes a finished upload and bumps the revision', async () => {
     vi.mocked(uploadNewFile).mockResolvedValue()
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.addFiles(SHARE_ID, [file()])
     await settled()
@@ -58,7 +60,7 @@ describe('UploadQueue', () => {
           }),
       )
       .mockResolvedValue()
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.addFiles(SHARE_ID, [file('a.bin'), file('b.bin')])
     await settled()
@@ -78,7 +80,7 @@ describe('UploadQueue', () => {
       observer.onOpened(FILE_ID)
       return new Promise(() => {})
     })
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.addFiles(SHARE_ID, [file()])
     await settled()
@@ -89,7 +91,7 @@ describe('UploadQueue', () => {
   it('keeps a failed upload with its error and carries on with the next file', async () => {
     const failure = new Error('boom')
     vi.mocked(uploadNewFile).mockRejectedValueOnce(failure).mockResolvedValue()
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.addFiles(SHARE_ID, [file('a.bin'), file('b.bin')])
     await vi.waitFor(() => expect(items(queue)).toHaveLength(1))
@@ -99,7 +101,7 @@ describe('UploadQueue', () => {
 
   it('dismisses a failed upload', async () => {
     vi.mocked(uploadNewFile).mockRejectedValue(new Error('boom'))
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.addFiles(SHARE_ID, [file()])
     await settled()
@@ -110,7 +112,7 @@ describe('UploadQueue', () => {
 
   it('dismisses the failed uploads of a file', async () => {
     vi.mocked(resumeFile).mockRejectedValue(new Error('boom'))
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
     await vi.waitFor(() => expect(items(queue)[0].phase).toBe('failed'))
@@ -121,7 +123,7 @@ describe('UploadQueue', () => {
 
   it('keeps a running upload when dismissing the failures of its file', async () => {
     vi.mocked(resumeFile).mockReturnValue(new Promise(() => {}))
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
 
     queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
     await vi.waitFor(() => expect(resumeFile).toHaveBeenCalled())
@@ -137,7 +139,7 @@ describe('UploadQueue', () => {
         request.observer.onOpened(FILE_ID)
         return untilCanceled(request)
       })
-      const queue = new UploadQueue()
+      const queue = new UploadQueue(shareUploadTarget)
 
       queue.addFiles(SHARE_ID, [file()])
       await settled()
@@ -150,7 +152,7 @@ describe('UploadQueue', () => {
 
     it('calls no API when the file was only being hashed', async () => {
       vi.mocked(uploadNewFile).mockImplementation(untilCanceled)
-      const queue = new UploadQueue()
+      const queue = new UploadQueue(shareUploadTarget)
 
       queue.addFiles(SHARE_ID, [file()])
       await settled()
@@ -162,7 +164,7 @@ describe('UploadQueue', () => {
 
     it('drops a file still waiting without ever starting it', async () => {
       vi.mocked(uploadNewFile).mockReturnValueOnce(new Promise(() => {}))
-      const queue = new UploadQueue()
+      const queue = new UploadQueue(shareUploadTarget)
 
       queue.addFiles(SHARE_ID, [file('a.bin'), file('b.bin')])
       await settled()
@@ -179,7 +181,7 @@ describe('UploadQueue', () => {
         request.observer.onOpened(FILE_ID)
         return untilCanceled(request)
       })
-      const queue = new UploadQueue()
+      const queue = new UploadQueue(shareUploadTarget)
 
       queue.addFiles(SHARE_ID, [file()])
       await settled()
@@ -196,7 +198,7 @@ describe('UploadQueue', () => {
         return Promise.reject(new Error('boom'))
       })
       vi.mocked(resumeFile).mockReturnValue(new Promise(() => {}))
-      const queue = new UploadQueue()
+      const queue = new UploadQueue(shareUploadTarget)
       queue.addFiles(SHARE_ID, [file()])
       await settled()
       const selected = file()
@@ -219,7 +221,7 @@ describe('UploadQueue', () => {
         observed.push(request.signal)
         return untilCanceled(request)
       })
-      const queue = new UploadQueue()
+      const queue = new UploadQueue(shareUploadTarget)
 
       queue.addFiles(SHARE_ID, [file('a.bin'), file('b.bin')])
       await settled()
@@ -235,7 +237,7 @@ describe('UploadQueue', () => {
 
   it('notifies its subscribers until they unsubscribe', async () => {
     vi.mocked(uploadNewFile).mockResolvedValue()
-    const queue = new UploadQueue()
+    const queue = new UploadQueue(shareUploadTarget)
     const listener = vi.fn()
     const unsubscribe = queue.subscribe(listener)
 
@@ -247,5 +249,63 @@ describe('UploadQueue', () => {
 
     expect(calls).toBeGreaterThan(0)
     expect(listener).toHaveBeenCalledTimes(calls)
+  })
+})
+
+describe('UploadQueue with another upload target', () => {
+  const TOKEN = 'token-123'
+
+  function fakeTarget(): UploadTarget {
+    return {
+      announce: vi.fn(),
+      listParts: vi.fn(),
+      sendPart: vi.fn(),
+      complete: vi.fn(),
+      cancel: vi.fn().mockResolvedValue(undefined),
+    }
+  }
+
+  it('cancels an opened upload through the target with its token', async () => {
+    const target = fakeTarget()
+    const targetOf = vi.fn().mockReturnValue(target)
+    vi.mocked(uploadNewFile).mockImplementation((request) => {
+      request.observer.onTokenIssued(TOKEN)
+      request.observer.onOpened(FILE_ID)
+      return untilCanceled(request)
+    })
+    const queue = new UploadQueue(targetOf)
+
+    queue.addFiles(SHARE_ID, [file()])
+    await settled()
+    queue.cancel(items(queue)[0].key)
+
+    await vi.waitFor(() => expect(items(queue)).toEqual([]))
+    expect(targetOf).toHaveBeenCalledWith(SHARE_ID)
+    expect(vi.mocked(uploadNewFile).mock.calls[0][0].target).toBe(target)
+    expect(target.cancel).toHaveBeenCalledWith({ fileId: FILE_ID, uploadToken: TOKEN })
+  })
+
+  it('cancels a resumed upload with the token remembered for its file', async () => {
+    const target = fakeTarget()
+    rememberUpload({
+      shareId: SHARE_ID,
+      fileId: FILE_ID,
+      name: 'a',
+      size: 3,
+      lastModified: 1,
+      sha256: 'ab',
+      uploadToken: TOKEN,
+    })
+    vi.mocked(resumeFile).mockImplementation(untilCanceled)
+    const queue = new UploadQueue(() => target)
+
+    queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
+    await vi.waitFor(() =>
+      expect(resumeFile).toHaveBeenCalledWith(expect.objectContaining({ fileId: FILE_ID, uploadToken: TOKEN })),
+    )
+    queue.cancel(items(queue)[0].key)
+
+    await vi.waitFor(() => expect(items(queue)).toEqual([]))
+    expect(target.cancel).toHaveBeenCalledWith({ fileId: FILE_ID, uploadToken: TOKEN })
   })
 })
