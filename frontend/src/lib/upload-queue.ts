@@ -1,7 +1,7 @@
-import { deleteShareFile } from '#api/shares'
 import { UploadCanceledError } from '#lib/share-errors'
 import { resumeFile, uploadNewFile, type TransferPhase, type UploadObserver } from '#lib/share-upload'
-import { forgetUpload } from '#utils/pending-uploads'
+import type { UploadTargetResolver } from '#lib/upload-target'
+import { forgetUpload, recallUpload } from '#utils/pending-uploads'
 
 export type UploadPhase = 'queued' | TransferPhase | 'canceling' | 'failed'
 
@@ -9,6 +9,7 @@ export interface UploadItem {
   key: string
   shareId: string
   fileId: string | null
+  uploadToken?: string
   name: string
   size: number
   phase: UploadPhase
@@ -41,6 +42,12 @@ export class UploadQueue {
   private nextKey = 1
   private draining = false
 
+  private readonly targetOf: UploadTargetResolver
+
+  constructor(targetOf: UploadTargetResolver) {
+    this.targetOf = targetOf
+  }
+
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
@@ -50,13 +57,20 @@ export class UploadQueue {
 
   addFiles(shareId: string, files: readonly File[]): void {
     for (const file of files) {
-      this.enqueue(shareId, null, file, (signal, observer) => uploadNewFile({ shareId, file, signal, observer }))
+      const target = this.targetOf(shareId)
+      this.enqueue(shareId, null, file, undefined, (signal, observer) =>
+        uploadNewFile({ shareId, target, file, signal, observer }),
+      )
     }
   }
 
   resume({ shareId, fileId }: ResumeTarget, file: File): void {
     this.setItems(this.snapshot.items.filter((item) => item.fileId !== fileId))
-    this.enqueue(shareId, fileId, file, (signal, observer) => resumeFile({ shareId, fileId, file, signal, observer }))
+    const target = this.targetOf(shareId)
+    const uploadToken = recallUpload(fileId)?.uploadToken
+    this.enqueue(shareId, fileId, file, uploadToken, (signal, observer) =>
+      resumeFile({ shareId, target, fileId, uploadToken, file, signal, observer }),
+    )
   }
 
   cancel(key: string): void {
@@ -86,7 +100,13 @@ export class UploadQueue {
     }
   }
 
-  private enqueue(shareId: string, fileId: string | null, file: File, job: UploadJob): void {
+  private enqueue(
+    shareId: string,
+    fileId: string | null,
+    file: File,
+    uploadToken: string | undefined,
+    job: UploadJob,
+  ): void {
     const key = String(this.nextKey)
     this.nextKey += 1
     this.jobs.set(key, job)
@@ -96,6 +116,7 @@ export class UploadQueue {
         key,
         shareId,
         fileId,
+        ...(uploadToken === undefined ? {} : { uploadToken }),
         name: file.name,
         size: file.size,
         phase: 'queued',
@@ -154,9 +175,9 @@ export class UploadQueue {
     this.bumpRevision()
   }
 
-  private async discard({ key, shareId }: UploadItem, fileId: string): Promise<void> {
+  private async discard({ key, shareId, uploadToken }: UploadItem, fileId: string): Promise<void> {
     try {
-      await deleteShareFile(shareId, fileId)
+      await this.targetOf(shareId).cancel({ fileId, uploadToken })
       forgetUpload(fileId)
       this.remove(key)
     } catch (error) {
@@ -171,6 +192,7 @@ export class UploadQueue {
       },
       onHashed: (hashedBytes) => this.update(key, { hashedBytes }),
       onSent: (sentBytes) => this.update(key, { sentBytes }),
+      onTokenIssued: (uploadToken) => this.update(key, { uploadToken }),
       onOpened: (fileId) => this.update(key, { fileId }),
     }
   }

@@ -10,6 +10,8 @@ import {
   type UploadStarted,
 } from '#api/shares'
 import { hashFile } from '#lib/file-hash'
+import { shareUploadTarget } from '#lib/share-upload-target'
+import type { UploadTarget } from '#lib/upload-target'
 import { DifferentFileError, UploadCanceledError } from '#lib/share-errors'
 import { recallUpload, rememberUpload } from '#utils/pending-uploads'
 import { PART_CONCURRENCY, PART_MAX_ATTEMPTS, resumeFile, uploadNewFile, type UploadObserver } from './share-upload'
@@ -36,7 +38,7 @@ function file(content = CONTENT, name = 'video.mp4', lastModified = 1000): File 
 }
 
 function observer(): UploadObserver {
-  return { onPhase: vi.fn(), onHashed: vi.fn(), onSent: vi.fn(), onOpened: vi.fn() }
+  return { onPhase: vi.fn(), onHashed: vi.fn(), onSent: vi.fn(), onTokenIssued: vi.fn(), onOpened: vi.fn() }
 }
 
 function httpError(status: number, headers: Record<string, string> = {}): AxiosError {
@@ -67,7 +69,7 @@ function rememberCurrentFile() {
 }
 
 function request(selected = file(), signal = new AbortController().signal) {
-  return { shareId: SHARE_ID, file: selected, signal, observer: observer() }
+  return { shareId: SHARE_ID, target: shareUploadTarget(SHARE_ID), file: selected, signal, observer: observer() }
 }
 
 beforeEach(() => {
@@ -359,5 +361,102 @@ describe('resumeFile', () => {
     await expect(resumeFile(resumeRequest())).rejects.toMatchObject({ response: { status: 409 } })
 
     expect(hashFile).not.toHaveBeenCalled()
+  })
+})
+
+describe('with another upload target', () => {
+  const TOKEN = 'token-123'
+  const PROOF = 'proof-456'
+
+  function fakeTarget(): UploadTarget {
+    return {
+      beforeAnnounce: vi.fn().mockResolvedValue(PROOF),
+      announce: vi.fn().mockResolvedValue({ fileId: FILE_ID, partSize: PART_SIZE, uploadToken: TOKEN }),
+      listParts: vi.fn(),
+      sendPart: vi.fn().mockResolvedValue(undefined),
+      complete: vi.fn().mockResolvedValue(undefined),
+      cancel: vi.fn(),
+    }
+  }
+
+  function requestFor(target: UploadTarget, signal = new AbortController().signal) {
+    return { ...request(file(), signal), target }
+  }
+
+  it('hashes, then waits for the hook, then announces with its proof', async () => {
+    const target = fakeTarget()
+    await uploadNewFile(requestFor(target))
+
+    const hookOrder = vi.mocked(target.beforeAnnounce!).mock.invocationCallOrder[0]
+    expect(vi.mocked(hashFile).mock.invocationCallOrder[0]).toBeLessThan(hookOrder)
+    expect(hookOrder).toBeLessThan(vi.mocked(target.announce).mock.invocationCallOrder[0])
+    expect(target.announce).toHaveBeenCalledWith({ name: 'video.mp4', size: 25, sha256: SHA256 }, PROOF)
+    expect(startFileUpload).not.toHaveBeenCalled()
+    expect(uploadFilePart).not.toHaveBeenCalled()
+  })
+
+  it('replays the token on every call, reports it and stores it for a later resume', async () => {
+    const target = fakeTarget()
+    vi.mocked(target.sendPart).mockImplementation(() => {
+      expect(recallUpload(FILE_ID)?.uploadToken).toBe(TOKEN)
+      return Promise.resolve()
+    })
+    const upload = requestFor(target)
+
+    await uploadNewFile(upload)
+
+    const handle = { fileId: FILE_ID, uploadToken: TOKEN }
+    expect(target.sendPart).toHaveBeenCalledTimes(3)
+    for (const [sent] of vi.mocked(target.sendPart).mock.calls) {
+      expect(sent).toEqual(handle)
+    }
+    expect(target.complete).toHaveBeenCalledWith(handle)
+    expect(upload.observer.onTokenIssued).toHaveBeenCalledWith(TOKEN)
+  })
+
+  it('reports no token when the announce returned none', async () => {
+    const target = fakeTarget()
+    vi.mocked(target.announce).mockResolvedValue({ fileId: FILE_ID, partSize: PART_SIZE })
+    const upload = requestFor(target)
+
+    await uploadNewFile(upload)
+
+    expect(upload.observer.onTokenIssued).not.toHaveBeenCalled()
+  })
+
+  it('cancels while the hook never settles, without announcing', async () => {
+    const target = fakeTarget()
+    vi.mocked(target.beforeAnnounce!).mockReturnValue(new Promise(() => {}))
+    const controller = new AbortController()
+
+    const upload = uploadNewFile(requestFor(target, controller.signal))
+    await vi.waitFor(() => expect(target.beforeAnnounce).toHaveBeenCalledWith(controller.signal))
+    controller.abort()
+
+    await expect(upload).rejects.toBeInstanceOf(UploadCanceledError)
+    expect(target.announce).not.toHaveBeenCalled()
+  })
+
+  it('fails with the error of the hook, without announcing', async () => {
+    const target = fakeTarget()
+    const failure = new Error('no proof')
+    vi.mocked(target.beforeAnnounce!).mockRejectedValue(failure)
+
+    await expect(uploadNewFile(requestFor(target))).rejects.toBe(failure)
+
+    expect(target.announce).not.toHaveBeenCalled()
+  })
+
+  it('replays the remembered token when resuming', async () => {
+    const target = fakeTarget()
+    vi.mocked(target.listParts).mockResolvedValue(remoteParts([{ partNumber: 1, size: 10 }]))
+    rememberCurrentFile()
+
+    await resumeFile({ ...requestFor(target), fileId: FILE_ID, uploadToken: TOKEN })
+
+    const handle = { fileId: FILE_ID, uploadToken: TOKEN }
+    expect(target.listParts).toHaveBeenCalledWith(handle)
+    expect(vi.mocked(target.sendPart).mock.calls.map(([sent]) => sent)).toEqual([handle, handle])
+    expect(target.complete).toHaveBeenCalledWith(handle)
   })
 })

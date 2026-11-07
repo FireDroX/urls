@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0 — 2026-11-07
+
+- Aucun changement visible : l'envoi de fichiers depuis les partages fonctionne comme avant, reprise, annulation et relance comprises.
+
 ## 0.0.15 — 2026-11-06
 
 - Correction : la mise à jour de la base échouait sur un serveur MariaDB, ce qui empêchait le backend de démarrer.
