@@ -10,6 +10,8 @@ const file = {
   linkId: 'share-uuid',
   s3Key: 'files/opaque',
   uploadId: 'upload-1',
+  uploaderName: null,
+  uploadTokenHash: null,
   size: 42,
   sha256: SHA256,
 } as StoredFile;

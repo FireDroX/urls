@@ -18,7 +18,9 @@ export type AuditAction =
   | 'drops.updated'
   | 'drops.deleted'
   | 'files.created'
-  | 'files.deleted';
+  | 'files.deleted'
+  | 'drops.files.received'
+  | 'drops.files.cancelled';
 
 export interface AuditEntry {
   action: AuditAction;

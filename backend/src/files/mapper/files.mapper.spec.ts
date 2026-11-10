@@ -9,6 +9,8 @@ const entry = {
     linkId: 'link-uuid',
     s3Key: 'files/opaque',
     uploadId: 'upload-1',
+    uploaderName: null,
+    uploadTokenHash: null,
     name: 'report.pdf',
     size: 42,
     mime: 'application/pdf',

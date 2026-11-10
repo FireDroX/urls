@@ -9,6 +9,7 @@ import { FileNotUploadingException } from '../../common/exceptions/files/file-no
 import { FileTooLargeException } from '../../common/exceptions/files/file-too-large.exception.js';
 import { UploadIncompleteException } from '../../common/exceptions/files/upload-incomplete.exception.js';
 import { UploadNotFoundException } from '../../common/exceptions/storage/upload-not-found.exception.js';
+import { uploadTokenMatches } from '../../common/upload-token.js';
 import { parseDto } from '../../common/parse-dto.js';
 import {
   generatePublicId,
@@ -24,7 +25,10 @@ import {
 } from '../../common/variables.global.js';
 import type { Link } from '../../links/entities/link.entity.js';
 import type { StorageService } from '../../storage/services/storage.service.js';
-import { startUploadSchema } from '../dto/in/start-upload.dto.js';
+import {
+  type StartUploadDto,
+  startUploadSchema,
+} from '../dto/in/start-upload.dto.js';
 import type { StoredFile } from '../entities/stored-file.entity.js';
 import {
   completeParts,
@@ -37,8 +41,12 @@ import { measuredPart } from '../file-streams.js';
 import type {
   NewStoredFile,
   StoredFileRepository,
+  UploadLimits,
 } from '../persistence/stored-file.repository.js';
-import { FileDeletionService } from './file-deletion.service.js';
+import {
+  type DeletionAudit,
+  FileDeletionService,
+} from './file-deletion.service.js';
 import { FileVerificationService } from './file-verification.service.js';
 
 export interface UploadStart {
@@ -60,10 +68,19 @@ export interface UploadParts extends UploadStart {
   parts: ReceivedPart[];
 }
 
-const UPLOAD_LIMITS = {
+export const SHARE_UPLOAD_LIMITS: UploadLimits = {
   maxFiles: SHARE_FILES_MAX,
+  maxLinkBytes: null,
   quotaBytes: FILES_STORAGE_QUOTA_BYTES,
 };
+
+export interface UploadOrigin {
+  userId: string | null;
+  uploaderName: string | null;
+  uploadTokenHash: string | null;
+  limitsFor: (link: Link | null) => UploadLimits;
+  auditMetadata: Record<string, unknown>;
+}
 
 @Injectable()
 export class FileUploadsService {
@@ -83,7 +100,20 @@ export class FileUploadsService {
     input: unknown,
     userId: string,
   ): Promise<UploadStart> {
-    const dto = parseDto(startUploadSchema, input);
+    return this.open(link, parseDto(startUploadSchema, input), {
+      userId,
+      uploaderName: null,
+      uploadTokenHash: null,
+      limitsFor: () => SHARE_UPLOAD_LIMITS,
+      auditMetadata: { shareId: link.publicId },
+    });
+  }
+
+  async open(
+    link: Link,
+    dto: StartUploadDto,
+    origin: UploadOrigin,
+  ): Promise<UploadStart> {
     if (dto.size > FILE_MAX_SIZE_BYTES) {
       throw new FileTooLargeException();
     }
@@ -98,6 +128,9 @@ export class FileUploadsService {
         name: dto.name,
         size: dto.size,
         sha256: dto.sha256,
+        uploaderName: origin.uploaderName,
+        uploadTokenHash: origin.uploadTokenHash,
+        limitsFor: origin.limitsFor,
       });
     } catch (error) {
       await this.abortQuietly(s3Key, uploadId);
@@ -105,9 +138,9 @@ export class FileUploadsService {
     }
     await this.auditLog.record({
       action: 'files.created',
-      userId,
+      userId: origin.userId,
       targetId: file.publicId,
-      metadata: { shareId: link.publicId, name: file.name, size: file.size },
+      metadata: { ...origin.auditMetadata, name: file.name, size: file.size },
     });
     return {
       file,
@@ -121,8 +154,9 @@ export class FileUploadsService {
     filePublicId: string,
     rawPartNumber: string,
     part: IncomingPart,
+    uploadToken?: string,
   ): Promise<ReceivedPart> {
-    const file = await this.findUploading(link, filePublicId);
+    const file = await this.findUploading(link, filePublicId, uploadToken);
     const partNumber = parsePartNumber(rawPartNumber, file.size);
     const size = parseContentLength(
       part.headers['content-length'],
@@ -141,8 +175,12 @@ export class FileUploadsService {
     return { partNumber, size };
   }
 
-  async listParts(link: Link, filePublicId: string): Promise<UploadParts> {
-    const file = await this.findUploading(link, filePublicId);
+  async listParts(
+    link: Link,
+    filePublicId: string,
+    uploadToken?: string,
+  ): Promise<UploadParts> {
+    const file = await this.findUploading(link, filePublicId, uploadToken);
     const parts = await this.whileUploading(() =>
       this.storage.listParts(file.s3Key, file.uploadId!),
     );
@@ -154,8 +192,12 @@ export class FileUploadsService {
     };
   }
 
-  async complete(link: Link, filePublicId: string): Promise<StoredFile> {
-    const file = await this.findUploading(link, filePublicId);
+  async complete(
+    link: Link,
+    filePublicId: string,
+    uploadToken?: string,
+  ): Promise<StoredFile> {
+    const file = await this.findUploading(link, filePublicId, uploadToken);
     const parts = completeParts(
       await this.whileUploading(() =>
         this.storage.listParts(file.s3Key, file.uploadId!),
@@ -185,18 +227,37 @@ export class FileUploadsService {
   async remove(
     link: Link,
     filePublicId: string,
-    userId: string,
+    audit: DeletionAudit,
+    uploadToken?: string,
   ): Promise<void> {
-    const file = await this.find(link, filePublicId);
-    await this.deletion.erase(file, link, userId);
+    const file = await this.find(link, filePublicId, uploadToken);
+    await this.deletion.erase(file, link, audit);
   }
 
-  private async find(link: Link, filePublicId: string): Promise<StoredFile> {
+  status(
+    link: Link,
+    filePublicId: string,
+    uploadToken?: string,
+  ): Promise<StoredFile> {
+    return this.find(link, filePublicId, uploadToken);
+  }
+
+  private async find(
+    link: Link,
+    filePublicId: string,
+    uploadToken?: string,
+  ): Promise<StoredFile> {
     if (!isWellFormedLinkId(filePublicId)) {
       throw new FileNotFoundException();
     }
     const file = await this.repository.findInLink(link.id, filePublicId);
     if (!file) {
+      throw new FileNotFoundException();
+    }
+    if (
+      link.type === 'drop' &&
+      !uploadTokenMatches(uploadToken, file.uploadTokenHash)
+    ) {
       throw new FileNotFoundException();
     }
     return file;
@@ -205,8 +266,9 @@ export class FileUploadsService {
   private async findUploading(
     link: Link,
     filePublicId: string,
+    uploadToken?: string,
   ): Promise<StoredFile> {
-    const file = await this.find(link, filePublicId);
+    const file = await this.find(link, filePublicId, uploadToken);
     if (file.status !== 'uploading' || !file.uploadId) {
       throw new FileNotUploadingException();
     }
@@ -250,13 +312,16 @@ export class FileUploadsService {
   }
 
   private async insertWithGeneratedId(
-    file: Omit<NewStoredFile, 'publicId'>,
+    file: Omit<NewStoredFile, 'publicId'> & {
+      limitsFor: UploadOrigin['limitsFor'];
+    },
   ): Promise<StoredFile> {
     for (let attempt = 1; ; attempt++) {
       try {
+        const { limitsFor, ...newFile } = file;
         return await this.repository.insertWithinLimits(
-          { ...file, publicId: generatePublicId() },
-          UPLOAD_LIMITS,
+          { ...newFile, publicId: generatePublicId() },
+          limitsFor,
         );
       } catch (error) {
         if (

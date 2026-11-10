@@ -223,7 +223,10 @@ describe('FilesAdminService', () => {
 
       await service.remove('file1234', USER_ID);
 
-      expect(deletion.erase).toHaveBeenCalledWith(file, link, USER_ID);
+      expect(deletion.erase).toHaveBeenCalledWith(file, link, {
+        action: 'files.deleted',
+        userId: USER_ID,
+      });
     });
 
     it('propagates a storage failure', async () => {

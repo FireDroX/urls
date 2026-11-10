@@ -89,6 +89,10 @@ export class EventsService {
     return this.record(linkId, 'view', visitor);
   }
 
+  recordUpload(linkId: string, visitor: Visitor): Promise<void> {
+    return this.record(linkId, 'upload', visitor);
+  }
+
   recordDownload(linkId: string, visitor: Visitor): Promise<void> {
     return this.record(linkId, 'download', visitor);
   }

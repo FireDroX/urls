@@ -17,6 +17,7 @@ const STATUS_BY_EXCEPTION: Record<string, number> = {
   UploadNotFoundException: HttpStatus.CONFLICT,
   FileTooLargeException: HttpStatus.PAYLOAD_TOO_LARGE,
   TooManyFilesException: HttpStatus.PAYLOAD_TOO_LARGE,
+  LinkBytesLimitExceededException: HttpStatus.PAYLOAD_TOO_LARGE,
   PartTooLargeException: HttpStatus.PAYLOAD_TOO_LARGE,
   StorageQuotaExceededException: HttpStatus.PAYLOAD_TOO_LARGE,
   StorageUnavailableException: HttpStatus.SERVICE_UNAVAILABLE,

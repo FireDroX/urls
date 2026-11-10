@@ -9,6 +9,7 @@ import type { StoredFile } from '../entities/stored-file.entity.js';
 import type { StoredFileRepository } from '../persistence/stored-file.repository.js';
 import { FileDeletionService } from './file-deletion.service.js';
 
+const audit1 = { action: 'files.deleted' as const, userId: 'user-1' };
 const link = { publicId: 'share123', type: 'share' } as Link;
 
 function buildFile(overrides: Partial<StoredFile> = {}): StoredFile {
@@ -45,11 +46,25 @@ describe('FileDeletionService', () => {
     );
   });
 
+  it('records the audit action it is given, without a user for a visitor', async () => {
+    await service.erase(buildFile(), link, {
+      action: 'drops.files.cancelled',
+      userId: null,
+    });
+
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'drops.files.cancelled',
+        userId: null,
+      }),
+    );
+  });
+
   it('aborts the multipart upload in progress, then soft-deletes and audits', async () => {
     await service.erase(
       buildFile({ status: 'uploading', uploadId: 'upload-1' }),
       link,
-      'user-1',
+      audit1,
     );
 
     expect(storage.abortMultipartUpload).toHaveBeenCalledWith(
@@ -69,7 +84,7 @@ describe('FileDeletionService', () => {
     await service.erase(
       buildFile({ status: 'uploading', uploadId: 'upload-1' }),
       link,
-      'user-1',
+      audit1,
     );
 
     expect(storage.deleteObject).toHaveBeenCalledOnce();
@@ -108,7 +123,7 @@ describe('FileDeletionService', () => {
         service.erase(
           buildFile({ status: 'uploading', uploadId: 'upload-1' }),
           link,
-          'user-1',
+          audit1,
         ),
       ).resolves.toBeUndefined();
 
@@ -130,7 +145,7 @@ describe('FileDeletionService', () => {
       service.erase(
         buildFile({ status: 'uploading', uploadId: 'upload-1' }),
         link,
-        'user-1',
+        audit1,
       ),
     ).rejects.toBeInstanceOf(StorageUnavailableException);
     expect(storage.deleteObject).not.toHaveBeenCalled();
@@ -145,7 +160,7 @@ describe('FileDeletionService', () => {
     await service.erase(
       buildFile({ status: 'uploading', uploadId: 'upload-1' }),
       link,
-      'user-1',
+      audit1,
     );
 
     expect(storage.deleteObject).toHaveBeenCalledTimes(2);
@@ -171,7 +186,7 @@ describe('FileDeletionService', () => {
       service.erase(
         buildFile({ status: 'uploading', uploadId: 'upload-1' }),
         link,
-        'user-1',
+        audit1,
       ),
     ).rejects.toBeInstanceOf(StorageUnavailableException);
     expect(storage.deleteObject).toHaveBeenCalledOnce();
@@ -182,7 +197,7 @@ describe('FileDeletionService', () => {
   it.each(['ready', 'verifying', 'rejected'] as const)(
     'deletes the object of a %s file',
     async (status) => {
-      await service.erase(buildFile({ status }), link, 'user-1');
+      await service.erase(buildFile({ status }), link, audit1);
 
       expect(storage.abortMultipartUpload).not.toHaveBeenCalled();
       expect(storage.deleteObject).toHaveBeenCalledOnce();
@@ -194,7 +209,7 @@ describe('FileDeletionService', () => {
   );
 
   it('removes the object before the row', async () => {
-    await service.erase(buildFile(), link, 'user-1');
+    await service.erase(buildFile(), link, audit1);
 
     expect(storage.deleteObject.mock.invocationCallOrder[0]).toBeLessThan(
       repository.softDelete.mock.invocationCallOrder[0],
@@ -211,7 +226,7 @@ describe('FileDeletionService', () => {
     storage.deleteObject.mockRejectedValue(new StorageUnavailableException());
 
     await expect(
-      service.erase(buildFile(file), link, 'user-1'),
+      service.erase(buildFile(file), link, audit1),
     ).rejects.toBeInstanceOf(StorageUnavailableException);
     expect(repository.softDelete).not.toHaveBeenCalled();
     expect(audit.record).not.toHaveBeenCalled();

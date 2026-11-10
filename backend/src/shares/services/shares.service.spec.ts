@@ -55,6 +55,8 @@ function buildFile(overrides: Partial<StoredFile> = {}): StoredFile {
     sha256: 'a'.repeat(64),
     status: 'ready',
     uploadId: null,
+    uploaderName: null,
+    uploadTokenHash: null,
     createdAt: new Date('2026-11-01T00:00:00Z'),
     completedAt: new Date('2026-11-01T00:01:00Z'),
     deletedAt: null,

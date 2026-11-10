@@ -22,6 +22,7 @@ import {
   PUBLIC_ID_GENERATION_ATTEMPTS,
   SHARE_FILES_MAX,
 } from '../../common/variables.global.js';
+import { generateUploadToken } from '../../common/upload-token.js';
 import type { Link } from '../../links/entities/link.entity.js';
 import type { StorageService } from '../../storage/services/storage.service.js';
 import type { StoredFile } from '../entities/stored-file.entity.js';
@@ -53,11 +54,13 @@ function buildFile(overrides: Partial<StoredFile> = {}): StoredFile {
     linkId: share.id,
     s3Key: 'files/opaque',
     name: 'video.mp4',
+    uploaderName: null,
     size: SIZE,
     mime: null,
     sha256: SHA256,
     status: 'uploading',
     uploadId: 'upload-1',
+    uploadTokenHash: null,
     createdAt: new Date('2026-11-03T00:00:00Z'),
     completedAt: null,
     deletedAt: null,
@@ -75,6 +78,8 @@ function incomingPart(
 function part(partNumber: number, size: number) {
   return { partNumber, size, etag: `"e${partNumber}"` };
 }
+
+const DELETION = { action: 'files.deleted' as const, userId: USER_ID };
 
 describe('FileUploadsService', () => {
   let repository: {
@@ -147,8 +152,17 @@ describe('FileUploadsService', () => {
           size: SIZE,
           sha256: SHA256,
         }),
-        { maxFiles: SHARE_FILES_MAX, quotaBytes: FILES_STORAGE_QUOTA_BYTES },
+        expect.any(Function),
       );
+      const [, limitsFor] = repository.insertWithinLimits.mock.calls[0] as [
+        unknown,
+        (link: Link | null) => unknown,
+      ];
+      expect(limitsFor(share)).toEqual({
+        maxFiles: SHARE_FILES_MAX,
+        maxLinkBytes: null,
+        quotaBytes: FILES_STORAGE_QUOTA_BYTES,
+      });
       expect(started.partSize).toBe(FILE_PART_SIZE_BYTES);
       expect(started.partCount).toBe(3);
       expect(audit.record).toHaveBeenCalledWith(
@@ -570,9 +584,131 @@ describe('FileUploadsService', () => {
     });
   });
 
+  describe('open for a drop', () => {
+    const drop = {
+      id: 'drop-uuid',
+      publicId: 'drop1234',
+      type: 'drop',
+    } as Link;
+    const hash = 'cd'.repeat(32);
+    const limitsFor = vi.fn();
+    const origin = {
+      userId: null,
+      uploaderName: 'Alice',
+      uploadTokenHash: hash,
+      limitsFor,
+      auditMetadata: { dropId: 'drop1234', uploaderName: 'Alice' },
+    };
+
+    it('stores the uploader and the token hash, and audits without a user', async () => {
+      await service.open(
+        drop,
+        { name: 'a.bin', size: SIZE, sha256: SHA256 },
+        origin,
+      );
+
+      expect(repository.insertWithinLimits).toHaveBeenCalledWith(
+        expect.objectContaining({
+          uploaderName: 'Alice',
+          uploadTokenHash: hash,
+        }),
+        limitsFor,
+      );
+      expect(audit.record).toHaveBeenCalledWith({
+        action: 'files.created',
+        userId: null,
+        targetId: expect.any(String) as string,
+        metadata: {
+          dropId: 'drop1234',
+          uploaderName: 'Alice',
+          name: 'a.bin',
+          size: SIZE,
+        },
+      });
+    });
+
+    it('keeps the admin audit of a share unchanged', async () => {
+      await service.start(
+        share,
+        { name: 'a.bin', size: SIZE, sha256: SHA256 },
+        USER_ID,
+      );
+
+      expect(audit.record).toHaveBeenCalledWith({
+        action: 'files.created',
+        userId: USER_ID,
+        targetId: expect.any(String) as string,
+        metadata: { shareId: 'share123', name: 'a.bin', size: SIZE },
+      });
+    });
+  });
+
+  describe('upload token on a drop', () => {
+    const drop = {
+      id: 'drop-uuid',
+      publicId: 'drop1234',
+      type: 'drop',
+    } as Link;
+    const { token, hash } = generateUploadToken();
+    const otherToken = generateUploadToken().token;
+    const part = () => incomingPart('x', { 'content-length': '1' });
+
+    beforeEach(() => {
+      repository.findInLink.mockResolvedValue(
+        buildFile({ uploadTokenHash: hash }),
+      );
+    });
+
+    const calls: [string, (presented?: string) => Promise<unknown>][] = [
+      ['status', (t) => service.status(drop, 'file1234', t)],
+      ['listParts', (t) => service.listParts(drop, 'file1234', t)],
+      [
+        'uploadPart',
+        (t) => service.uploadPart(drop, 'file1234', '1', part(), t),
+      ],
+      ['complete', (t) => service.complete(drop, 'file1234', t)],
+      ['remove', (t) => service.remove(drop, 'file1234', DELETION, t)],
+    ];
+
+    it.each(calls)(
+      '%s answers 404 without a token, with a wrong one or with another file token',
+      async (_name, call) => {
+        for (const presented of [undefined, otherToken, 'x'.repeat(43)]) {
+          await expect(call(presented)).rejects.toBeInstanceOf(
+            FileNotFoundException,
+          );
+        }
+        expect(storage.uploadPart).not.toHaveBeenCalled();
+        expect(storage.listParts).not.toHaveBeenCalled();
+        expect(storage.abortMultipartUpload).not.toHaveBeenCalled();
+        expect(repository.softDelete).not.toHaveBeenCalled();
+      },
+    );
+
+    it('serves the right token', async () => {
+      await expect(
+        service.status(drop, 'file1234', token),
+      ).resolves.toMatchObject({ publicId: 'file1234' });
+    });
+
+    it('fails closed on a drop file that has no token hash', async () => {
+      repository.findInLink.mockResolvedValue(buildFile());
+
+      await expect(
+        service.status(drop, 'file1234', token),
+      ).rejects.toBeInstanceOf(FileNotFoundException);
+    });
+
+    it('ignores the token for a share', async () => {
+      await expect(service.status(share, 'file1234')).resolves.toMatchObject({
+        publicId: 'file1234',
+      });
+    });
+  });
+
   describe('remove', () => {
     it('aborts an upload in progress, soft-deletes the file and audits it', async () => {
-      await service.remove(share, 'file1234', USER_ID);
+      await service.remove(share, 'file1234', DELETION);
 
       expect(storage.abortMultipartUpload).toHaveBeenCalledWith(
         'files/opaque',
@@ -592,7 +728,7 @@ describe('FileUploadsService', () => {
         buildFile({ status: 'ready', uploadId: null }),
       );
 
-      await service.remove(share, 'file1234', USER_ID);
+      await service.remove(share, 'file1234', DELETION);
 
       expect(storage.abortMultipartUpload).not.toHaveBeenCalled();
       expect(storage.deleteObject).toHaveBeenCalledWith('files/opaque');
@@ -605,7 +741,7 @@ describe('FileUploadsService', () => {
       );
 
       await expect(
-        service.remove(share, 'file1234', USER_ID),
+        service.remove(share, 'file1234', DELETION),
       ).rejects.toBeInstanceOf(StorageUnavailableException);
       expect(repository.softDelete).not.toHaveBeenCalled();
     });
@@ -614,7 +750,7 @@ describe('FileUploadsService', () => {
       repository.findInLink.mockResolvedValue(null);
 
       await expect(
-        service.remove(share, 'file1234', USER_ID),
+        service.remove(share, 'file1234', DELETION),
       ).rejects.toBeInstanceOf(FileNotFoundException);
       expect(repository.softDelete).not.toHaveBeenCalled();
     });
