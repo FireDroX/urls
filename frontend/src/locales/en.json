@@ -24,6 +24,7 @@
     "allLinks": "All links",
     "redirects": "Redirects",
     "shares": "Shares",
+    "drops": "Drops",
     "files": "Files",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
@@ -212,6 +213,69 @@
       "storageUnavailable": "Storage is unreachable, try again in a moment.",
       "inUse": "This file is still attached to a share.",
       "notReady": "This file is not ready yet."
+    }
+  },
+  "drops": {
+    "title": "Drops",
+    "subtitle": "/u/ links to receive files, up to a number and a size.",
+    "new": "New drop",
+    "emptyTitle": "No drops yet",
+    "emptyBody": "Create a drop to get a link where files can be sent to you.",
+    "loadFailedTitle": "Could not load drops",
+    "untitled": "Untitled",
+    "filesOfMax": "{{current}} / {{max}}",
+    "sizeOfMax": "{{current}} / {{max}}",
+    "copyAction": "Copy link",
+    "created": "Drop created.",
+    "updated": "Drop updated.",
+    "deleted": "Drop deleted.",
+    "disabledToast": "Drop disabled.",
+    "enabledToast": "Drop re-enabled.",
+    "columns": {
+      "title": "Title",
+      "files": "Files received",
+      "size": "Size received"
+    },
+    "state": {
+      "open": "Open",
+      "full": "Full",
+      "expired": "Expired",
+      "disabled": "Disabled"
+    },
+    "form": {
+      "createTitle": "New drop",
+      "createDescription": "Received files stop at the limits chosen here.",
+      "editTitle": "Edit drop",
+      "editDescription": "Title, slug, limits and expiry can be changed at any time.",
+      "title": "Title (optional)",
+      "titleHelp": "To find it in the list.",
+      "slugEditHelp": "Changing the slug breaks the drop's old address.",
+      "maxFiles": "Maximum number of files",
+      "maxFilesHelp": "From 1 to 50 files.",
+      "maxTotalSize": "Maximum total size",
+      "maxTotalSizeHelp": "Sum of received files, up to 75 GiB.",
+      "unit": "Unit",
+      "units": {
+        "MiB": "MiB",
+        "GiB": "GiB"
+      },
+      "expiresAtHelp": "Suggested at 7 days. Leave empty for a drop that never expires."
+    },
+    "delete": {
+      "title": "Delete this drop?",
+      "description": "The /u/{{slug}} link will stop working. Its slug will stay reserved."
+    },
+    "validation": {
+      "titleTooLong": "{{max}} characters maximum",
+      "titleCharacters": "Control characters are not allowed",
+      "maxFiles": "Whole number from 1 to {{max}}",
+      "maxTotalSize": "Whole number greater than 0",
+      "maxTotalSizeTooLarge": "{{max}} GiB at most"
+    },
+    "errors": {
+      "invalid": "Invalid title, slug, limit or expiry.",
+      "notFound": "This drop no longer exists.",
+      "slugTaken": "This slug is already taken."
     }
   },
   "shares": {
