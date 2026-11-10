@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 — 2026-11-10
+
+- Page « Dépôts » du dashboard (`/drops`) : liste des liens `/u/` (titre, URL complète à copier, fichiers et taille reçus sur le maximum, état, expiration), création (titre, slug choisi ou généré, nombre de fichiers et taille totale maximum, expiration proposée à 7 jours et facultative), modification, désactivation et suppression après confirmation. Mêmes limites que l’API vérifiées dans le formulaire, erreurs traduites.
+
 ## 0.1.2 — 2026-11-10
 
 - Un dépôt s’ouvre au public : sa page lit son titre et la place restante (fichiers et octets), sans rien montrer des envois reçus. Un dépôt expiré ou plein répond « expiré », et un lien désactivé, supprimé ou d’un autre type reste introuvable.

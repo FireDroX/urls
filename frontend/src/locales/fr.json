@@ -24,6 +24,7 @@
     "allLinks": "Tous les liens",
     "redirects": "Redirections",
     "shares": "Partages",
+    "drops": "Dépôts",
     "files": "Fichiers",
     "settings": "Réglages",
     "toggleTheme": "Changer de thème",
@@ -212,6 +213,69 @@
       "storageUnavailable": "Stockage injoignable, réessayez dans un instant.",
       "inUse": "Ce fichier est encore attaché à un partage.",
       "notReady": "Ce fichier n'est pas encore prêt."
+    }
+  },
+  "drops": {
+    "title": "Dépôts",
+    "subtitle": "Des liens /u/ pour recevoir des fichiers, dans la limite d'un nombre et d'une taille.",
+    "new": "Nouveau dépôt",
+    "emptyTitle": "Aucun dépôt pour l'instant",
+    "emptyBody": "Créez un dépôt pour obtenir un lien où l'on pourra vous envoyer des fichiers.",
+    "loadFailedTitle": "Impossible de charger les dépôts",
+    "untitled": "Sans titre",
+    "filesOfMax": "{{current}} / {{max}}",
+    "sizeOfMax": "{{current}} / {{max}}",
+    "copyAction": "Copier le lien",
+    "created": "Dépôt créé.",
+    "updated": "Dépôt mis à jour.",
+    "deleted": "Dépôt supprimé.",
+    "disabledToast": "Dépôt désactivé.",
+    "enabledToast": "Dépôt réactivé.",
+    "columns": {
+      "title": "Titre",
+      "files": "Fichiers reçus",
+      "size": "Taille reçue"
+    },
+    "state": {
+      "open": "Ouvert",
+      "full": "Plein",
+      "expired": "Expiré",
+      "disabled": "Désactivé"
+    },
+    "form": {
+      "createTitle": "Nouveau dépôt",
+      "createDescription": "Les fichiers reçus s'arrêtent aux limites choisies ici.",
+      "editTitle": "Modifier le dépôt",
+      "editDescription": "Titre, slug, limites et expiration restent modifiables à tout moment.",
+      "title": "Titre (facultatif)",
+      "titleHelp": "Pour vous y retrouver dans la liste.",
+      "slugEditHelp": "Changer le slug invalide l'ancienne adresse du dépôt.",
+      "maxFiles": "Nombre de fichiers maximum",
+      "maxFilesHelp": "De 1 à 50 fichiers.",
+      "maxTotalSize": "Taille totale maximum",
+      "maxTotalSizeHelp": "Somme des fichiers reçus, jusqu'à 75 Gio.",
+      "unit": "Unité",
+      "units": {
+        "MiB": "Mio",
+        "GiB": "Gio"
+      },
+      "expiresAtHelp": "Proposée à 7 jours. Laissez vide pour un dépôt qui n'expire jamais."
+    },
+    "delete": {
+      "title": "Supprimer ce dépôt ?",
+      "description": "Le lien /u/{{slug}} cessera de fonctionner. Son slug restera réservé."
+    },
+    "validation": {
+      "titleTooLong": "{{max}} caractères maximum",
+      "titleCharacters": "Caractères de contrôle interdits",
+      "maxFiles": "Nombre entier de 1 à {{max}}",
+      "maxTotalSize": "Nombre entier supérieur à 0",
+      "maxTotalSizeTooLarge": "{{max}} Gio au maximum"
+    },
+    "errors": {
+      "invalid": "Titre, slug, limite ou expiration invalide.",
+      "notFound": "Ce dépôt n'existe plus.",
+      "slugTaken": "Ce slug est déjà pris."
     }
   },
   "shares": {

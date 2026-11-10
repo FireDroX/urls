@@ -1,0 +1,272 @@
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createDrop, deleteDrop, listDrops, updateDrop, type Drop } from '#api/drops'
+import { dropFormDefaults } from '#schemas/drop.schema'
+import { Drops } from './Drops'
+
+vi.mock('#api/drops', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#api/drops')>()),
+  listDrops: vi.fn(),
+  createDrop: vi.fn(),
+  updateDrop: vi.fn(),
+  deleteDrop: vi.fn(),
+}))
+
+const GIB = 1024 ** 3
+
+const drop: Drop = {
+  id: 'docs',
+  title: 'Documents',
+  maxTotalBytes: 2 * GIB,
+  maxFiles: 5,
+  expiresAt: null,
+  disabled: false,
+  fileCount: 2,
+  totalSize: 2048,
+  state: 'open',
+  createdAt: '2026-11-01T10:00:00.000Z',
+  updatedAt: '2026-11-01T10:00:00.000Z',
+}
+
+function apiError(status: number, headers: Record<string, string> = {}): AxiosError {
+  const response = {
+    status,
+    data: { error: 'failed' },
+    headers: new AxiosHeaders(headers),
+    statusText: '',
+    config: { headers: new AxiosHeaders() },
+  } as AxiosResponse
+  return new AxiosError('failed', undefined, undefined, undefined, response)
+}
+
+async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: 'Actions pour docs' }))
+}
+
+async function openCreateForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: 'Nouveau dépôt' }))
+}
+
+beforeEach(() => {
+  vi.resetAllMocks()
+  vi.mocked(listDrops).mockResolvedValue([drop])
+})
+
+describe('Drops page', () => {
+  it('lists the drops with title, URL, files, size, state and expiry', async () => {
+    render(<Drops />)
+
+    const row = (await screen.findByText(`${window.location.origin}/u/docs`)).closest('tr')!
+    expect(within(row).getByText('Documents')).toBeInTheDocument()
+    expect(within(row).getByText('2 / 5')).toBeInTheDocument()
+    expect(within(row).getByText('2 Ko / 2 Go')).toBeInTheDocument()
+    expect(within(row).getByText('Ouvert')).toBeInTheDocument()
+    expect(within(row).getByText('Jamais')).toBeInTheDocument()
+  })
+
+  it('falls back to a translated title for an untitled drop', async () => {
+    vi.mocked(listDrops).mockResolvedValue([{ ...drop, title: null, state: 'full' }])
+    render(<Drops />)
+
+    expect(await screen.findByText('Sans titre')).toBeInTheDocument()
+    expect(screen.getByText('Plein')).toBeInTheDocument()
+  })
+
+  it('shows an empty state', async () => {
+    vi.mocked(listDrops).mockResolvedValue([])
+    render(<Drops />)
+
+    expect(await screen.findByText("Aucun dépôt pour l'instant")).toBeInTheDocument()
+  })
+
+  it('offers a retry when loading fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listDrops).mockRejectedValueOnce(new Error('down'))
+    render(<Drops />)
+
+    await user.click(await screen.findByRole('button', { name: 'Réessayer' }))
+
+    expect(await screen.findByText('Documents')).toBeInTheDocument()
+  })
+
+  it('copies the full /u/ URL', async () => {
+    const user = userEvent.setup()
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
+    render(<Drops />)
+
+    await user.click(await screen.findByRole('button', { name: 'Copier le lien docs' }))
+
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/u/docs`)
+  })
+
+  it('proposes a 7 day expiry and posts the creation', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createDrop).mockResolvedValue({ ...drop, id: 'recus', title: 'Reçus' })
+    render(<Drops />)
+
+    await openCreateForm(user)
+    const expectedExpiry = dropFormDefaults().expiresAt
+    expect(screen.getByLabelText('Expiration (facultatif)')).toHaveValue(expectedExpiry)
+    await user.type(screen.getByLabelText('Titre (facultatif)'), 'Reçus')
+    await user.type(screen.getByLabelText('Slug (facultatif)'), 'recus')
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    await waitFor(() => expect(createDrop).toHaveBeenCalled())
+    expect(vi.mocked(createDrop).mock.calls[0][0]).toMatchObject({
+      title: 'Reçus',
+      slug: 'recus',
+      maxFiles: 10,
+      maxTotalBytes: GIB,
+      expiresAt: new Date(expectedExpiry).toISOString(),
+    })
+    expect(await screen.findByText(`${window.location.origin}/u/recus`)).toBeInTheDocument()
+  })
+
+  it('creates a drop without expiry once cleared', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createDrop).mockResolvedValue(drop)
+    render(<Drops />)
+
+    await openCreateForm(user)
+    await user.click(screen.getByRole('button', { name: 'Aucune' }))
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    await waitFor(() => expect(createDrop).toHaveBeenCalledWith({ maxFiles: 10, maxTotalBytes: GIB }))
+  })
+
+  it.each([
+    ['Nombre de fichiers maximum', '0', 'Nombre entier de 1 à 50'],
+    ['Nombre de fichiers maximum', '51', 'Nombre entier de 1 à 50'],
+    ['Taille totale maximum', '0', 'Nombre entier supérieur à 0'],
+    ['Taille totale maximum', '76', '75 Gio au maximum'],
+  ])('refuses %s = %s before calling the API', async (label, value, message) => {
+    const user = userEvent.setup()
+    render(<Drops />)
+
+    await openCreateForm(user)
+    const input = screen.getByLabelText(label)
+    await user.clear(input)
+    await user.type(input, value)
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    expect(await screen.findByText(message)).toBeInTheDocument()
+    expect(createDrop).not.toHaveBeenCalled()
+  })
+
+  it('refuses a title that is too long', async () => {
+    const user = userEvent.setup()
+    render(<Drops />)
+
+    await openCreateForm(user)
+    await user.click(screen.getByLabelText('Titre (facultatif)'))
+    await user.paste('a'.repeat(121))
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    expect(await screen.findByText('120 caractères maximum')).toBeInTheDocument()
+    expect(createDrop).not.toHaveBeenCalled()
+  })
+
+  it('translates a taken slug', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createDrop).mockRejectedValue(apiError(409))
+    render(<Drops />)
+
+    await openCreateForm(user)
+    await user.type(screen.getByLabelText('Slug (facultatif)'), 'docs')
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    expect(await screen.findByText('Ce slug est déjà pris.')).toBeInTheDocument()
+  })
+
+  it('translates a throttled creation', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createDrop).mockRejectedValue(apiError(429, { 'retry-after': '30' }))
+    render(<Drops />)
+
+    await openCreateForm(user)
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    expect(await screen.findByText('Trop de requêtes, réessayez dans 30 s.')).toBeInTheDocument()
+  })
+
+  it('sends only the changed fields when editing', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDrop).mockResolvedValue({ ...drop, maxFiles: 8 })
+    render(<Drops />)
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
+    const maxFiles = screen.getByLabelText('Nombre de fichiers maximum')
+    await user.clear(maxFiles)
+    await user.type(maxFiles, '8')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(updateDrop).toHaveBeenCalledWith('docs', { maxFiles: 8 }))
+    expect(await screen.findByText('2 / 8')).toBeInTheDocument()
+  })
+
+  it('calls no API when nothing changed', async () => {
+    const user = userEvent.setup()
+    render(<Drops />)
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(updateDrop).not.toHaveBeenCalled()
+  })
+
+  it('translates a drop that no longer exists when editing', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDrop).mockRejectedValue(apiError(404))
+    render(<Drops />)
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
+    await user.type(screen.getByLabelText('Titre (facultatif)'), ' 2')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByText("Ce dépôt n'existe plus.")).toBeInTheDocument()
+  })
+
+  it('disables a drop', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDrop).mockResolvedValue({ ...drop, disabled: true, state: 'disabled' })
+    render(<Drops />)
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Désactiver' }))
+
+    expect(updateDrop).toHaveBeenCalledWith('docs', { disabled: true })
+    expect(await screen.findByText('Désactivé')).toBeInTheDocument()
+  })
+
+  it('deletes a drop only after confirmation', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteDrop).mockResolvedValue()
+    render(<Drops />)
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Supprimer' }))
+    expect(deleteDrop).not.toHaveBeenCalled()
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Supprimer' }))
+
+    await waitFor(() => expect(deleteDrop).toHaveBeenCalledWith('docs'))
+    await waitFor(() => expect(screen.queryByText('Documents')).not.toBeInTheDocument())
+  })
+
+  it('keeps the dialog open with a translated error when the deletion fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteDrop).mockRejectedValue(apiError(404))
+    render(<Drops />)
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Supprimer' }))
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Supprimer' }))
+
+    expect(await screen.findByText("Ce dépôt n'existe plus.")).toBeInTheDocument()
+  })
+})
