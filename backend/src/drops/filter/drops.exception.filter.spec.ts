@@ -1,6 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import type { Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
+import { DropExpiredException } from '../../common/exceptions/drops/drop-expired.exception.js';
 import { DropNotFoundException } from '../../common/exceptions/drops/drop-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
@@ -28,6 +29,13 @@ describe('DropsExceptionFilter', () => {
     expect(respondTo(new DropNotFoundException())).toEqual({
       status: 404,
       body: { error: 'Drop not found' },
+    });
+  });
+
+  it('answers 410 for an expired or full drop', () => {
+    expect(respondTo(new DropExpiredException())).toEqual({
+      status: 410,
+      body: { error: 'Drop expired' },
     });
   });
 

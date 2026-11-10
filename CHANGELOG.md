@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 — 2026-11-10
+
+- Un dépôt s’ouvre au public : sa page lit son titre et la place restante (fichiers et octets), sans rien montrer des envois reçus. Un dépôt expiré ou plein répond « expiré », et un lien désactivé, supprimé ou d’un autre type reste introuvable.
+
 ## 0.1.1 — 2026-11-07
 
 - Nouveau : les dépôts. On les gère via `/api/drops` (liste, création, détail, modification, suppression), avec un titre et une expiration facultatifs et deux limites obligatoires : le nombre de fichiers (de 1 à 50) et la taille totale reçue.
