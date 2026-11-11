@@ -61,7 +61,7 @@ describe('Drops page', () => {
     const row = (await screen.findByText(`${window.location.origin}/u/docs`)).closest('tr')!
     expect(within(row).getByText('Documents')).toBeInTheDocument()
     expect(within(row).getByText('2 / 5')).toBeInTheDocument()
-    expect(within(row).getByText('2 Ko / 2 Go')).toBeInTheDocument()
+    expect(within(row).getByText('2 Kio / 2 Gio')).toBeInTheDocument()
     expect(within(row).getByText('Ouvert')).toBeInTheDocument()
     expect(within(row).getByText('Jamais')).toBeInTheDocument()
   })

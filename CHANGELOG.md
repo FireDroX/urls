@@ -6,6 +6,7 @@
 - Un envoi interrompu (onglet fermé, coupure) se reprend depuis la même page en sélectionnant de nouveau le même fichier : seules les parties manquantes sont renvoyées, un autre fichier est refusé. Les envois non repris sont oubliés au bout de 7 jours.
 - Un dépôt introuvable affiche « lien introuvable », un dépôt expiré ou plein « ce dépôt est fermé », et une limitation de débit indique le délai d'attente.
 - Un fichier reçu dans un dépôt compte désormais comme utilisé : il n'apparaît plus parmi les fichiers orphelins, n'est plus compté dans leur taille et ne peut plus être supprimé depuis la page « Fichiers » tant que le dépôt existe.
+- Les tailles s'affichent partout en unités binaires (Kio, Mio, Gio), comme celles saisies dans les formulaires : « 1014 Mio restants sur 1 Gio » au lieu d'un « 1014 Mo sur 1 Go » trompeur.
 - Sécurité : le jeton secret d'un envoi n'est plus jamais conservé dans les erreurs affichées, et les entrées de reprise expirent après 7 jours.
 
 ## 0.1.4 — 2026-11-10

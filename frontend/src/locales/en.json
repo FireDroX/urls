@@ -459,6 +459,6 @@
     "tooManyRequestsNoDelay": "Too many requests, try again in a moment."
   },
   "units": {
-    "bytes": ["B", "KB", "MB", "GB", "TB"]
+    "bytes": ["B", "KiB", "MiB", "GiB", "TiB"]
   }
 }

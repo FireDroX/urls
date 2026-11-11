@@ -459,6 +459,6 @@
     "tooManyRequestsNoDelay": "Trop de requêtes, réessayez dans un instant."
   },
   "units": {
-    "bytes": ["o", "Ko", "Mo", "Go", "To"]
+    "bytes": ["o", "Kio", "Mio", "Gio", "Tio"]
   }
 }
