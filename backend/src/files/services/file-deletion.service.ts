@@ -1,10 +1,18 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { AuditLogService } from '../../audit/services/audit-log.service.js';
+import {
+  type AuditAction,
+  AuditLogService,
+} from '../../audit/services/audit-log.service.js';
 import { UploadNotFoundException } from '../../common/exceptions/storage/upload-not-found.exception.js';
 import type { Link } from '../../links/entities/link.entity.js';
 import type { StorageService } from '../../storage/services/storage.service.js';
 import type { StoredFile } from '../entities/stored-file.entity.js';
 import type { StoredFileRepository } from '../persistence/stored-file.repository.js';
+
+export interface DeletionAudit {
+  action: AuditAction;
+  userId: string | null;
+}
 
 @Injectable()
 export class FileDeletionService {
@@ -17,15 +25,19 @@ export class FileDeletionService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  async erase(file: StoredFile, link: Link, userId: string): Promise<void> {
+  async erase(
+    file: StoredFile,
+    link: Link,
+    audit: DeletionAudit,
+  ): Promise<void> {
     await this.removeFromStorage(file);
     await this.repository.softDelete(file.id);
     if (file.status === 'uploading') {
       await this.removeObjectQuietly(file.s3Key);
     }
     await this.auditLog.record({
-      action: 'files.deleted',
-      userId,
+      action: audit.action,
+      userId: audit.userId,
       targetId: file.publicId,
       metadata: {
         linkId: link.publicId,

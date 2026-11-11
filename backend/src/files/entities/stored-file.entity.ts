@@ -9,7 +9,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { bigintToNumber } from '../../common/bigint-to-number.js';
-import type { FILE_STATUSES } from '../../common/variables.global.js';
+import {
+  DROP_UPLOADER_NAME_MAX_LENGTH,
+  type FILE_STATUSES,
+} from '../../common/variables.global.js';
 import { Link } from '../../links/entities/link.entity.js';
 
 export type FileStatus = (typeof FILE_STATUSES)[number];
@@ -51,6 +54,14 @@ export class StoredFile {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
+  @Column({
+    type: 'varchar',
+    length: DROP_UPLOADER_NAME_MAX_LENGTH,
+    name: 'uploader_name',
+    nullable: true,
+  })
+  uploaderName: string | null;
+
   @Column({ type: 'bigint', unsigned: true, transformer: bigintToNumber })
   size: number;
 
@@ -77,6 +88,16 @@ export class StoredFile {
     collation: 'ascii_bin',
   })
   uploadId: string | null;
+
+  @Column({
+    type: 'char',
+    length: 64,
+    name: 'upload_token_hash',
+    nullable: true,
+    charset: 'ascii',
+    collation: 'ascii_bin',
+  })
+  uploadTokenHash: string | null;
 
   @CreateDateColumn({ name: 'created_at', precision: 6 })
   createdAt: Date;

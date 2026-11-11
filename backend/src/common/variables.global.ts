@@ -112,13 +112,21 @@ export const FILE_S3_KEY_PREFIX = 'files/';
 export const FILE_UNKNOWN_MIME = 'application/octet-stream';
 export const FILE_MIME_SNIFF_BYTES = 64 * 1024;
 export const FILE_PART_UPLOAD_PATH_REGEX =
-  /^\/api\/shares\/[^/?]+\/files\/[^/?]+\/parts\/[^/?]+\/?(?:\?|$)/;
+  /^\/api\/(?:shares|public\/drops)\/[^/?]+\/files\/[^/?]+\/parts\/[^/?]+\/?(?:\?|$)/;
+export const DROP_UPLOADER_NAME_MAX_LENGTH = 80;
+export const DROP_UPLOAD_TOKEN_BYTES = 32;
+export const DROP_UPLOAD_TOKEN_LENGTH = 43;
+export const DROP_UPLOAD_TOKEN_HEADER = 'x-upload-token';
+export const DROP_UPLOAD_TOKEN_HASH_ALGORITHM = 'sha256';
+export const DROP_UPLOAD_THROTTLE_TTL_MS = 60_000;
+export const DROP_UPLOAD_START_THROTTLE_LIMIT = 10;
+export const DROP_UPLOAD_PART_THROTTLE_LIMIT = 120;
 export const FILE_UPLOAD_THROTTLE_TTL_MS = 60_000;
 export const FILE_START_THROTTLE_LIMIT = 60;
 export const FILE_PART_THROTTLE_LIMIT = 300;
 export const S3_LIST_PARTS_PAGE_SIZE = 1000;
 
-export const EVENT_TYPES = ['click', 'view', 'download'] as const;
+export const EVENT_TYPES = ['click', 'view', 'download', 'upload'] as const;
 export const EVENT_REFERER_MAX_LENGTH = 2048;
 export const EVENT_USER_AGENT_MAX_LENGTH = 512;
 export const EVENT_REFERER_HOST_MAX_LENGTH = 255;

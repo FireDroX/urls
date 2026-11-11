@@ -37,6 +37,17 @@ describe('parsesAsJson', () => {
     ).toBe(false);
   });
 
+  it('never parses a part sent to a public drop', () => {
+    expect(
+      parsesAsJson(
+        request('/api/public/drops/abc/files/f1/parts/3', 'application/json'),
+      ),
+    ).toBe(false);
+    expect(
+      parsesAsJson(request('/api/public/drops/abc/files', 'application/json')),
+    ).toBe(true);
+  });
+
   it('still parses the complete call next to the parts', () => {
     expect(
       parsesAsJson(

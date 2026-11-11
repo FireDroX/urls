@@ -57,6 +57,9 @@ export class ShareFilesService {
     userId: string,
   ): Promise<void> {
     const share = await this.shares.find(sharePublicId);
-    await this.uploads.remove(share, filePublicId, userId);
+    await this.uploads.remove(share, filePublicId, {
+      action: 'files.deleted',
+      userId,
+    });
   }
 }

@@ -1,8 +1,10 @@
 import { IsNull, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LinkBytesLimitExceededException } from '../../common/exceptions/files/link-bytes-limit-exceeded.exception.js';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
 import { StorageQuotaExceededException } from '../../common/exceptions/storage/storage-quota-exceeded.exception.js';
 import type { StoredFile } from '../entities/stored-file.entity.js';
+import type { UploadLimits } from './stored-file.repository.js';
 import { TypeormStoredFileRepository } from './typeorm.stored-file.repository.js';
 
 function queryBuilder(rows: unknown[]) {
@@ -98,7 +100,8 @@ describe('TypeormStoredFileRepository', () => {
   });
 
   describe('insertWithinLimits', () => {
-    const limits = { maxFiles: 2, quotaBytes: 1000 };
+    const limits = { maxFiles: 2, maxLinkBytes: null, quotaBytes: 1000 };
+    const limitsFor = vi.fn<(link: unknown) => UploadLimits>(() => limits);
     const file = {
       publicId: 'file1234',
       linkId: 'link-uuid',
@@ -107,6 +110,8 @@ describe('TypeormStoredFileRepository', () => {
       size: 100,
       sha256: 'a'.repeat(64),
       uploadId: 'upload-1',
+      uploaderName: null,
+      uploadTokenHash: null,
     };
     let files: {
       countBy: ReturnType<typeof vi.fn>;
@@ -115,6 +120,7 @@ describe('TypeormStoredFileRepository', () => {
       save: ReturnType<typeof vi.fn>;
     };
     let lock: ReturnType<typeof vi.fn>;
+    const lockedLink = { id: 'link-uuid', type: 'drop' };
 
     beforeEach(() => {
       files = {
@@ -124,10 +130,12 @@ describe('TypeormStoredFileRepository', () => {
         save: vi.fn((value: unknown) => Promise.resolve(value)),
       };
       lock = vi.fn();
+      limitsFor.mockClear();
+      limitsFor.mockReturnValue(limits);
       const linkQuery = {
         setLock: lock,
         where: vi.fn(),
-        getOne: vi.fn().mockResolvedValue({}),
+        getOne: vi.fn().mockResolvedValue(lockedLink),
       };
       lock.mockReturnValue(linkQuery);
       linkQuery.where.mockReturnValue(linkQuery);
@@ -149,7 +157,7 @@ describe('TypeormStoredFileRepository', () => {
       files.sum.mockResolvedValue('800');
 
       await expect(
-        repository.insertWithinLimits(file, limits),
+        repository.insertWithinLimits(file, limitsFor),
       ).resolves.toMatchObject({ ...file, status: 'uploading', mime: null });
       expect(lock).toHaveBeenCalledWith('pessimistic_write');
     });
@@ -158,7 +166,7 @@ describe('TypeormStoredFileRepository', () => {
       files.countBy.mockResolvedValue(2);
 
       await expect(
-        repository.insertWithinLimits(file, limits),
+        repository.insertWithinLimits(file, limitsFor),
       ).rejects.toBeInstanceOf(TooManyFilesException);
       expect(files.save).not.toHaveBeenCalled();
     });
@@ -167,13 +175,63 @@ describe('TypeormStoredFileRepository', () => {
       files.sum.mockResolvedValue('901');
 
       await expect(
-        repository.insertWithinLimits(file, limits),
+        repository.insertWithinLimits(file, limitsFor),
       ).rejects.toBeInstanceOf(StorageQuotaExceededException);
       expect(files.save).not.toHaveBeenCalled();
     });
 
+    it('reads the limits from the locked link, before counting anything', async () => {
+      await repository.insertWithinLimits(file, limitsFor);
+
+      expect(limitsFor).toHaveBeenCalledWith(lockedLink);
+      expect(limitsFor.mock.invocationCallOrder[0]).toBeLessThan(
+        files.countBy.mock.invocationCallOrder[0],
+      );
+      expect(lock.mock.invocationCallOrder[0]).toBeLessThan(
+        limitsFor.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('stops when the limits callback refuses the locked link', async () => {
+      limitsFor.mockImplementation(() => {
+        throw new Error('closed');
+      });
+
+      await expect(
+        repository.insertWithinLimits(file, limitsFor),
+      ).rejects.toThrow('closed');
+      expect(files.countBy).not.toHaveBeenCalled();
+      expect(files.save).not.toHaveBeenCalled();
+    });
+
+    it('skips the per-link byte sum when there is no per-link limit', async () => {
+      await repository.insertWithinLimits(file, limitsFor);
+
+      expect(files.sum).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses a file that would exceed the per-link byte limit', async () => {
+      limitsFor.mockReturnValue({ ...limits, maxLinkBytes: 500 });
+      files.sum.mockResolvedValueOnce('401');
+
+      await expect(
+        repository.insertWithinLimits(file, limitsFor),
+      ).rejects.toBeInstanceOf(LinkBytesLimitExceededException);
+      expect(files.save).not.toHaveBeenCalled();
+    });
+
+    it('counts the per-link bytes of this link only, before the global quota', async () => {
+      limitsFor.mockReturnValue({ ...limits, maxLinkBytes: 500 });
+      files.sum.mockResolvedValueOnce('400');
+
+      await repository.insertWithinLimits(file, limitsFor);
+
+      expect(files.sum.mock.calls[0][1]).toMatchObject({ linkId: 'link-uuid' });
+      expect(files.sum.mock.calls[1][1]).not.toHaveProperty('linkId');
+    });
+
     it('counts only files that are neither rejected nor deleted', async () => {
-      await repository.insertWithinLimits(file, limits);
+      await repository.insertWithinLimits(file, limitsFor);
 
       const [where] = files.sum.mock.calls[0].slice(1) as [
         Record<string, unknown>,

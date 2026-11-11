@@ -74,7 +74,10 @@ export class FilesAdminService {
     if (isFileInUse(file.link!)) {
       throw new FileInUseException();
     }
-    await this.deletion.erase(file, file.link!, userId);
+    await this.deletion.erase(file, file.link!, {
+      action: 'files.deleted',
+      userId,
+    });
   }
 
   async createDownloadUrl(publicId: string): Promise<string> {

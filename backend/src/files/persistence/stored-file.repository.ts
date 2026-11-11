@@ -1,3 +1,4 @@
+import type { Link } from '../../links/entities/link.entity.js';
 import type { FileStatus, StoredFile } from '../entities/stored-file.entity.js';
 
 export interface FilesSummary {
@@ -8,11 +9,20 @@ export interface FilesSummary {
 
 export type NewStoredFile = Pick<
   StoredFile,
-  'publicId' | 'linkId' | 's3Key' | 'name' | 'size' | 'sha256' | 'uploadId'
+  | 'publicId'
+  | 'linkId'
+  | 's3Key'
+  | 'name'
+  | 'size'
+  | 'sha256'
+  | 'uploadId'
+  | 'uploaderName'
+  | 'uploadTokenHash'
 >;
 
 export interface UploadLimits {
   maxFiles: number;
+  maxLinkBytes: number | null;
   quotaBytes: number;
 }
 
@@ -32,7 +42,7 @@ export interface StoredFileRepository {
   findByStatus(status: FileStatus): Promise<StoredFile[]>;
   insertWithinLimits(
     file: NewStoredFile,
-    limits: UploadLimits,
+    limitsFor: (link: Link | null) => UploadLimits,
   ): Promise<StoredFile>;
   transition(
     id: string,

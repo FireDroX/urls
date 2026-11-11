@@ -184,6 +184,7 @@ describe('EventsService', () => {
   it.each([
     ['view', 'recordView'],
     ['download', 'recordDownload'],
+    ['upload', 'recordUpload'],
   ] as const)(
     'records a %s event with the same visitor details',
     async (type, method) => {

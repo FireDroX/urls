@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 — 2026-11-10
+
+- Un visiteur peut maintenant envoyer des fichiers dans un dépôt ouvert, sans compte : un captcha est demandé pour chaque fichier, l’envoi peut être repris après une coupure et annulé par son expéditeur. Les limites du dépôt (nombre de fichiers et taille totale) sont respectées même quand plusieurs envois arrivent en même temps. Un envoi déjà commencé va jusqu’au bout si le dépôt expire ou se remplit entre-temps ; désactiver ou supprimer le dépôt l’arrête aussitôt.
+- Sécurité : l’expéditeur d’un fichier reçoit un jeton secret qui lui seul permet de suivre, reprendre ou annuler son envoi ; il n’est conservé que sous forme hachée.
+
 ## 0.1.3 — 2026-11-10
 
 - Page « Dépôts » du dashboard (`/drops`) : liste des liens `/u/` (titre, URL complète à copier, fichiers et taille reçus sur le maximum, état, expiration), création (titre, slug choisi ou généré, nombre de fichiers et taille totale maximum, expiration proposée à 7 jours et facultative), modification, désactivation et suppression après confirmation. Mêmes limites que l’API vérifiées dans le formulaire, erreurs traduites.

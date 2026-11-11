@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Not, Repository } from 'typeorm';
 import { isDuplicateEntry } from '../../common/database-errors.js';
 import { FileIdTakenException } from '../../common/exceptions/files/file-id-taken.exception.js';
+import { LinkBytesLimitExceededException } from '../../common/exceptions/files/link-bytes-limit-exceeded.exception.js';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
 import { StorageQuotaExceededException } from '../../common/exceptions/storage/storage-quota-exceeded.exception.js';
 import { Link } from '../../links/entities/link.entity.js';
@@ -109,16 +110,17 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
 
   async insertWithinLimits(
     file: NewStoredFile,
-    limits: UploadLimits,
+    limitsFor: (link: Link | null) => UploadLimits,
   ): Promise<StoredFile> {
     try {
       return await this.repository.manager.transaction(async (manager) => {
-        await manager
+        const link = await manager
           .getRepository(Link)
           .createQueryBuilder('link')
           .setLock('pessimistic_write')
           .where('link.id = :id', { id: file.linkId })
           .getOne();
+        const limits = limitsFor(link);
         const files = manager.getRepository(StoredFile);
         const linkFiles = await files.countBy({
           ...COUNTED_FILES,
@@ -126,6 +128,17 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
         });
         if (linkFiles >= limits.maxFiles) {
           throw new TooManyFilesException();
+        }
+        if (limits.maxLinkBytes !== null) {
+          const linkBytes = Number(
+            (await files.sum('size', {
+              ...COUNTED_FILES,
+              linkId: file.linkId,
+            })) ?? 0,
+          );
+          if (linkBytes + file.size > limits.maxLinkBytes) {
+            throw new LinkBytesLimitExceededException();
+          }
         }
         const usedBytes = await this.sumCounted(files);
         if (usedBytes + file.size > limits.quotaBytes) {

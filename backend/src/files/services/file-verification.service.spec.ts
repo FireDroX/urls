@@ -17,7 +17,10 @@ function sha256(content: Buffer): string {
   return createHash('sha256').update(content).digest('hex');
 }
 
-function buildFile(content: Buffer, overrides: Partial<StoredFile> = {}) {
+function buildFile(
+  content: Buffer,
+  overrides: Partial<StoredFile> = {},
+): StoredFile {
   return {
     id: 'file-uuid',
     publicId: 'file1234',
@@ -29,6 +32,8 @@ function buildFile(content: Buffer, overrides: Partial<StoredFile> = {}) {
     sha256: sha256(content),
     status: 'verifying',
     uploadId: null,
+    uploaderName: null,
+    uploadTokenHash: null,
     createdAt: new Date(),
     completedAt: new Date(),
     deletedAt: null,
