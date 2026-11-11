@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { isAxiosError } from 'axios'
 import { cancelDropUpload } from '#api/public-drops'
 import type { UseUploads } from '#hooks/useUploads'
+import { toUploadError } from '#lib/upload-error'
 import { forgetUpload, pendingUploadsOf, type PendingUpload } from '#utils/pending-uploads'
 
 const NOT_FOUND = 404
@@ -23,7 +24,7 @@ export function usePendingDropUploads(dropId: string, uploads: UseUploads) {
         await cancelDropUpload(dropId, { fileId, uploadToken })
       } catch (error) {
         if (!(isAxiosError(error) && error.response?.status === NOT_FOUND)) {
-          setErrors((current) => ({ ...current, [fileId]: error }))
+          setErrors((current) => ({ ...current, [fileId]: toUploadError(error) }))
           return
         }
       }
