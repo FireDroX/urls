@@ -1,7 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
-import { isAxiosError } from 'axios'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cancelDropUpload, type PublicDrop } from '#api/public-drops'
+import type { PublicDrop } from '#api/public-drops'
 import { DropHeader } from '#components/drops/DropHeader'
 import { DropReceiptsList } from '#components/drops/DropReceiptsList'
 import { PendingDropUploads } from '#components/drops/PendingDropUploads'
@@ -13,6 +12,7 @@ import { Input } from '#components/ui/input'
 import { Label } from '#components/ui/label'
 import type { DropReceipt } from '#hooks/useDropReceipts'
 import { useFileSize } from '#hooks/useFileSize'
+import { usePendingDropUploads } from '#hooks/usePendingDropUploads'
 import { useUploads } from '#hooks/useUploads'
 import { dropUploadErrorMessage } from '#lib/drop-errors'
 import type { TurnstileGate } from '#lib/turnstile-gate'
@@ -20,9 +20,6 @@ import { isActiveUpload } from '#lib/upload-queue'
 import { DROP_UPLOADER_NAME_MAX_LENGTH } from '#schemas/drop.schema'
 import { FILE_MAX_SIZE_BYTES } from '#schemas/share.schema'
 import { selectWithinRoom, type RefusedFile } from '#utils/drop-capacity'
-import { forgetUpload, pendingUploadsOf, type PendingUpload } from '#utils/pending-uploads'
-
-const NOT_FOUND = 404
 
 interface DropUploadPanelProps {
   drop: PublicDrop
@@ -47,7 +44,6 @@ export function DropUploadPanel({
   const formatSize = useFileSize()
   const uploads = useUploads(drop.id)
   const [refused, setRefused] = useState<RefusedFile[]>([])
-  const [pendingVersion, setPendingVersion] = useState(0)
   const nextRefusalId = useRef(1)
 
   const active = uploads.items.filter(isActiveUpload)
@@ -55,12 +51,7 @@ export function DropUploadPanel({
   const filesRemaining = Math.max(0, drop.filesRemaining - active.length)
   const bytesRemaining = Math.max(0, drop.bytesRemaining - activeBytes)
 
-  const stored = useMemo(
-    () => pendingUploadsOf(drop.id),
-    [drop.id, uploads.revision, uploads.items.length, pendingVersion],
-  )
-  const queuedFileIds = new Set(uploads.items.map((item) => item.fileId))
-  const pending = stored.filter((upload) => !queuedFileIds.has(upload.fileId))
+  const pending = usePendingDropUploads(drop.id, uploads)
 
   function addFiles(files: File[]) {
     const selection = selectWithinRoom(files, {
@@ -76,16 +67,6 @@ export function DropUploadPanel({
     if (selection.accepted.length > 0) {
       uploads.addFiles(selection.accepted)
     }
-  }
-
-  async function abandon({ fileId, uploadToken }: PendingUpload) {
-    try {
-      await cancelDropUpload(drop.id, { fileId, uploadToken })
-    } catch (error) {
-      if (!(isAxiosError(error) && error.response?.status === NOT_FOUND)) return
-    }
-    forgetUpload(fileId)
-    setPendingVersion((version) => version + 1)
   }
 
   return (
@@ -123,12 +104,16 @@ export function DropUploadPanel({
         items={uploads.items}
         onCancel={uploads.cancel}
         onDismiss={uploads.dismiss}
+        onResume={uploads.resume}
+        onAbandon={uploads.abandon}
         errorMessage={dropUploadErrorMessage}
       />
       <PendingDropUploads
-        uploads={pending}
+        uploads={pending.pending}
+        errors={pending.errors}
+        errorMessage={dropUploadErrorMessage}
         onResume={({ fileId }, file) => uploads.resume(fileId, file)}
-        onAbandon={(upload) => void abandon(upload)}
+        onAbandon={(upload) => void pending.abandon(upload)}
       />
       <DropReceiptsList receipts={receipts} />
     </main>

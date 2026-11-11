@@ -336,6 +336,20 @@ describe('DropUpload sending', () => {
     expect(await screen.findByText('a.bin')).toBeInTheDocument()
   })
 
+  it('shows the closed notice when the drop is gone during a refresh', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('heading', { name: DROP_HEADING })
+    vi.mocked(getPublicDrop).mockRejectedValue(apiError(404))
+
+    await user.upload(zoneInput(), bin())
+    await solve()
+
+    expect(await screen.findByText(/Ce dépôt vient de se fermer/)).toBeInTheDocument()
+    expect(zoneInput()).toBeDisabled()
+    expect(screen.getByRole('heading', { name: DROP_HEADING })).toBeInTheDocument()
+  })
+
   it('warns before closing the tab while an upload runs', async () => {
     const user = userEvent.setup()
     vi.mocked(uploadDropPart).mockReturnValue(new Promise(() => undefined))
@@ -544,5 +558,76 @@ describe('DropUpload resuming', () => {
     await user.click(screen.getByRole('button', { name: "Abandonner l'envoi de a.bin" }))
 
     await waitFor(() => expect(recallUpload('file0001')).toBeUndefined())
+  })
+
+  it('keeps the entry and shows the delay when abandoning is throttled', async () => {
+    const user = userEvent.setup()
+    pendingEntry()
+    vi.mocked(cancelDropUpload).mockRejectedValue(apiError(429, { 'retry-after': '30' }))
+    renderPage()
+    await screen.findByText('Envois interrompus')
+
+    await user.click(screen.getByRole('button', { name: "Abandonner l'envoi de a.bin" }))
+
+    expect(await screen.findByText(/30/)).toBeInTheDocument()
+    expect(recallUpload('file0001')).toBeDefined()
+    expect(screen.getByText('a.bin')).toBeInTheDocument()
+  })
+})
+
+describe('DropUpload failed uploads', () => {
+  const handle = { fileId: 'file0001', uploadToken: 'upl-1' }
+
+  async function failFirstPart() {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+    vi.mocked(uploadDropPart).mockRejectedValueOnce(apiError(400))
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('heading', { name: DROP_HEADING })
+    await user.upload(zoneInput(), bin())
+    await solve()
+    await screen.findByRole('button', { name: "Abandonner l'envoi de a.bin" })
+    return user
+  }
+
+  it('resumes a failed upload in the same session with the token, even without localStorage', async () => {
+    vi.mocked(listDropParts).mockResolvedValue({
+      size: 3,
+      sha256: SHA256,
+      partSize: 2,
+      parts: [{ partNumber: 1, size: 2 }],
+    })
+    const user = await failFirstPart()
+
+    await user.upload(screen.getByLabelText("Reprendre l'envoi de a.bin"), bin())
+
+    await waitFor(() => expect(completeDropUpload).toHaveBeenCalledWith(DROP_ID, handle))
+    expect(listDropParts).toHaveBeenCalledWith(DROP_ID, handle)
+    expect(uploadDropPart).toHaveBeenLastCalledWith(DROP_ID, handle, 2, expect.anything(), expect.anything())
+    expect(announceDropUpload).toHaveBeenCalledTimes(1)
+  })
+
+  it('abandons a failed upload with its token and removes the row', async () => {
+    vi.mocked(cancelDropUpload).mockResolvedValue()
+    const user = await failFirstPart()
+
+    await user.click(screen.getByRole('button', { name: "Abandonner l'envoi de a.bin" }))
+
+    await waitFor(() => expect(screen.queryByText('a.bin')).not.toBeInTheDocument())
+    expect(cancelDropUpload).toHaveBeenCalledWith(DROP_ID, handle)
+  })
+
+  it('keeps the failed row with the reason when the cancel fails', async () => {
+    vi.mocked(cancelDropUpload).mockRejectedValue(apiError(503))
+    const user = await failFirstPart()
+
+    await user.click(screen.getByRole('button', { name: "Abandonner l'envoi de a.bin" }))
+
+    await waitFor(() => expect(cancelDropUpload).toHaveBeenCalledWith(DROP_ID, handle))
+    expect(screen.getByText('a.bin')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: "Abandonner l'envoi de a.bin" })).toBeInTheDocument()
+    expect(screen.getAllByRole('alert').length).toBeGreaterThan(0)
   })
 })

@@ -1,5 +1,6 @@
+import { useRef, type ChangeEvent } from 'react'
 import type { TFunction } from 'i18next'
-import { X } from 'lucide-react'
+import { RotateCw, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { FormError } from '#components/FormError'
 import { Button } from '#components/ui/button'
@@ -13,6 +14,8 @@ interface UploadsListProps {
   items: UploadItem[]
   onCancel: (key: string) => void
   onDismiss: (key: string) => void
+  onResume?: (fileId: string, file: File) => void
+  onAbandon?: (key: string) => void
   errorMessage?: (error: unknown, t: TFunction) => string
 }
 
@@ -44,12 +47,22 @@ function UploadRow({
   item,
   onCancel,
   onDismiss,
+  onResume,
+  onAbandon,
   errorMessage = uploadErrorMessage,
 }: { item: UploadItem } & Omit<UploadsListProps, 'items'>) {
   const { t } = useTranslation()
   const formatSize = useFileSize()
   const failed = item.phase === 'failed'
   const closable = item.phase !== 'completing' && item.phase !== 'canceling'
+  const inputRef = useRef<HTMLInputElement>(null)
+  const { fileId } = item
+
+  function handleResumeChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0]
+    event.target.value = ''
+    if (selected && fileId) onResume?.(fileId, selected)
+  }
 
   return (
     <li className="flex flex-col gap-2 p-4">
@@ -62,6 +75,31 @@ function UploadRow({
             {formatSize(item.size)} · {t(`shares.upload.phase.${item.phase}`)}
           </p>
         </div>
+        {failed && fileId && onResume && (
+          <>
+            <input
+              ref={inputRef}
+              type="file"
+              className="hidden"
+              aria-label={t('dropUpload.pending.resumeInput', { name: item.name })}
+              onChange={handleResumeChange}
+            />
+            <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+              <RotateCw />
+              {t('dropUpload.pending.resume')}
+            </Button>
+          </>
+        )}
+        {failed && fileId && onAbandon && (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={t('dropUpload.pending.abandonLabel', { name: item.name })}
+            onClick={() => onAbandon(item.key)}
+          >
+            {t('dropUpload.pending.abandon')}
+          </Button>
+        )}
         {closable && (
           <Button
             variant="ghost"
@@ -89,7 +127,7 @@ function UploadRow({
   )
 }
 
-export function UploadsList({ items, onCancel, onDismiss, errorMessage }: UploadsListProps) {
+export function UploadsList({ items, onCancel, onDismiss, onResume, onAbandon, errorMessage }: UploadsListProps) {
   const { t } = useTranslation()
 
   if (items.length === 0) {
@@ -101,7 +139,15 @@ export function UploadsList({ items, onCancel, onDismiss, errorMessage }: Upload
       className="divide-y divide-border rounded-xl border border-border bg-card"
     >
       {items.map((item) => (
-        <UploadRow key={item.key} item={item} onCancel={onCancel} onDismiss={onDismiss} errorMessage={errorMessage} />
+        <UploadRow
+          key={item.key}
+          item={item}
+          onCancel={onCancel}
+          onDismiss={onDismiss}
+          onResume={onResume}
+          onAbandon={onAbandon}
+          errorMessage={errorMessage}
+        />
       ))}
     </ul>
   )

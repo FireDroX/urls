@@ -104,6 +104,13 @@ export class UploadQueue {
     this.remove(key)
   }
 
+  async abandon(key: string): Promise<void> {
+    const item = this.find(key)
+    if (item?.phase === 'failed' && item.fileId) {
+      await this.discard(item, item.fileId)
+    }
+  }
+
   dismissFailed(fileId: string): void {
     this.setItems(this.snapshot.items.filter((item) => item.fileId !== fileId || isActiveUpload(item)))
   }
@@ -208,7 +215,10 @@ export class UploadQueue {
 
   private async discard({ key, shareId, uploadToken }: UploadItem, fileId: string): Promise<void> {
     try {
-      await this.targetOf(shareId).cancel({ fileId, uploadToken })
+      await this.targetOf(shareId).cancel({
+        fileId,
+        uploadToken: uploadToken ?? this.tokens.get(fileId) ?? recallUpload(fileId)?.uploadToken,
+      })
       forgetUpload(fileId)
       this.tokens.delete(fileId)
       this.remove(key)

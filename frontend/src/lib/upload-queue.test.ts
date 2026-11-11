@@ -333,6 +333,58 @@ describe('UploadQueue with another upload target', () => {
     )
   })
 
+  describe('abandon', () => {
+    async function failedQueue(target: UploadTarget) {
+      vi.mocked(uploadNewFile).mockImplementation(({ observer }) => {
+        observer.onTokenIssued(TOKEN)
+        observer.onOpened(FILE_ID)
+        return Promise.reject(new Error('network'))
+      })
+      const queue = new UploadQueue(() => target)
+      queue.addFiles(SHARE_ID, [file()])
+      await vi.waitFor(() => expect(items(queue)[0]?.phase).toBe('failed'))
+      return queue
+    }
+
+    it('cancels a failed upload with its token, then removes it and forgets its token', async () => {
+      const target = fakeTarget()
+      const queue = await failedQueue(target)
+
+      await queue.abandon(items(queue)[0].key)
+
+      expect(target.cancel).toHaveBeenCalledWith({ fileId: FILE_ID, uploadToken: TOKEN })
+      expect(items(queue)).toEqual([])
+      queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
+      expect(vi.mocked(resumeFile).mock.calls[0][0].uploadToken).toBeUndefined()
+    })
+
+    it('keeps the item failed with the reason when the cancel fails', async () => {
+      const target = fakeTarget()
+      const failure = new Error('storage down')
+      vi.mocked(target.cancel).mockRejectedValue(failure)
+      const queue = await failedQueue(target)
+
+      await queue.abandon(items(queue)[0].key)
+
+      expect(items(queue)).toHaveLength(1)
+      expect(items(queue)[0].phase).toBe('failed')
+      expect(items(queue)[0].error).toBeInstanceOf(Error)
+    })
+
+    it('ignores an item that is not failed or has no file', async () => {
+      const target = fakeTarget()
+      vi.mocked(uploadNewFile).mockImplementation(untilCanceled)
+      const queue = new UploadQueue(() => target)
+      queue.addFiles(SHARE_ID, [file()])
+      await settled()
+
+      await queue.abandon(items(queue)[0].key)
+
+      expect(target.cancel).not.toHaveBeenCalled()
+      expect(items(queue)).toHaveLength(1)
+    })
+  })
+
   it('reports a finished upload with its file id and token', async () => {
     const onUploaded = vi.fn()
     vi.mocked(uploadNewFile).mockImplementation(({ observer }) => {

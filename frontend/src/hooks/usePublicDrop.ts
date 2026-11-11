@@ -48,7 +48,7 @@ export function usePublicDrop(id: string) {
       .then((drop) => setState({ status: 'ready', drop, closedWhileOpen: false }))
       .catch((error: unknown) => {
         const status = isAxiosError(error) ? error.response?.status : undefined
-        if (status === GONE) {
+        if (status === GONE || status === NOT_FOUND) {
           setState((current) => (current.status === 'ready' ? { ...current, closedWhileOpen: true } : current))
         }
       })

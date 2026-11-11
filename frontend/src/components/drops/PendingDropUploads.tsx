@@ -1,21 +1,27 @@
+import type { TFunction } from 'i18next'
 import { useRef, type ChangeEvent } from 'react'
 import { RotateCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { FormError } from '#components/FormError'
 import { Button } from '#components/ui/button'
 import { useFileSize } from '#hooks/useFileSize'
 import type { PendingUpload } from '#utils/pending-uploads'
 
 interface PendingDropUploadsProps {
   uploads: PendingUpload[]
+  errors: Record<string, unknown>
+  errorMessage: (error: unknown, t: TFunction) => string
   onResume: (upload: PendingUpload, file: File) => void
   onAbandon: (upload: PendingUpload) => void
 }
 
 function PendingRow({
   upload,
+  error,
+  errorMessage,
   onResume,
   onAbandon,
-}: { upload: PendingUpload } & Omit<PendingDropUploadsProps, 'uploads'>) {
+}: { upload: PendingUpload; error: unknown } & Omit<PendingDropUploadsProps, 'uploads' | 'errors'>) {
   const { t } = useTranslation()
   const formatSize = useFileSize()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -27,7 +33,8 @@ function PendingRow({
   }
 
   return (
-    <li className="flex items-center gap-3 p-4">
+    <li className="flex flex-col gap-2 p-4">
+      <div className="flex items-center gap-3">
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium" title={upload.name}>
           {upload.name}
@@ -53,11 +60,13 @@ function PendingRow({
       >
         {t('dropUpload.pending.abandon')}
       </Button>
+      </div>
+      {error !== undefined && <FormError message={errorMessage(error, t)} />}
     </li>
   )
 }
 
-export function PendingDropUploads({ uploads, onResume, onAbandon }: PendingDropUploadsProps) {
+export function PendingDropUploads({ uploads, errors, errorMessage, onResume, onAbandon }: PendingDropUploadsProps) {
   const { t } = useTranslation()
 
   if (uploads.length === 0) {
@@ -71,7 +80,14 @@ export function PendingDropUploads({ uploads, onResume, onAbandon }: PendingDrop
       <p className="text-xs text-muted-foreground">{t('dropUpload.pending.help')}</p>
       <ul className="divide-y divide-border rounded-xl border border-border bg-card">
         {uploads.map((upload) => (
-          <PendingRow key={upload.fileId} upload={upload} onResume={onResume} onAbandon={onAbandon} />
+          <PendingRow
+            key={upload.fileId}
+            upload={upload}
+            error={errors[upload.fileId]}
+            errorMessage={errorMessage}
+            onResume={onResume}
+            onAbandon={onAbandon}
+          />
         ))}
       </ul>
     </section>
