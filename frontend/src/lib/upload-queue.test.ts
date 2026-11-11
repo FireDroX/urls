@@ -1,8 +1,10 @@
+import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { deleteShareFile } from '#api/shares'
 import { shareUploadTarget } from '#lib/share-upload-target'
 import type { UploadTarget } from '#lib/upload-target'
 import { UploadCanceledError } from '#lib/share-errors'
+import { UploadRequestError } from '#lib/upload-request-error'
 import { resumeFile, uploadNewFile, type UploadRequest } from '#lib/share-upload'
 import { rememberUpload, recallUpload } from '#utils/pending-uploads'
 import { UploadQueue, type UploadItem } from './upload-queue'
@@ -307,5 +309,76 @@ describe('UploadQueue with another upload target', () => {
 
     await vi.waitFor(() => expect(items(queue)).toEqual([]))
     expect(target.cancel).toHaveBeenCalledWith({ fileId: FILE_ID, uploadToken: TOKEN })
+  })
+
+  it('resumes in the same session with the in-memory token when localStorage refuses writes', async () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota')
+    })
+    const target = fakeTarget()
+    vi.mocked(uploadNewFile).mockImplementation(({ observer }) => {
+      observer.onTokenIssued(TOKEN)
+      observer.onOpened(FILE_ID)
+      return Promise.reject(new Error('network'))
+    })
+    vi.mocked(resumeFile).mockResolvedValue()
+    const queue = new UploadQueue(() => target)
+
+    queue.addFiles(SHARE_ID, [file()])
+    await vi.waitFor(() => expect(items(queue)[0]?.phase).toBe('failed'))
+    queue.resume({ shareId: SHARE_ID, fileId: FILE_ID }, file())
+
+    await vi.waitFor(() =>
+      expect(resumeFile).toHaveBeenCalledWith(expect.objectContaining({ fileId: FILE_ID, uploadToken: TOKEN })),
+    )
+  })
+
+  it('reports a finished upload with its file id and token', async () => {
+    const onUploaded = vi.fn()
+    vi.mocked(uploadNewFile).mockImplementation(({ observer }) => {
+      observer.onTokenIssued(TOKEN)
+      observer.onOpened(FILE_ID)
+      return Promise.resolve()
+    })
+    const queue = new UploadQueue(() => fakeTarget(), { onUploaded })
+
+    queue.addFiles(SHARE_ID, [file()])
+
+    await vi.waitFor(() =>
+      expect(onUploaded).toHaveBeenCalledWith({
+        shareId: SHARE_ID,
+        fileId: FILE_ID,
+        uploadToken: TOKEN,
+        name: 'video.mp4',
+        size: 3,
+      }),
+    )
+  })
+
+  it('keeps no request config nor token in the error of a failed upload', async () => {
+    const config = { headers: new AxiosHeaders({ 'X-Upload-Token': TOKEN }) }
+    const response = {
+      status: 413,
+      data: { error: 'Too big' },
+      headers: new AxiosHeaders({ 'retry-after': '3' }),
+      statusText: '',
+      config,
+    } as AxiosResponse
+    const failure = new AxiosError('failed', undefined, config, undefined, response)
+    vi.mocked(uploadNewFile).mockImplementation(({ observer }) => {
+      observer.onTokenIssued(TOKEN)
+      observer.onOpened(FILE_ID)
+      return Promise.reject(failure)
+    })
+    const queue = new UploadQueue(() => fakeTarget())
+
+    queue.addFiles(SHARE_ID, [file()])
+    await vi.waitFor(() => expect(items(queue)[0]?.phase).toBe('failed'))
+
+    const { error } = items(queue)[0]
+    expect(error).toBeInstanceOf(UploadRequestError)
+    expect(Object.keys(error as object).sort()).toEqual(['name', 'retryAfter', 'serverMessage', 'status'])
+    expect(JSON.stringify(error)).not.toContain(TOKEN)
+    expect(String((error as Error).stack)).not.toContain(TOKEN)
   })
 })

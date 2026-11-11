@@ -1,5 +1,6 @@
 import { UploadCanceledError } from '#lib/share-errors'
 import { resumeFile, uploadNewFile, type TransferPhase, type UploadObserver } from '#lib/share-upload'
+import { toUploadError } from '#lib/upload-error'
 import type { UploadTargetResolver } from '#lib/upload-target'
 import { forgetUpload, recallUpload } from '#utils/pending-uploads'
 
@@ -28,6 +29,18 @@ export interface ResumeTarget {
   fileId: string
 }
 
+export interface UploadedFile {
+  shareId: string
+  fileId: string
+  uploadToken?: string
+  name: string
+  size: number
+}
+
+export interface UploadQueueOptions {
+  onUploaded?: (upload: UploadedFile) => void
+}
+
 type UploadJob = (signal: AbortSignal, observer: UploadObserver) => Promise<void>
 
 export function isActiveUpload(item: UploadItem): boolean {
@@ -42,10 +55,13 @@ export class UploadQueue {
   private nextKey = 1
   private draining = false
 
+  private readonly tokens = new Map<string, string>()
   private readonly targetOf: UploadTargetResolver
+  private readonly options: UploadQueueOptions
 
-  constructor(targetOf: UploadTargetResolver) {
+  constructor(targetOf: UploadTargetResolver, options: UploadQueueOptions = {}) {
     this.targetOf = targetOf
+    this.options = options
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -67,7 +83,7 @@ export class UploadQueue {
   resume({ shareId, fileId }: ResumeTarget, file: File): void {
     this.setItems(this.snapshot.items.filter((item) => item.fileId !== fileId))
     const target = this.targetOf(shareId)
-    const uploadToken = recallUpload(fileId)?.uploadToken
+    const uploadToken = this.tokens.get(fileId) ?? recallUpload(fileId)?.uploadToken
     this.enqueue(shareId, fileId, file, uploadToken, (signal, observer) =>
       resumeFile({ shareId, target, fileId, uploadToken, file, signal, observer }),
     )
@@ -151,7 +167,7 @@ export class UploadQueue {
     this.controllers.set(key, controller)
     try {
       await job(controller.signal, this.observerOf(key, controller.signal))
-      this.remove(key)
+      this.finish(key)
       this.bumpRevision()
     } catch (error) {
       await this.settle(key, error)
@@ -160,13 +176,28 @@ export class UploadQueue {
     }
   }
 
+  private finish(key: string): void {
+    const item = this.find(key)
+    if (item?.fileId) {
+      this.options.onUploaded?.({
+        shareId: item.shareId,
+        fileId: item.fileId,
+        uploadToken: item.uploadToken,
+        name: item.name,
+        size: item.size,
+      })
+      this.tokens.delete(item.fileId)
+    }
+    this.remove(key)
+  }
+
   private async settle(key: string, error: unknown): Promise<void> {
     const item = this.find(key)
     if (!item) {
       return
     }
     if (!(error instanceof UploadCanceledError)) {
-      this.update(key, { phase: 'failed', error })
+      this.update(key, { phase: 'failed', error: toUploadError(error) })
     } else if (item.fileId === null) {
       this.remove(key)
     } else {
@@ -179,9 +210,10 @@ export class UploadQueue {
     try {
       await this.targetOf(shareId).cancel({ fileId, uploadToken })
       forgetUpload(fileId)
+      this.tokens.delete(fileId)
       this.remove(key)
     } catch (error) {
-      this.update(key, { phase: 'failed', error })
+      this.update(key, { phase: 'failed', error: toUploadError(error) })
     }
   }
 
@@ -192,8 +224,16 @@ export class UploadQueue {
       },
       onHashed: (hashedBytes) => this.update(key, { hashedBytes }),
       onSent: (sentBytes) => this.update(key, { sentBytes }),
-      onTokenIssued: (uploadToken) => this.update(key, { uploadToken }),
-      onOpened: (fileId) => this.update(key, { fileId }),
+      onTokenIssued: (uploadToken) => {
+        this.update(key, { uploadToken })
+        const fileId = this.find(key)?.fileId
+        if (fileId) this.tokens.set(fileId, uploadToken)
+      },
+      onOpened: (fileId) => {
+        this.update(key, { fileId })
+        const uploadToken = this.find(key)?.uploadToken
+        if (uploadToken) this.tokens.set(fileId, uploadToken)
+      },
     }
   }
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 — 2026-11-11
+
+- Nouvelle page publique `/u/<slug>` : un visiteur y voit le titre du dépôt, le nombre de fichiers et la place restants, la date de fermeture éventuelle, et peut envoyer des fichiers par glisser-déposer ou sélection, avec un nom facultatif. Un captcha est demandé pour chaque fichier, juste avant son envoi. Chaque fichier affiche sa progression, peut être annulé, et indique s'il est refusé (trop gros, plus de place, dépôt fermé) puis s'il est reçu ou rejeté.
+- Un envoi interrompu (onglet fermé, coupure) se reprend depuis la même page en sélectionnant de nouveau le même fichier : seules les parties manquantes sont renvoyées, un autre fichier est refusé. Les envois non repris sont oubliés au bout de 7 jours.
+- Un dépôt introuvable affiche « lien introuvable », un dépôt expiré ou plein « ce dépôt est fermé », et une limitation de débit indique le délai d'attente.
+- Un fichier reçu dans un dépôt compte désormais comme utilisé : il n'apparaît plus parmi les fichiers orphelins, n'est plus compté dans leur taille et ne peut plus être supprimé depuis la page « Fichiers » tant que le dépôt existe.
+- Sécurité : le jeton secret d'un envoi n'est plus jamais conservé dans les erreurs affichées, et les entrées de reprise expirent après 7 jours.
+
 ## 0.1.4 — 2026-11-10
 
 - Un visiteur peut maintenant envoyer des fichiers dans un dépôt ouvert, sans compte : un captcha est demandé pour chaque fichier, l’envoi peut être repris après une coupure et annulé par son expéditeur. Les limites du dépôt (nombre de fichiers et taille totale) sont respectées même quand plusieurs envois arrivent en même temps. Un envoi déjà commencé va jusqu’au bout si le dépôt expire ou se remplit entre-temps ; désactiver ou supprimer le dépôt l’arrête aussitôt.

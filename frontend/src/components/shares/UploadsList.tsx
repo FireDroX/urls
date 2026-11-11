@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { FormError } from '#components/FormError'
@@ -12,6 +13,7 @@ interface UploadsListProps {
   items: UploadItem[]
   onCancel: (key: string) => void
   onDismiss: (key: string) => void
+  errorMessage?: (error: unknown, t: TFunction) => string
 }
 
 function ProgressBar({ label, value, max }: { label: string; value: number; max: number }) {
@@ -38,7 +40,12 @@ function ProgressBar({ label, value, max }: { label: string; value: number; max:
   )
 }
 
-function UploadRow({ item, onCancel, onDismiss }: { item: UploadItem } & Omit<UploadsListProps, 'items'>) {
+function UploadRow({
+  item,
+  onCancel,
+  onDismiss,
+  errorMessage = uploadErrorMessage,
+}: { item: UploadItem } & Omit<UploadsListProps, 'items'>) {
   const { t } = useTranslation()
   const formatSize = useFileSize()
   const failed = item.phase === 'failed'
@@ -77,12 +84,12 @@ function UploadRow({ item, onCancel, onDismiss }: { item: UploadItem } & Omit<Up
       {!failed && item.phase !== 'queued' && item.phase !== 'hashing' && (
         <ProgressBar label={t('shares.upload.sendProgress')} value={item.sentBytes} max={item.size} />
       )}
-      {failed && <FormError message={uploadErrorMessage(item.error, t)} />}
+      {failed && <FormError message={errorMessage(item.error, t)} />}
     </li>
   )
 }
 
-export function UploadsList({ items, onCancel, onDismiss }: UploadsListProps) {
+export function UploadsList({ items, onCancel, onDismiss, errorMessage }: UploadsListProps) {
   const { t } = useTranslation()
 
   if (items.length === 0) {
@@ -94,7 +101,7 @@ export function UploadsList({ items, onCancel, onDismiss }: UploadsListProps) {
       className="divide-y divide-border rounded-xl border border-border bg-card"
     >
       {items.map((item) => (
-        <UploadRow key={item.key} item={item} onCancel={onCancel} onDismiss={onDismiss} />
+        <UploadRow key={item.key} item={item} onCancel={onCancel} onDismiss={onDismiss} errorMessage={errorMessage} />
       ))}
     </ul>
   )

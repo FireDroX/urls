@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 const STORAGE_KEY = 'pending-uploads'
 
+export const PENDING_UPLOAD_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
 const pendingUploadsSchema = z.array(
   z.object({
     shareId: z.string(),
@@ -11,10 +13,18 @@ const pendingUploadsSchema = z.array(
     lastModified: z.number(),
     sha256: z.string(),
     uploadToken: z.string().optional(),
+    savedAt: z.number().optional(),
   }),
 )
 
 export type PendingUpload = z.infer<typeof pendingUploadsSchema>[number]
+
+function isExpired(upload: PendingUpload, now: number): boolean {
+  return (
+    upload.uploadToken !== undefined &&
+    (upload.savedAt === undefined || upload.savedAt + PENDING_UPLOAD_TOKEN_TTL_MS <= now)
+  )
+}
 
 function readAll(): PendingUpload[] {
   try {
@@ -23,6 +33,11 @@ function readAll(): PendingUpload[] {
   } catch {
     return []
   }
+}
+
+function readFresh(): PendingUpload[] {
+  const now = Date.now()
+  return readAll().filter((upload) => !isExpired(upload, now))
 }
 
 function writeAll(uploads: PendingUpload[]): void {
@@ -37,12 +52,24 @@ function writeAll(uploads: PendingUpload[]): void {
   }
 }
 
-export function rememberUpload(upload: PendingUpload): void {
-  writeAll([...readAll().filter(({ fileId }) => fileId !== upload.fileId), upload])
+export function rememberUpload(upload: Omit<PendingUpload, 'savedAt'>): void {
+  writeAll([...readAll().filter(({ fileId }) => fileId !== upload.fileId), { ...upload, savedAt: Date.now() }])
 }
 
 export function recallUpload(fileId: string): PendingUpload | undefined {
-  return readAll().find((upload) => upload.fileId === fileId)
+  return readFresh().find((upload) => upload.fileId === fileId)
+}
+
+export function pendingUploadsOf(shareId: string): PendingUpload[] {
+  return readFresh().filter((upload) => upload.shareId === shareId)
+}
+
+export function purgeExpiredUploads(now = Date.now()): void {
+  const all = readAll()
+  const kept = all.filter((upload) => !isExpired(upload, now))
+  if (kept.length !== all.length) {
+    writeAll(kept)
+  }
 }
 
 export function forgetUpload(fileId: string): void {

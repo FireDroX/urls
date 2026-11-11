@@ -239,7 +239,7 @@ describe('Files page', () => {
     const dialog = await screen.findByRole('alertdialog')
     await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
 
-    expect(await within(dialog).findByText('Ce fichier est encore attaché à un partage.')).toBeInTheDocument()
+    expect(await within(dialog).findByText('Ce fichier est encore attaché à un partage ou à un dépôt.')).toBeInTheDocument()
     await waitFor(() => expect(listFiles).toHaveBeenCalledTimes(2))
   })
 

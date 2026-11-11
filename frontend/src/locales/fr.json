@@ -178,7 +178,7 @@
     "deleteDescription": "{{name}} ({{size}}) sera supprimé définitivement du stockage.",
     "download": "Télécharger {{name}}",
     "delete": "Supprimer {{name}}",
-    "inUseHint": "Ce fichier est encore attaché à un partage : retirez-le depuis le partage.",
+    "inUseHint": "Ce fichier est encore attaché à un partage ou à un dépôt : retirez-le depuis celui-ci.",
     "filter": {
       "label": "Filtre",
       "all": "Tous",
@@ -211,7 +211,7 @@
       "invalid": "Requête invalide.",
       "notFound": "Fichier introuvable.",
       "storageUnavailable": "Stockage injoignable, réessayez dans un instant.",
-      "inUse": "Ce fichier est encore attaché à un partage.",
+      "inUse": "Ce fichier est encore attaché à un partage ou à un dépôt.",
       "notReady": "Ce fichier n'est pas encore prêt."
     }
   },
@@ -393,6 +393,57 @@
     "verifyHint": "Validez la vérification ci-dessous pour télécharger.",
     "verificationFailed": "La vérification a échoué, réessayez.",
     "loadFailedTitle": "Impossible d'ouvrir ce partage"
+  },
+  "dropUpload": {
+    "title": "Envoyer des fichiers",
+    "untitled": "Dépôt de fichiers",
+    "filesRemaining_one": "{{count}} fichier restant sur {{max}}",
+    "filesRemaining_other": "{{count}} fichiers restants sur {{max}}",
+    "bytesRemaining": "{{remaining}} restants sur {{total}}",
+    "closesAt": "Fermeture le {{date}}",
+    "noExpiry": "Pas de date de fermeture",
+    "nameLabel": "Votre nom (facultatif)",
+    "namePlaceholder": "Pour que le destinataire sache de qui vient l'envoi",
+    "dropHelp": "Encore {{size}} disponibles",
+    "verifyHint": "Une vérification est demandée pour chaque fichier.",
+    "refused": {
+      "title": "Fichiers refusés",
+      "dismiss": "Fermer le refus de {{name}}",
+      "tooLarge": "Ce fichier dépasse la taille maximale d'un fichier.",
+      "noRoom": "Il ne reste pas assez de place dans ce dépôt pour ce fichier.",
+      "closed": "Ce dépôt est fermé."
+    },
+    "pending": {
+      "title": "Envois interrompus",
+      "help": "Choisissez de nouveau le même fichier pour reprendre l'envoi là où il s'est arrêté.",
+      "resume": "Reprendre",
+      "resumeInput": "Reprendre l'envoi de {{name}}",
+      "abandon": "Abandonner",
+      "abandonLabel": "Abandonner l'envoi de {{name}}"
+    },
+    "receipts": {
+      "title": "Fichiers envoyés",
+      "verifying": "Vérification…",
+      "ready": "Reçu",
+      "rejected": "Rejeté"
+    },
+    "closed": {
+      "title": "Ce dépôt est fermé",
+      "body": "Ce dépôt n'accepte plus de fichiers : il est expiré ou plein."
+    },
+    "closedInline": "Ce dépôt vient de se fermer : les envois en cours vont jusqu'au bout, mais il n'accepte plus de nouveaux fichiers.",
+    "loadFailedTitle": "Impossible d'ouvrir ce dépôt",
+    "retry": "Réessayer",
+    "errors": {
+      "differentFile": "Ce fichier n'est pas celui dont l'envoi a été interrompu.",
+      "hashFailed": "Le fichier n'a pas pu être lu.",
+      "interrupted": "L'envoi a été interrompu.",
+      "verificationFailed": "La vérification a échoué, réessayez.",
+      "notFound": "Cet envoi est introuvable, il a peut-être été annulé.",
+      "closed": "Le dépôt est fermé.",
+      "noRoom": "Ce fichier est trop gros ou il ne reste pas assez de place dans le dépôt.",
+      "storageUnavailable": "Le stockage est injoignable, réessayez dans un instant."
+    }
   },
   "notFound": {
     "title": "Lien introuvable",

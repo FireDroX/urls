@@ -115,6 +115,7 @@ describe('uploadNewFile', () => {
       size: 25,
       lastModified: 1000,
       sha256: SHA256,
+      savedAt: expect.any(Number),
     })
     expect(recallUpload(FILE_ID)).toBeUndefined()
   })
