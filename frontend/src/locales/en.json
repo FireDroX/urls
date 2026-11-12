@@ -303,6 +303,24 @@
       "deleted": "File deleted.",
       "deleteTitle": "Delete this file?",
       "deleteDescription": "{{name}} will be permanently deleted. An upload in progress will be canceled."
+    },
+    "share": {
+      "action": "Create a share",
+      "title": "Create a share from this drop",
+      "description": "The chosen files are moved to a new /d/ share, not copied: they no longer belong to the drop.",
+      "files": "Files to share",
+      "closeDrop": "Close the drop",
+      "closeDropHelp": "Disables the drop so that nobody can send files with its link anymore.",
+      "submit": "Create the share",
+      "validation": {
+        "noFile": "Choose at least one file",
+        "tooManyFiles": "{{max}} files at most"
+      },
+      "errors": {
+        "invalid": "Files, slug, expiration or limit invalid.",
+        "notFound": "A file or this drop no longer exists. The list was refreshed.",
+        "notReady": "A file is no longer ready. The list was refreshed."
+      }
     }
   },
   "shares": {

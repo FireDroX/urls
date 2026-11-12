@@ -1,5 +1,5 @@
 import type { ResponseDto } from '#api/response-dto'
-import type { FileStatus } from '#api/shares'
+import type { CreateSharePayload, FileStatus, ShareDetail } from '#api/shares'
 import { apiClient } from '#lib/api-client'
 
 export type DropState = 'open' | 'full' | 'expired' | 'disabled'
@@ -90,4 +90,11 @@ export async function deleteDrop(id: string): Promise<void> {
 
 export async function deleteDropFile(id: string, fileId: string): Promise<void> {
   await apiClient.delete(`${dropApiPath(id)}/files/${encodeURIComponent(fileId)}`)
+}
+
+export type ShareDropFilesPayload = CreateSharePayload & { fileIds: string[]; closeDrop: boolean }
+
+export async function shareDropFiles(id: string, payload: ShareDropFilesPayload): Promise<ShareDetail> {
+  const { data } = await apiClient.post<ResponseDto<ShareDetail>>(`${dropApiPath(id)}/share`, payload)
+  return data.data
 }

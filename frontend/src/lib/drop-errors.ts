@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import type { TFunction } from 'i18next'
 import { extractErrorMessage, type MessagesByStatus } from '#lib/api-errors'
 import { DifferentFileError, FileHashError } from '#lib/share-errors'
@@ -37,5 +38,24 @@ export function dropUploadErrorMessage(error: unknown, t: TFunction): string {
     [GONE]: t('dropUpload.errors.closed'),
     [PAYLOAD_TOO_LARGE]: t('dropUpload.errors.noRoom'),
     [SERVICE_UNAVAILABLE]: t('dropUpload.errors.storageUnavailable'),
+  })
+}
+
+const FILE_NOT_READY_MESSAGE = 'File is not ready'
+
+function isFileNotReady(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.data?.error === FILE_NOT_READY_MESSAGE
+}
+
+export function isShareDropFilesStale(error: unknown): boolean {
+  const status = isAxiosError(error) ? error.response?.status : undefined
+  return status === NOT_FOUND || (status === CONFLICT && isFileNotReady(error))
+}
+
+export function shareDropFilesErrorMessage(t: TFunction, error: unknown): string {
+  return extractErrorMessage(error, undefined, {
+    [BAD_REQUEST]: t('drops.share.errors.invalid'),
+    [NOT_FOUND]: t('drops.share.errors.notFound'),
+    [CONFLICT]: isFileNotReady(error) ? t('drops.share.errors.notReady') : t('drops.errors.slugTaken'),
   })
 }

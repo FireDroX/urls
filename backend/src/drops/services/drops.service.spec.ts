@@ -60,6 +60,7 @@ describe('DropsService', () => {
     summarizeCountedLinks: ReturnType<typeof vi.fn>;
     listForLink: ReturnType<typeof vi.fn>;
     findInLink: ReturnType<typeof vi.fn>;
+    moveToNewShare: ReturnType<typeof vi.fn>;
   };
   let events: { countViews: ReturnType<typeof vi.fn> };
   let fileDeletion: { erase: ReturnType<typeof vi.fn> };
@@ -78,6 +79,12 @@ describe('DropsService', () => {
       summarizeCountedLinks: vi.fn().mockResolvedValue(new Map()),
       listForLink: vi.fn().mockResolvedValue([]),
       findInLink: vi.fn().mockResolvedValue(null),
+      moveToNewShare: vi.fn((_d: string, ids: string[], share: object) =>
+        Promise.resolve({
+          share: buildDrop({ ...share, type: 'share', id: 'share-uuid' }),
+          files: ids.map((id) => ({ publicId: id, size: 10 }) as StoredFile),
+        }),
+      ),
     };
     events = { countViews: vi.fn().mockResolvedValue(0) };
     fileDeletion = { erase: vi.fn().mockResolvedValue(undefined) };
@@ -216,6 +223,139 @@ describe('DropsService', () => {
       await expect(
         service.removeFile('drop1234', 'file1234', USER_ID),
       ).rejects.toBeInstanceOf(StorageUnavailableException);
+    });
+  });
+
+  describe('shareFiles', () => {
+    const INPUT = { fileIds: ['f1', 'f2'], closeDrop: true };
+
+    beforeEach(() => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+    });
+
+    it('moves the files into a new share with the chosen slug and audits', async () => {
+      const detail = await service.shareFiles(
+        'drop1234',
+        { ...INPUT, slug: 'my-share', maxDownloads: 4 },
+        USER_ID,
+      );
+
+      expect(files.moveToNewShare).toHaveBeenCalledWith(
+        'drop-uuid',
+        ['f1', 'f2'],
+        { publicId: 'my-share', expiresAt: null, maxDownloads: 4 },
+        true,
+      );
+      expect(detail).toMatchObject({
+        fileCount: 2,
+        totalSize: 20,
+        viewCount: 0,
+      });
+      expect(audit.record).toHaveBeenCalledWith({
+        action: 'shares.created',
+        userId: USER_ID,
+        targetId: 'my-share',
+        metadata: {
+          expiresAt: null,
+          maxDownloads: 4,
+          fromDropId: 'drop1234',
+        },
+      });
+      expect(audit.record).toHaveBeenCalledWith({
+        action: 'drops.files.shared',
+        userId: USER_ID,
+        targetId: 'drop1234',
+        metadata: {
+          shareId: 'my-share',
+          fileIds: ['f1', 'f2'],
+          closeDrop: true,
+        },
+      });
+    });
+
+    it('passes closeDrop false through', async () => {
+      await service.shareFiles(
+        'drop1234',
+        { ...INPUT, closeDrop: false },
+        USER_ID,
+      );
+
+      expect(files.moveToNewShare.mock.calls[0][3]).toBe(false);
+    });
+
+    it('retries a generated slug that is already taken', async () => {
+      files.moveToNewShare.mockRejectedValueOnce(
+        new SlugAlreadyTakenException(),
+      );
+
+      await service.shareFiles('drop1234', INPUT, USER_ID);
+
+      expect(files.moveToNewShare).toHaveBeenCalledTimes(2);
+      const publicId = (
+        files.moveToNewShare.mock.calls[1][2] as { publicId: string }
+      ).publicId;
+      expect(publicId).toHaveLength(PUBLIC_ID_LENGTH);
+    });
+
+    it('gives up after too many generated slug collisions', async () => {
+      files.moveToNewShare.mockRejectedValue(new SlugAlreadyTakenException());
+
+      await expect(
+        service.shareFiles('drop1234', INPUT, USER_ID),
+      ).rejects.toBeInstanceOf(SlugAlreadyTakenException);
+      expect(files.moveToNewShare).toHaveBeenCalledTimes(
+        PUBLIC_ID_GENERATION_ATTEMPTS,
+      );
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for a malformed id before any call', async () => {
+      await expect(
+        service.shareFiles('bad id!', INPUT, USER_ID),
+      ).rejects.toBeInstanceOf(DropNotFoundException);
+      expect(repository.findByPublicId).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for an unknown drop', async () => {
+      repository.findByPublicId.mockResolvedValue(null);
+
+      await expect(
+        service.shareFiles('drop1234', INPUT, USER_ID),
+      ).rejects.toBeInstanceOf(DropNotFoundException);
+      expect(files.moveToNewShare).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['no file', { ...INPUT, fileIds: [] }],
+      [
+        'too many files',
+        {
+          ...INPUT,
+          fileIds: Array.from(
+            { length: SHARE_FILES_MAX + 1 },
+            (_, i) => `f${i}`,
+          ),
+        },
+      ],
+      ['duplicate ids', { ...INPUT, fileIds: ['f1', 'f1'] }],
+      ['missing closeDrop', { fileIds: ['f1'] }],
+      ['unknown key', { ...INPUT, extra: 1 }],
+      ['invalid max downloads', { ...INPUT, maxDownloads: 0 }],
+    ])('rejects %s with a validation error', async (_, body) => {
+      await expect(
+        service.shareFiles('drop1234', body, USER_ID),
+      ).rejects.toBeInstanceOf(ValidationException);
+      expect(files.moveToNewShare).not.toHaveBeenCalled();
+    });
+
+    it('propagates a failed move without auditing', async () => {
+      const failure = new FileNotFoundException();
+      files.moveToNewShare.mockRejectedValue(failure);
+
+      await expect(service.shareFiles('drop1234', INPUT, USER_ID)).rejects.toBe(
+        failure,
+      );
+      expect(audit.record).not.toHaveBeenCalled();
     });
   });
 

@@ -36,6 +36,8 @@ import type {
   DropDetailResponseDto,
   DropResponseDto,
 } from './dto/out/drop-response.dto.js';
+import type { ShareDetailResponseDto } from '../shares/dto/out/share-response.dto.js';
+import { SharesMapper } from '../shares/mapper/shares.mapper.js';
 import { DropsExceptionFilter } from './filter/drops.exception.filter.js';
 import { DropsMapper } from './mapper/drops.mapper.js';
 import { DropsService } from './services/drops.service.js';
@@ -91,6 +93,34 @@ export class DropsController {
   ): Promise<ResponseDto<DropResponseDto>> {
     return DropsMapper.toResponse(
       await this.dropsService.create(body, user.id),
+    );
+  }
+
+  @Post(':id/share')
+  @Throttle(CREATE_THROTTLE)
+  @ApiOperation({
+    summary: 'Créer un partage à partir de fichiers prêts du dépôt',
+  })
+  @ApiBadRequestResponse({
+    description: 'Fichiers, slug, expiration ou limite invalide.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Dépôt ou fichier inconnu.',
+    type: ErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Slug déjà pris ou fichier pas prêt.',
+    type: ErrorResponseDto,
+  })
+  @ApiTooManyRequestsResponse({ description: 'Trop de créations.' })
+  async share(
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ResponseDto<ShareDetailResponseDto>> {
+    return SharesMapper.toDetailResponse(
+      await this.dropsService.shareFiles(id, body, user.id),
     );
   }
 

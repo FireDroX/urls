@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest'
 import { extractErrorMessage } from '#lib/api-errors'
 import i18n from '#lib/i18n'
 import { DifferentFileError, FileHashError } from '#lib/share-errors'
-import { dropErrorMessages, dropFileDeleteErrorMessages, dropUploadErrorMessage } from './drop-errors'
+import {
+  dropErrorMessages,
+  dropFileDeleteErrorMessages,
+  dropUploadErrorMessage,
+  isShareDropFilesStale,
+  shareDropFilesErrorMessage,
+} from './drop-errors'
 import { toUploadError } from './upload-error'
 
 const t = i18n.t.bind(i18n)
@@ -79,5 +85,40 @@ describe('dropUploadErrorMessage', () => {
     expect(dropUploadErrorMessage(toUploadError(apiError(429, { 'retry-after': '8' })), t)).toBe(
       'Trop de requêtes, réessayez dans 8 s.',
     )
+  })
+})
+
+describe('shareDropFilesErrorMessage', () => {
+  function conflict(message: string): AxiosError {
+    const error = apiError(409)
+    error.response!.data = { error: message }
+    return error
+  }
+
+  it.each([
+    [400, 'Fichiers, slug, expiration ou limite invalide.'],
+    [404, "Un fichier ou ce dépôt n'existe plus. La liste a été actualisée."],
+  ])('translates %i', (status, message) => {
+    expect(shareDropFilesErrorMessage(t, apiError(status))).toBe(message)
+  })
+
+  it('tells a taken slug from a file that is not ready', () => {
+    expect(shareDropFilesErrorMessage(t, conflict('Slug already taken'))).toBe('Ce slug est déjà pris.')
+    expect(shareDropFilesErrorMessage(t, conflict('File is not ready'))).toBe(
+      "Un fichier n'est plus prêt. La liste a été actualisée.",
+    )
+  })
+
+  it('shows the Retry-After delay of a 429', () => {
+    expect(shareDropFilesErrorMessage(t, apiError(429, { 'retry-after': '5' }))).toBe(
+      'Trop de requêtes, réessayez dans 5 s.',
+    )
+  })
+
+  it('asks for a refresh on a 404 or a not-ready 409 only', () => {
+    expect(isShareDropFilesStale(apiError(404))).toBe(true)
+    expect(isShareDropFilesStale(conflict('File is not ready'))).toBe(true)
+    expect(isShareDropFilesStale(conflict('Slug already taken'))).toBe(false)
+    expect(isShareDropFilesStale(apiError(400))).toBe(false)
   })
 })

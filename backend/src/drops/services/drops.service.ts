@@ -21,6 +21,18 @@ import {
   type LinkFilesSummary,
 } from '../../files/services/files.service.js';
 import type { Link } from '../../links/entities/link.entity.js';
+import type {
+  MovedToShare,
+  NewSharedFiles,
+} from '../../files/persistence/stored-file.repository.js';
+import {
+  type ShareDetail,
+  withFiles,
+} from '../../shares/services/shares.service.js';
+import {
+  shareDropFilesSchema,
+  type ShareDropFilesDto,
+} from '../dto/in/share-drop-files.dto.js';
 import { createDropSchema } from '../dto/in/create-drop.dto.js';
 import { updateDropSchema } from '../dto/in/update-drop.dto.js';
 import type {
@@ -112,6 +124,71 @@ export class DropsService {
       metadata: fields,
     });
     return summarize(drop, NO_FILES);
+  }
+
+  async shareFiles(
+    publicId: string,
+    input: unknown,
+    userId: string,
+  ): Promise<ShareDetail> {
+    if (!isWellFormedLinkId(publicId)) {
+      throw new DropNotFoundException();
+    }
+    const dto = parseDto(shareDropFilesSchema, input);
+    const drop = await this.find(publicId);
+    const fields = {
+      expiresAt: dto.expiresAt ?? null,
+      maxDownloads: dto.maxDownloads ?? null,
+    };
+    const { share, files } = dto.slug
+      ? await this.files.moveToNewShare(
+          drop.id,
+          dto.fileIds,
+          { ...fields, publicId: dto.slug },
+          dto.closeDrop,
+        )
+      : await this.moveWithGeneratedId(drop.id, dto, fields);
+    await this.auditLog.record({
+      action: 'shares.created',
+      userId,
+      targetId: share.publicId,
+      metadata: { ...fields, fromDropId: drop.publicId },
+    });
+    await this.auditLog.record({
+      action: 'drops.files.shared',
+      userId,
+      targetId: drop.publicId,
+      metadata: {
+        shareId: share.publicId,
+        fileIds: dto.fileIds,
+        closeDrop: dto.closeDrop,
+      },
+    });
+    return { ...withFiles(share, files), viewCount: 0 };
+  }
+
+  private async moveWithGeneratedId(
+    dropId: string,
+    dto: ShareDropFilesDto,
+    fields: Pick<NewSharedFiles, 'expiresAt' | 'maxDownloads'>,
+  ): Promise<MovedToShare> {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await this.files.moveToNewShare(
+          dropId,
+          dto.fileIds,
+          { ...fields, publicId: generatePublicId() },
+          dto.closeDrop,
+        );
+      } catch (error) {
+        if (
+          !(error instanceof SlugAlreadyTakenException) ||
+          attempt >= PUBLIC_ID_GENERATION_ATTEMPTS
+        ) {
+          throw error;
+        }
+      }
+    }
   }
 
   async update(

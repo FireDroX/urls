@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { isAxiosError } from 'axios'
-import { ArrowLeft, Copy, Inbox, Pencil, Power, PowerOff, SearchX, Trash } from 'lucide-react'
+import { ArrowLeft, Copy, Inbox, Pencil, Power, PowerOff, SearchX, Share2, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -16,9 +16,11 @@ import {
   type DropFile,
 } from '#api/drops'
 import { createFileDownloadUrl } from '#api/files'
+import { shareDetailPath } from '#api/shares'
 import { DropFilesTable } from '#components/drops/DropFilesTable'
 import { DropFormDialog } from '#components/drops/DropFormDialog'
 import { DropStateBadge } from '#components/drops/DropStateBadge'
+import { ShareDropFilesDialog } from '#components/drops/ShareDropFilesDialog'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
 import { ConfirmDeleteDialog } from '#components/shares/ConfirmDeleteDialog'
 import { Button } from '#components/ui/button'
@@ -36,7 +38,7 @@ import { startDownload } from '#utils/start-download'
 const DROPS_LIST_PATH = '/drops'
 const NOT_FOUND = 404
 
-type DialogState = { kind: 'closed' } | { kind: 'edit' } | { kind: 'delete' } | { kind: 'deleteFile'; file: DropFile }
+type DialogState = { kind: 'closed' } | { kind: 'share' } | { kind: 'edit' } | { kind: 'delete' } | { kind: 'deleteFile'; file: DropFile }
 
 function BackLink() {
   const { t } = useTranslation()
@@ -86,12 +88,13 @@ function DropStats({ drop }: { drop: DropDetailData }) {
 
 interface DropHeaderProps {
   drop: DropDetailData
+  onShare: () => void
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
 }
 
-function DropDetailHeader({ drop, onEdit, onToggle, onDelete }: DropHeaderProps) {
+function DropDetailHeader({ drop, onShare, onEdit, onToggle, onDelete }: DropHeaderProps) {
   const { t } = useTranslation()
   const copyLink = useCopyLink(dropUrl)
 
@@ -103,6 +106,10 @@ function DropDetailHeader({ drop, onEdit, onToggle, onDelete }: DropHeaderProps)
           <DropStateBadge state={drop.state} />
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" disabled={!drop.files.some((file) => file.status === 'ready')} onClick={onShare}>
+            <Share2 />
+            {t('drops.share.action')}
+          </Button>
           <Button variant="outline" onClick={onEdit}>
             <Pencil />
             {t('links.edit')}
@@ -207,6 +214,7 @@ function DropView({ drop, onChanged, onRefresh }: DropViewProps) {
     <>
       <DropDetailHeader
         drop={drop}
+        onShare={() => setDialog({ kind: 'share' })}
         onEdit={() => setDialog({ kind: 'edit' })}
         onToggle={() => void toggleDrop()}
         onDelete={() => setDialog({ kind: 'delete' })}
@@ -228,6 +236,19 @@ function DropView({ drop, onChanged, onRefresh }: DropViewProps) {
           <LinksPlaceholder icon={Inbox} title={t('drops.files.emptyTitle')} body={t('drops.files.emptyBody')} />
         )}
       </section>
+      {dialog.kind === 'share' && (
+        <ShareDropFilesDialog
+          open
+          dropId={drop.id}
+          files={drop.files}
+          onOpenChange={handleOpenChange}
+          onShared={(share) => {
+            toast.success(t('shares.created'))
+            void navigate(shareDetailPath(share.id))
+          }}
+          onStale={onRefresh}
+        />
+      )}
       <DropFormDialog open={dialog.kind === 'edit'} drop={drop} onOpenChange={handleOpenChange} onSaved={handleSaved} />
       <ConfirmDeleteDialog
         open={dialog.kind === 'delete'}

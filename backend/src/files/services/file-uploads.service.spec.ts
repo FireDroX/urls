@@ -92,6 +92,7 @@ describe('FileUploadsService', () => {
 
   beforeEach(() => {
     repository = {
+      moveToNewShare: vi.fn(),
       findByLinkId: vi.fn(),
       summarizeByLinkIds: vi.fn(),
       summarizeCountedByLinkIds: vi.fn(),
@@ -105,6 +106,8 @@ describe('FileUploadsService', () => {
         Promise.resolve(buildFile({ ...file })),
       ),
       transition: vi.fn().mockResolvedValue(true),
+      claimForCancel: vi.fn().mockResolvedValue(true),
+      releaseCancelClaim: vi.fn().mockResolvedValue(undefined),
       softDelete: vi.fn().mockResolvedValue(undefined),
     };
     storage = {
@@ -753,6 +756,84 @@ describe('FileUploadsService', () => {
         service.remove(share, 'file1234', DELETION),
       ).rejects.toBeInstanceOf(FileNotFoundException);
       expect(repository.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('does not claim a share file', async () => {
+      await service.remove(share, 'file1234', DELETION);
+
+      expect(repository.claimForCancel).not.toHaveBeenCalled();
+    });
+
+    describe('on a drop', () => {
+      const drop = {
+        id: 'drop-uuid',
+        publicId: 'drop1234',
+        type: 'drop',
+      } as Link;
+      const { token, hash } = generateUploadToken();
+
+      beforeEach(() => {
+        repository.findInLink.mockResolvedValue(
+          buildFile({ linkId: drop.id, uploadTokenHash: hash }),
+        );
+      });
+
+      it('claims the file before erasing it', async () => {
+        await service.remove(drop, 'file1234', DELETION, token);
+
+        expect(repository.claimForCancel).toHaveBeenCalledWith(
+          'file-uuid',
+          drop.id,
+          hash,
+        );
+        expect(storage.abortMultipartUpload).toHaveBeenCalled();
+        expect(repository.softDelete).toHaveBeenCalledWith('file-uuid');
+        expect(repository.releaseCancelClaim).not.toHaveBeenCalled();
+      });
+
+      it('answers 404 and touches nothing when the file moved after the lookup', async () => {
+        repository.claimForCancel.mockResolvedValue(false);
+
+        await expect(
+          service.remove(drop, 'file1234', DELETION, token),
+        ).rejects.toBeInstanceOf(FileNotFoundException);
+        expect(storage.abortMultipartUpload).not.toHaveBeenCalled();
+        expect(storage.deleteObject).not.toHaveBeenCalled();
+        expect(repository.softDelete).not.toHaveBeenCalled();
+        expect(audit.record).not.toHaveBeenCalled();
+      });
+
+      it('restores the claim and rethrows when the erase fails', async () => {
+        storage.abortMultipartUpload.mockRejectedValue(
+          new StorageUnavailableException(),
+        );
+
+        await expect(
+          service.remove(drop, 'file1234', DELETION, token),
+        ).rejects.toBeInstanceOf(StorageUnavailableException);
+        expect(repository.releaseCancelClaim).toHaveBeenCalledWith(
+          'file-uuid',
+          drop.id,
+          hash,
+        );
+      });
+
+      it('rethrows the original error when the release fails too', async () => {
+        const warn = vi
+          .spyOn(Logger.prototype, 'warn')
+          .mockImplementation(() => undefined);
+        storage.abortMultipartUpload.mockRejectedValue(
+          new StorageUnavailableException(),
+        );
+        repository.releaseCancelClaim.mockRejectedValue(new Error('db down'));
+
+        await expect(
+          service.remove(drop, 'file1234', DELETION, token),
+        ).rejects.toBeInstanceOf(StorageUnavailableException);
+        expect(warn).toHaveBeenCalledOnce();
+        expect(JSON.stringify(warn.mock.calls)).not.toContain(hash);
+        warn.mockRestore();
+      });
     });
   });
 });

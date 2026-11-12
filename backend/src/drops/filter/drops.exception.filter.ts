@@ -12,6 +12,7 @@ const STATUS_BY_EXCEPTION: Record<string, number> = {
   DropNotFoundException: HttpStatus.NOT_FOUND,
   DropExpiredException: HttpStatus.GONE,
   FileNotFoundException: HttpStatus.NOT_FOUND,
+  FileNotReadyException: HttpStatus.CONFLICT,
   SlugAlreadyTakenException: HttpStatus.CONFLICT,
   StorageUnavailableException: HttpStatus.SERVICE_UNAVAILABLE,
 };

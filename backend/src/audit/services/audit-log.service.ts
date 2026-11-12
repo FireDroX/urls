@@ -19,6 +19,7 @@ export type AuditAction =
   | 'drops.deleted'
   | 'files.created'
   | 'files.deleted'
+  | 'drops.files.shared'
   | 'drops.files.received'
   | 'drops.files.cancelled';
 
