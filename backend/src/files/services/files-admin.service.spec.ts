@@ -95,6 +95,11 @@ describe('FilesAdminService', () => {
         buildFile('expired', buildLink({ expiresAt: past })),
         buildFile('deleted', buildLink({ deletedAt: new Date() })),
         buildFile('dropped', buildLink({ type: 'drop' }), { size: 50 }),
+        buildFile(
+          'droppedGone',
+          buildLink({ type: 'drop', deletedAt: new Date() }),
+          { size: 20 },
+        ),
         buildFile('rejected', buildLink({ deletedAt: new Date() }), {
           status: 'rejected',
           size: 7,
@@ -117,7 +122,8 @@ describe('FilesAdminService', () => {
         disabled: true,
         expired: true,
         deleted: false,
-        dropped: false,
+        dropped: true,
+        droppedGone: false,
         rejected: false,
       });
       expect(byId.expired.expired).toBe(true);
@@ -130,7 +136,7 @@ describe('FilesAdminService', () => {
 
       expect(orphans.files.map(({ file }) => file.publicId)).toEqual([
         'deleted',
-        'dropped',
+        'droppedGone',
         'rejected',
       ]);
       expect(orphans.summary).toEqual(all.summary);
@@ -144,7 +150,7 @@ describe('FilesAdminService', () => {
       expect(summary).toEqual({
         quotaUsedBytes: 450,
         quotaLimitBytes: FILES_STORAGE_QUOTA_BYTES,
-        orphanBytes: 150,
+        orphanBytes: 120,
         storageUsedBytes: 5,
       });
     });
@@ -155,7 +161,7 @@ describe('FilesAdminService', () => {
       const { files, summary } = await service.list({});
 
       expect(summary.storageUsedBytes).toBeNull();
-      expect(files).toHaveLength(6);
+      expect(files).toHaveLength(7);
     });
 
     it('keeps a null usage from the storage as null', async () => {
@@ -203,7 +209,13 @@ describe('FilesAdminService', () => {
       ['active', buildLink()],
       ['disabled', buildLink({ disabled: true })],
       ['expired', buildLink({ expiresAt: new Date('2020-01-01') })],
-    ])('answers 409 for a file of a %s share', async (_label, link) => {
+      ['open drop', buildLink({ type: 'drop' })],
+      ['disabled drop', buildLink({ type: 'drop', disabled: true })],
+      [
+        'expired drop',
+        buildLink({ type: 'drop', expiresAt: new Date('2020-01-01') }),
+      ],
+    ])('answers 409 for a file of an %s link', async (_label, link) => {
       repository.findByPublicIdWithLink.mockResolvedValue(
         buildFile('file1234', link),
       );
@@ -216,7 +228,7 @@ describe('FilesAdminService', () => {
 
     it.each([
       ['deleted share', buildLink({ deletedAt: new Date() })],
-      ['drop link', buildLink({ type: 'drop' })],
+      ['deleted drop', buildLink({ type: 'drop', deletedAt: new Date() })],
     ])('erases an orphan of a %s', async (_label, link) => {
       const file = buildFile('file1234', link);
       repository.findByPublicIdWithLink.mockResolvedValue(file);
@@ -231,7 +243,10 @@ describe('FilesAdminService', () => {
 
     it('propagates a storage failure', async () => {
       repository.findByPublicIdWithLink.mockResolvedValue(
-        buildFile('file1234', buildLink({ type: 'drop' })),
+        buildFile(
+          'file1234',
+          buildLink({ type: 'drop', deletedAt: new Date() }),
+        ),
       );
       deletion.erase.mockRejectedValue(new StorageUnavailableException());
 

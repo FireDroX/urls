@@ -68,7 +68,7 @@ describe('Shares page', () => {
     render(<Shares />, { wrapper: Wrapper })
 
     const row = (await screen.findByText('/d/photos')).closest('tr')!
-    expect(within(row).getByText('2 fichiers · 2 Ko')).toBeInTheDocument()
+    expect(within(row).getByText('2 fichiers · 2 Kio')).toBeInTheDocument()
     expect(within(row).getByText('3 / 10')).toBeInTheDocument()
     expect(within(row).getByText('Actif')).toBeInTheDocument()
     expect(within(row).getByText('Jamais')).toBeInTheDocument()

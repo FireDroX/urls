@@ -6,6 +6,7 @@ import { ProtectedRoute } from '#components/ProtectedRoute'
 import { Skeleton } from '#components/ui/skeleton'
 import { useAuth } from '#hooks/useAuth'
 import { Dashboard } from '#pages/Dashboard'
+import { DropUpload } from '#pages/DropUpload'
 import { Login } from '#pages/Login'
 import { NotFound } from '#pages/NotFound'
 import { Redirects } from '#pages/Redirects'
@@ -33,6 +34,7 @@ export function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/r/:id" element={<RedirectUnavailable />} />
       <Route path="/d/:id" element={<ShareDownload />} />
+      <Route path="/u/:id" element={<DropUpload />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<Dashboard />} />

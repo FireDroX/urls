@@ -2,7 +2,9 @@ import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { describe, expect, it } from 'vitest'
 import { extractErrorMessage } from '#lib/api-errors'
 import i18n from '#lib/i18n'
-import { dropErrorMessages } from './drop-errors'
+import { DifferentFileError, FileHashError } from '#lib/share-errors'
+import { dropErrorMessages, dropUploadErrorMessage } from './drop-errors'
+import { toUploadError } from './upload-error'
 
 const t = i18n.t.bind(i18n)
 
@@ -37,6 +39,36 @@ describe('dropErrorMessages', () => {
   it('translates a throttled creation without delay', () => {
     expect(extractErrorMessage(apiError(429), undefined, dropErrorMessages(t))).toBe(
       'Trop de requêtes, réessayez dans un instant.',
+    )
+  })
+})
+
+describe('dropUploadErrorMessage', () => {
+  it.each([
+    [400, 'La vérification a échoué, réessayez.'],
+    [404, 'Cet envoi est introuvable, il a peut-être été annulé.'],
+    [410, 'Le dépôt est fermé.'],
+    [413, 'Ce fichier est trop gros ou il ne reste pas assez de place dans le dépôt.'],
+    [503, 'Le stockage est injoignable, réessayez dans un instant.'],
+    [500, "L'envoi a été interrompu."],
+  ])('translates %i, raw or sanitized', (status, message) => {
+    const raw = apiError(status)
+    raw.response!.data = {}
+
+    expect(dropUploadErrorMessage(raw, t)).toBe(message)
+    expect(dropUploadErrorMessage(toUploadError(raw), t)).toBe(message)
+  })
+
+  it('translates a different file and a read failure', () => {
+    expect(dropUploadErrorMessage(new DifferentFileError(), t)).toBe(
+      "Ce fichier n'est pas celui dont l'envoi a été interrompu.",
+    )
+    expect(dropUploadErrorMessage(new FileHashError(), t)).toBe("Le fichier n'a pas pu être lu.")
+  })
+
+  it('shows the Retry-After delay of a 429', () => {
+    expect(dropUploadErrorMessage(toUploadError(apiError(429, { 'retry-after': '8' })), t)).toBe(
+      'Trop de requêtes, réessayez dans 8 s.',
     )
   })
 })

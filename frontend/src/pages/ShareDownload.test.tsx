@@ -72,7 +72,7 @@ describe('ShareDownload', () => {
     renderAt()
 
     expect(await screen.findByRole('heading', { name: 'Fichiers partagés' })).toBeInTheDocument()
-    expect(screen.getByText('2 fichiers · 3 Mo')).toBeInTheDocument()
+    expect(screen.getByText('2 fichiers · 3 Mio')).toBeInTheDocument()
     expect(screen.getByText("Sans date d'expiration")).toBeInTheDocument()
     expect(screen.getByText('rapport.pdf')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Télécharger photos.zip' })).toBeEnabled())
@@ -162,7 +162,7 @@ describe('ShareDownload', () => {
     renderAt()
 
     expect(await screen.findByRole('heading', { name: 'Shared files' })).toBeInTheDocument()
-    expect(screen.getByText('2 files · 3 MB')).toBeInTheDocument()
+    expect(screen.getByText('2 files · 3 MiB')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Download rapport.pdf' })).toBeInTheDocument()
   })
 })

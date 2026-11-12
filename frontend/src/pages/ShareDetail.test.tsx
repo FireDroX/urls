@@ -115,7 +115,7 @@ describe('ShareDetail page', () => {
     expect(await screen.findByRole('heading', { name: '/d/photos' })).toBeInTheDocument()
     expect(screen.getByText('Vues').nextSibling).toHaveTextContent('7')
     expect(screen.getByText('Téléchargements').nextSibling).toHaveTextContent('3 / 10')
-    expect(screen.getByText('Taille totale').nextSibling).toHaveTextContent('2 Ko')
+    expect(screen.getByText('Taille totale').nextSibling).toHaveTextContent('2 Kio')
   })
 
   it('shows a not found state for an unknown share', async () => {
@@ -146,7 +146,7 @@ describe('ShareDetail page', () => {
 
     const row = (await screen.findByText('video.mp4')).closest('tr')!
     expect(within(row).getByText(label)).toBeInTheDocument()
-    expect(within(row).getByText('1 Ko')).toBeInTheDocument()
+    expect(within(row).getByText('1 Kio')).toBeInTheDocument()
   })
 
   it('follows a file from verifying to ready, then stops asking', async () => {
@@ -376,7 +376,7 @@ describe('ShareDetail page', () => {
 
       await user.upload(dropInput(), [tooLarge, new File(['abc'], 'ok.bin')])
 
-      expect(toast.error).toHaveBeenCalledWith('huge.iso refusé : 20 Go maximum par fichier')
+      expect(toast.error).toHaveBeenCalledWith('huge.iso refusé : 20 Gio maximum par fichier')
       expect(await screen.findByText('ok.bin')).toBeInTheDocument()
       expect(screen.queryByText('huge.iso')).not.toBeInTheDocument()
     })

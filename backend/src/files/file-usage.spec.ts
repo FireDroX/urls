@@ -11,7 +11,20 @@ describe('isFileInUse', () => {
     ['a disabled share', { disabled: true }, true],
     ['an expired share', { expiresAt: new Date('2020-01-01') }, true],
     ['a deleted share', { deletedAt: new Date() }, false],
-    ['a drop link', { type: 'drop' as const }, false],
+    ['an open drop', { type: 'drop' as const }, true],
+    ['a disabled drop', { type: 'drop' as const, disabled: true }, true],
+    [
+      'an expired drop',
+      { type: 'drop' as const, expiresAt: new Date('2020-01-01') },
+      true,
+    ],
+    [
+      'a full drop',
+      { type: 'drop' as const, maxFiles: 1, maxTotalBytes: 1 },
+      true,
+    ],
+    ['a deleted drop', { type: 'drop' as const, deletedAt: new Date() }, false],
+    ['a redirect', { type: 'redirect' as const }, false],
   ])('%s: in use is %s', (_label, overrides, expected) => {
     expect(isFileInUse(link(overrides))).toBe(expected);
   });

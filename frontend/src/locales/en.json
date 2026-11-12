@@ -178,7 +178,7 @@
     "deleteDescription": "{{name}} ({{size}}) will be permanently removed from storage.",
     "download": "Download {{name}}",
     "delete": "Delete {{name}}",
-    "inUseHint": "This file is still attached to a share: remove it from the share instead.",
+    "inUseHint": "This file is still attached to a share or a drop: remove it from there instead.",
     "filter": {
       "label": "Filter",
       "all": "All",
@@ -211,7 +211,7 @@
       "invalid": "Invalid request.",
       "notFound": "File not found.",
       "storageUnavailable": "Storage is unreachable, try again in a moment.",
-      "inUse": "This file is still attached to a share.",
+      "inUse": "This file is still attached to a share or a drop.",
       "notReady": "This file is not ready yet."
     }
   },
@@ -394,6 +394,57 @@
     "verificationFailed": "The check failed, please try again.",
     "loadFailedTitle": "Could not open this share"
   },
+  "dropUpload": {
+    "title": "Send files",
+    "untitled": "File drop",
+    "filesRemaining_one": "{{count}} file left out of {{max}}",
+    "filesRemaining_other": "{{count}} files left out of {{max}}",
+    "bytesRemaining": "{{remaining}} left out of {{total}}",
+    "closesAt": "Closes on {{date}}",
+    "noExpiry": "No closing date",
+    "nameLabel": "Your name (optional)",
+    "namePlaceholder": "So the recipient knows who sent this",
+    "dropHelp": "{{size}} still available",
+    "verifyHint": "A check is requested for each file.",
+    "refused": {
+      "title": "Refused files",
+      "dismiss": "Dismiss the refusal of {{name}}",
+      "tooLarge": "This file exceeds the maximum size of a file.",
+      "noRoom": "There is not enough room left in this drop for this file.",
+      "closed": "This drop is closed."
+    },
+    "pending": {
+      "title": "Interrupted uploads",
+      "help": "Select the same file again to resume the upload where it stopped.",
+      "resume": "Resume",
+      "resumeInput": "Resume the upload of {{name}}",
+      "abandon": "Abandon",
+      "abandonLabel": "Abandon the upload of {{name}}"
+    },
+    "receipts": {
+      "title": "Sent files",
+      "verifying": "Checking…",
+      "ready": "Received",
+      "rejected": "Rejected"
+    },
+    "closed": {
+      "title": "This drop is closed",
+      "body": "This drop no longer accepts files: it has expired or is full."
+    },
+    "closedInline": "This drop has just closed: uploads in progress will finish, but it no longer accepts new files.",
+    "loadFailedTitle": "Could not open this drop",
+    "retry": "Try again",
+    "errors": {
+      "differentFile": "This is not the file whose upload was interrupted.",
+      "hashFailed": "The file could not be read.",
+      "interrupted": "The upload was interrupted.",
+      "verificationFailed": "The check failed, please try again.",
+      "notFound": "This upload cannot be found, it may have been canceled.",
+      "closed": "The drop is closed.",
+      "noRoom": "This file is too large or there is not enough room left in the drop.",
+      "storageUnavailable": "Storage is unreachable, try again in a moment."
+    }
+  },
   "notFound": {
     "title": "Link not found",
     "body": "This link does not exist, or is no longer available."
@@ -408,6 +459,6 @@
     "tooManyRequestsNoDelay": "Too many requests, try again in a moment."
   },
   "units": {
-    "bytes": ["B", "KB", "MB", "GB", "TB"]
+    "bytes": ["B", "KiB", "MiB", "GiB", "TiB"]
   }
 }

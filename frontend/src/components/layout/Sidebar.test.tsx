@@ -50,10 +50,10 @@ describe('Sidebar', () => {
       .mockResolvedValueOnce({ usedBytes: 2048, quotaBytes: 4096 })
     renderAt('/')
 
-    expect(await screen.findByText('1 Ko / 4 Ko')).toBeInTheDocument()
+    expect(await screen.findByText('1 Kio / 4 Kio')).toBeInTheDocument()
     act(() => refreshStorageUsage())
 
-    expect(await screen.findByText('2 Ko / 4 Ko')).toBeInTheDocument()
+    expect(await screen.findByText('2 Kio / 4 Kio')).toBeInTheDocument()
     expect(getStorageUsage).toHaveBeenCalledTimes(2)
   })
 

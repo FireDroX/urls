@@ -5,6 +5,7 @@ import { expiresAtField, slugField } from '#schemas/link.schema'
 import { fromDateTimeLocal, toDateTimeLocal } from '#utils/datetime-local'
 
 export const DROP_TITLE_MAX_LENGTH = 120
+export const DROP_UPLOADER_NAME_MAX_LENGTH = 80
 export const DROP_MAX_FILES_LIMIT = 50
 export const DROP_MAX_TOTAL_BYTES = 75 * 1024 ** 3
 const DEFAULT_MAX_FILES = 10

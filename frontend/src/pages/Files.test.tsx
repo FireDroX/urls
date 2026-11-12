@@ -179,9 +179,9 @@ describe('Files page', () => {
   it('shows the space used and the real storage usage', async () => {
     renderAt('/files')
 
-    expect(await screen.findByText('1 Ko utilisés sur 4 Ko')).toBeInTheDocument()
+    expect(await screen.findByText('1 Kio utilisés sur 4 Kio')).toBeInTheDocument()
     expect(screen.getByText('dont 512 o de fichiers orphelins')).toBeInTheDocument()
-    expect(screen.getByText('Usage réel du stockage : 4 Ko')).toBeInTheDocument()
+    expect(screen.getByText('Usage réel du stockage : 4 Kio')).toBeInTheDocument()
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25')
   })
 
@@ -210,12 +210,12 @@ describe('Files page', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Supprimer old.zip' }))
     const dialog = await screen.findByRole('alertdialog')
-    expect(within(dialog).getByText(/old\.zip \(2 Ko\)/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/old\.zip \(2 Kio\)/)).toBeInTheDocument()
     await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
 
     await waitFor(() => expect(deleteFile).toHaveBeenCalledWith('f2'))
     await waitFor(() => expect(screen.queryByText('old.zip')).not.toBeInTheDocument())
-    expect(await screen.findByText('512 o utilisés sur 4 Ko')).toBeInTheDocument()
+    expect(await screen.findByText('512 o utilisés sur 4 Kio')).toBeInTheDocument()
   })
 
   it('refreshes the sidebar gauge after a deletion', async () => {
@@ -239,7 +239,7 @@ describe('Files page', () => {
     const dialog = await screen.findByRole('alertdialog')
     await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
 
-    expect(await within(dialog).findByText('Ce fichier est encore attaché à un partage.')).toBeInTheDocument()
+    expect(await within(dialog).findByText('Ce fichier est encore attaché à un partage ou à un dépôt.')).toBeInTheDocument()
     await waitFor(() => expect(listFiles).toHaveBeenCalledTimes(2))
   })
 

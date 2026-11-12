@@ -5,6 +5,9 @@ import {
   isSameFile,
   recallUpload,
   rememberUpload,
+  PENDING_UPLOAD_TOKEN_TTL_MS,
+  pendingUploadsOf,
+  purgeExpiredUploads,
   type PendingUpload,
 } from './pending-uploads'
 
@@ -26,7 +29,7 @@ describe('pending uploads', () => {
   it('remembers metadata only, and finds it back by file id', () => {
     rememberUpload(upload)
 
-    expect(recallUpload('file1234')).toEqual(upload)
+    expect(recallUpload('file1234')).toEqual({ ...upload, savedAt: expect.any(Number) })
     expect(recallUpload('unknown1')).toBeUndefined()
   })
 
@@ -96,5 +99,58 @@ describe('isSameFile', () => {
     ['date', new File(['abc'], 'video.mp4', { lastModified: 2000 })],
   ])('refuses a different %s', (_, other) => {
     expect(isSameFile(upload, other)).toBe(false)
+  })
+})
+
+describe('upload token expiry', () => {
+  const NOW = 1_000_000_000_000
+  const withToken = { ...upload, uploadToken: 'token-123' }
+
+  function store(...entries: object[]) {
+    localStorage.setItem('pending-uploads', JSON.stringify(entries))
+  }
+
+  it('stamps the entry when it is remembered', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(NOW)
+    rememberUpload(withToken)
+
+    expect(recallUpload('file1234')?.savedAt).toBe(NOW)
+  })
+
+  it('expires a token entry exactly at the TTL', () => {
+    store({ ...withToken, savedAt: NOW })
+    vi.spyOn(Date, 'now').mockReturnValue(NOW + PENDING_UPLOAD_TOKEN_TTL_MS - 1)
+    expect(recallUpload('file1234')).toBeDefined()
+
+    vi.spyOn(Date, 'now').mockReturnValue(NOW + PENDING_UPLOAD_TOKEN_TTL_MS)
+    expect(recallUpload('file1234')).toBeUndefined()
+    expect(pendingUploadsOf('photos')).toEqual([])
+  })
+
+  it('treats a token entry without savedAt as expired', () => {
+    store(withToken)
+
+    expect(recallUpload('file1234')).toBeUndefined()
+  })
+
+  it('purges expired token entries and keeps fresh and token-less ones', () => {
+    store(
+      { ...withToken, fileId: 'old00001', savedAt: NOW - PENDING_UPLOAD_TOKEN_TTL_MS },
+      { ...withToken, fileId: 'nosave01' },
+      { ...withToken, fileId: 'fresh001', savedAt: NOW },
+      { ...upload, fileId: 'admin001' },
+    )
+
+    purgeExpiredUploads(NOW)
+
+    const kept = JSON.parse(localStorage.getItem('pending-uploads') ?? '[]') as { fileId: string }[]
+    expect(kept.map(({ fileId }) => fileId)).toEqual(['fresh001', 'admin001'])
+  })
+
+  it('lists the pending uploads of one share', () => {
+    rememberUpload(upload)
+    rememberUpload({ ...upload, shareId: 'other', fileId: 'file9012' })
+
+    expect(pendingUploadsOf('photos').map(({ fileId }) => fileId)).toEqual(['file1234'])
   })
 })
