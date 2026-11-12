@@ -1,5 +1,43 @@
 import { describe, expect, it } from 'vitest'
-import { selectWithinRoom, type DropRoom } from './drop-capacity'
+import { knownFileIds, remainingRoom, selectWithinRoom, type DropRoom } from './drop-capacity'
+
+describe('remainingRoom', () => {
+  const drop = { filesRemaining: 1, bytesRemaining: 100 }
+
+  it('does not subtract a resumed upload the server already counts, and accepts a new file', () => {
+    const counted = knownFileIds([{ fileId: 'resumed' }], [{ fileId: 'resumed' }])
+    const room = remainingRoom(drop, [{ fileId: 'resumed', size: 60 }], counted)
+
+    expect(room).toEqual({ filesRemaining: 1, bytesRemaining: 100 })
+    const { accepted } = selectWithinRoom([new File([new Uint8Array(50)], 'new')], {
+      closed: false,
+      maxFileSize: 100,
+      ...room,
+    })
+    expect(accepted).toHaveLength(1)
+  })
+
+  it('subtracts uploads not announced yet and uploads announced after the preview', () => {
+    const room = remainingRoom(
+      { filesRemaining: 3, bytesRemaining: 100 },
+      [
+        { fileId: null, size: 10 },
+        { fileId: 'later', size: 20 },
+        { fileId: 'known', size: 40 },
+      ],
+      new Set(['known']),
+    )
+
+    expect(room).toEqual({ filesRemaining: 1, bytesRemaining: 70 })
+  })
+
+  it('never goes below zero', () => {
+    expect(remainingRoom(drop, [{ fileId: null, size: 500 }, { fileId: null, size: 1 }], new Set())).toEqual({
+      filesRemaining: 0,
+      bytesRemaining: 0,
+    })
+  })
+})
 
 const room: DropRoom = { closed: false, maxFileSize: 100, filesRemaining: 2, bytesRemaining: 150 }
 

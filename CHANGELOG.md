@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8 — 2026-11-12
+
+- Page d'envoi d'un dépôt : reprendre un envoi interrompu ne réduit plus une seconde fois la place restante, un nouveau fichier est accepté tant qu'il reste de la place.
+- « Abandonner » un envoi dont le fichier n'existe plus sur le serveur le retire définitivement de la liste.
+- Un fichier envoyé puis supprimé ou déplacé par l'administrateur s'affiche « Indisponible » au lieu de rester en « Vérification… ».
+
 ## 0.1.7 — 2026-11-12
 
 - Depuis la fiche d'un dépôt, le bouton « Créer un partage » permet de choisir parmi les fichiers prêts ceux à partager, avec un slug, une expiration et un nombre de téléchargements maximum facultatifs ; la fiche du nouveau partage s'ouvre ensuite.

@@ -19,7 +19,8 @@ import type { TurnstileGate } from '#lib/turnstile-gate'
 import { isActiveUpload } from '#lib/upload-queue'
 import { DROP_UPLOADER_NAME_MAX_LENGTH } from '#schemas/drop.schema'
 import { FILE_MAX_SIZE_BYTES } from '#schemas/share.schema'
-import { selectWithinRoom, type RefusedFile } from '#utils/drop-capacity'
+import { knownFileIds, remainingRoom, selectWithinRoom, type RefusedFile } from '#utils/drop-capacity'
+import { pendingUploadsOf } from '#utils/pending-uploads'
 
 interface DropUploadPanelProps {
   drop: PublicDrop
@@ -46,10 +47,16 @@ export function DropUploadPanel({
   const [refused, setRefused] = useState<RefusedFile[]>([])
   const nextRefusalId = useRef(1)
 
+  const [counted, setCounted] = useState(() => ({
+    drop,
+    fileIds: knownFileIds(uploads.items, pendingUploadsOf(drop.id)),
+  }))
+  if (counted.drop !== drop) {
+    setCounted({ drop, fileIds: knownFileIds(uploads.items, pendingUploadsOf(drop.id)) })
+  }
+
   const active = uploads.items.filter(isActiveUpload)
-  const activeBytes = active.reduce((total, item) => total + item.size, 0)
-  const filesRemaining = Math.max(0, drop.filesRemaining - active.length)
-  const bytesRemaining = Math.max(0, drop.bytesRemaining - activeBytes)
+  const { filesRemaining, bytesRemaining } = remainingRoom(drop, active, counted.fileIds)
 
   const pending = usePendingDropUploads(drop.id, uploads)
 
