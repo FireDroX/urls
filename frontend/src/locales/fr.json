@@ -470,7 +470,8 @@
       "title": "Fichiers envoyés",
       "verifying": "Vérification…",
       "ready": "Reçu",
-      "rejected": "Rejeté"
+      "rejected": "Rejeté",
+      "unavailable": "Indisponible"
     },
     "closed": {
       "title": "Ce dépôt est fermé",

@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios'
 import { UploadCanceledError } from '#lib/share-errors'
 import { resumeFile, uploadNewFile, type TransferPhase, type UploadObserver } from '#lib/share-upload'
 import { toUploadError } from '#lib/upload-error'
@@ -42,6 +43,12 @@ export interface UploadQueueOptions {
 }
 
 type UploadJob = (signal: AbortSignal, observer: UploadObserver) => Promise<void>
+
+const NOT_FOUND = 404
+
+function isNotFound(error: unknown): boolean {
+  return isAxiosError(error) && error.response?.status === NOT_FOUND
+}
 
 export function isActiveUpload(item: UploadItem): boolean {
   return item.phase !== 'failed'
@@ -223,6 +230,12 @@ export class UploadQueue {
       this.tokens.delete(fileId)
       this.remove(key)
     } catch (error) {
+      if (isNotFound(error)) {
+        forgetUpload(fileId)
+        this.tokens.delete(fileId)
+        this.remove(key)
+        return
+      }
       this.update(key, { phase: 'failed', error: toUploadError(error) })
     }
   }

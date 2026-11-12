@@ -371,6 +371,37 @@ describe('UploadQueue with another upload target', () => {
       expect(items(queue)[0].error).toBeInstanceOf(Error)
     })
 
+    function axiosFailure(status: number): AxiosError {
+      const config = { headers: new AxiosHeaders({ 'X-Upload-Token': TOKEN }) }
+      const response = { status, data: {}, headers: new AxiosHeaders(), statusText: '', config } as AxiosResponse
+      return new AxiosError('failed', undefined, config, undefined, response)
+    }
+
+    it('treats a 404 on the cancel as a success: row removed and entry forgotten', async () => {
+      rememberUpload({ shareId: SHARE_ID, fileId: FILE_ID, name: 'a', size: 3, lastModified: 1, sha256: 'ab' })
+      const target = fakeTarget()
+      vi.mocked(target.cancel).mockRejectedValue(axiosFailure(404))
+      const queue = await failedQueue(target)
+
+      await queue.abandon(items(queue)[0].key)
+
+      expect(items(queue)).toEqual([])
+      expect(recallUpload(FILE_ID)).toBeUndefined()
+    })
+
+    it('keeps the row failed with a reduced error on a 500', async () => {
+      const target = fakeTarget()
+      vi.mocked(target.cancel).mockRejectedValue(axiosFailure(500))
+      const queue = await failedQueue(target)
+
+      await queue.abandon(items(queue)[0].key)
+
+      const { error, phase } = items(queue)[0]
+      expect(phase).toBe('failed')
+      expect(error).toBeInstanceOf(UploadRequestError)
+      expect(JSON.stringify(error)).not.toContain(TOKEN)
+    })
+
     it('ignores an item that is not failed or has no file', async () => {
       const target = fakeTarget()
       vi.mocked(uploadNewFile).mockImplementation(untilCanceled)

@@ -470,7 +470,8 @@
       "title": "Sent files",
       "verifying": "Checking…",
       "ready": "Received",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "unavailable": "Unavailable"
     },
     "closed": {
       "title": "This drop is closed",

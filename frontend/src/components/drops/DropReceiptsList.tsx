@@ -7,6 +7,7 @@ const STATUS_VARIANTS = {
   verifying: 'secondary',
   ready: 'default',
   rejected: 'destructive',
+  unavailable: 'outline',
 } as const
 
 export function DropReceiptsList({ receipts }: { receipts: DropReceipt[] }) {

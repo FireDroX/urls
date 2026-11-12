@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { isAxiosError } from 'axios'
 import { getDropFile, type DropFile } from '#api/public-drops'
 import { FILE_STATUS_POLL_MS } from '#hooks/useShareDetail'
 import type { UploadedFile } from '#lib/upload-queue'
+
+const NOT_FOUND = 404
 
 export interface DropReceipt {
   fileId: string
   uploadToken?: string
   name: string
   size: number
-  status: Exclude<DropFile['status'], 'uploading'>
+  status: Exclude<DropFile['status'], 'uploading'> | 'unavailable'
 }
 
 export function useDropReceipts(dropId: string) {
@@ -43,8 +46,12 @@ export function useDropReceipts(dropId: string) {
               current.map((receipt) => (receipt.fileId === fileId ? { ...receipt, status: settled } : receipt)),
             )
           }
-        } catch {
-          continue
+        } catch (error) {
+          if (active && isAxiosError(error) && error.response?.status === NOT_FOUND) {
+            setReceipts((current) =>
+              current.map((receipt) => (receipt.fileId === fileId ? { ...receipt, status: 'unavailable' } : receipt)),
+            )
+          }
         }
       }
     }

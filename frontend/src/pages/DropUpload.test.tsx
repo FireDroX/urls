@@ -521,6 +521,34 @@ describe('DropUpload resuming', () => {
     expect(announceDropUpload).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ['files', { maxFiles: 2, filesRemaining: 1 }, 'second.bin', 'abc'],
+    ['bytes', { bytesRemaining: 8 }, 'second.bin', 'abcdef'],
+  ])('accepts a new file after resuming an upload the server already counts (%s)', async (_name, room, name, content) => {
+    const user = userEvent.setup()
+    vi.mocked(getPublicDrop).mockResolvedValue({ ...drop, ...room })
+    pendingEntry()
+    renderPage()
+    await screen.findByText('Envois interrompus')
+    let releasePart = () => {}
+    vi.mocked(uploadDropPart).mockReturnValue(new Promise<void>((resolve) => (releasePart = resolve)))
+    await user.upload(resumeInput(), bin())
+    await waitFor(() => expect(uploadDropPart).toHaveBeenCalledTimes(1))
+
+    await user.upload(zoneInput(), bin(name, content))
+    expect(screen.queryByText('Il ne reste pas assez de place dans ce dépôt pour ce fichier.')).not.toBeInTheDocument()
+    releasePart()
+    await waitFor(() => expect(completeDropUpload).toHaveBeenCalledTimes(1))
+    await solve()
+
+    await waitFor(() => expect(announceDropUpload).toHaveBeenCalledTimes(1))
+    expect(announceDropUpload).toHaveBeenCalledWith(
+      DROP_ID,
+      expect.objectContaining({ name, size: content.length }),
+    )
+    expect(screen.queryByText('Il ne reste pas assez de place dans ce dépôt pour ce fichier.')).not.toBeInTheDocument()
+  })
+
   it('refuses another file without sending anything', async () => {
     const user = userEvent.setup()
     pendingEntry()
