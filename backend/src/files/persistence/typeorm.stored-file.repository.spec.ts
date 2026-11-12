@@ -1,8 +1,12 @@
-import { IsNull, type Repository } from 'typeorm';
+import { IsNull, QueryFailedError, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LinkBytesLimitExceededException } from '../../common/exceptions/files/link-bytes-limit-exceeded.exception.js';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
 import { StorageQuotaExceededException } from '../../common/exceptions/storage/storage-quota-exceeded.exception.js';
+import { DropNotFoundException } from '../../common/exceptions/drops/drop-not-found.exception.js';
+import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
+import { FileNotReadyException } from '../../common/exceptions/files/file-not-ready.exception.js';
+import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import type { StoredFile } from '../entities/stored-file.entity.js';
 import type { UploadLimits } from './stored-file.repository.js';
 import { TypeormStoredFileRepository } from './typeorm.stored-file.repository.js';
@@ -342,6 +346,153 @@ describe('TypeormStoredFileRepository', () => {
     expect(ormRepository.find).toHaveBeenCalledWith({
       where: { linkId: 'a' },
       order: { createdAt: 'ASC' },
+    });
+  });
+
+  describe('moveToNewShare', () => {
+    const share = { publicId: 'share123', expiresAt: null, maxDownloads: 3 };
+    const ids = ['f1', 'f2'];
+    let links: {
+      create: ReturnType<typeof vi.fn>;
+      save: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    let files: {
+      find: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+    };
+    let lockedDrop: unknown;
+
+    function storedFile(publicId: string, status = 'ready') {
+      return { id: `${publicId}-uuid`, publicId, status, linkId: 'drop-uuid' };
+    }
+
+    beforeEach(() => {
+      lockedDrop = { id: 'drop-uuid', type: 'drop', deletedAt: null };
+      links = {
+        create: vi.fn((value: unknown) => value),
+        save: vi.fn((value: object) =>
+          Promise.resolve({ ...value, id: 'share-uuid' }),
+        ),
+        update: vi.fn().mockResolvedValue(undefined),
+      };
+      files = {
+        find: vi.fn().mockResolvedValue([storedFile('f1'), storedFile('f2')]),
+        update: vi.fn().mockResolvedValue(undefined),
+      };
+      const query = {
+        setLock: vi.fn(),
+        where: vi.fn(),
+        getOne: vi.fn(() => Promise.resolve(lockedDrop)),
+      };
+      query.setLock.mockReturnValue(query);
+      query.where.mockReturnValue(query);
+      const manager = {
+        getRepository: (entity: { name: string }) =>
+          entity.name === 'Link'
+            ? { ...links, createQueryBuilder: () => query }
+            : files,
+      };
+      Object.assign(ormRepository, {
+        manager: {
+          transaction: (work: (m: typeof manager) => Promise<unknown>) =>
+            work(manager),
+        },
+      });
+    });
+
+    it('creates the share, moves the files and closes the drop', async () => {
+      const result = await repository.moveToNewShare(
+        'drop-uuid',
+        ids,
+        share,
+        true,
+      );
+
+      expect(links.save).toHaveBeenCalledWith(
+        expect.objectContaining({ ...share, type: 'share', destination: null }),
+      );
+      expect(files.update).toHaveBeenCalledWith(
+        { id: expect.anything() as unknown },
+        { linkId: 'share-uuid', uploadTokenHash: null },
+      );
+      expect(links.update).toHaveBeenCalledWith(
+        { id: 'drop-uuid' },
+        { disabled: true },
+      );
+      expect(result.share).toMatchObject({ id: 'share-uuid' });
+      expect(result.files.map((file) => file.linkId)).toEqual([
+        'share-uuid',
+        'share-uuid',
+      ]);
+    });
+
+    it('keeps the drop open when closeDrop is false', async () => {
+      await repository.moveToNewShare('drop-uuid', ids, share, false);
+
+      expect(files.update).toHaveBeenCalled();
+      expect(links.update).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['missing', null],
+      ['not a drop', { id: 'drop-uuid', type: 'share', deletedAt: null }],
+      ['deleted', { id: 'drop-uuid', type: 'drop', deletedAt: new Date() }],
+    ])('answers a drop not found when the drop is %s', async (_, found) => {
+      lockedDrop = found;
+
+      await expect(
+        repository.moveToNewShare('drop-uuid', ids, share, true),
+      ).rejects.toBeInstanceOf(DropNotFoundException);
+      expect(links.save).not.toHaveBeenCalled();
+      expect(files.update).not.toHaveBeenCalled();
+      expect(links.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses when a file is unknown, from another link or deleted', async () => {
+      files.find.mockResolvedValue([storedFile('f1')]);
+
+      await expect(
+        repository.moveToNewShare('drop-uuid', ids, share, true),
+      ).rejects.toBeInstanceOf(FileNotFoundException);
+      expect(links.save).not.toHaveBeenCalled();
+      expect(files.update).not.toHaveBeenCalled();
+      expect(links.update).not.toHaveBeenCalled();
+    });
+
+    it('refuses a file that is not ready', async () => {
+      files.find.mockResolvedValue([
+        storedFile('f1'),
+        storedFile('f2', 'verifying'),
+      ]);
+
+      await expect(
+        repository.moveToNewShare('drop-uuid', ids, share, true),
+      ).rejects.toBeInstanceOf(FileNotReadyException);
+      expect(links.save).not.toHaveBeenCalled();
+      expect(files.update).not.toHaveBeenCalled();
+    });
+
+    it('translates a duplicate slug and moves nothing', async () => {
+      links.save.mockRejectedValue(
+        new QueryFailedError('INSERT', [], { code: 'ER_DUP_ENTRY' } as never),
+      );
+
+      await expect(
+        repository.moveToNewShare('drop-uuid', ids, share, true),
+      ).rejects.toBeInstanceOf(SlugAlreadyTakenException);
+      expect(files.update).not.toHaveBeenCalled();
+      expect(links.update).not.toHaveBeenCalled();
+    });
+
+    it('lets the transaction fail, and so roll back, when a step breaks midway', async () => {
+      const failure = new Error('deadlock');
+      files.update.mockRejectedValue(failure);
+
+      await expect(
+        repository.moveToNewShare('drop-uuid', ids, share, true),
+      ).rejects.toBe(failure);
+      expect(links.update).not.toHaveBeenCalled();
     });
   });
 });

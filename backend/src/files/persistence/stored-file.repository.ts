@@ -30,7 +30,23 @@ export type FileTransition = Partial<
   Pick<StoredFile, 'status' | 'mime' | 'uploadId' | 'completedAt'>
 >;
 
+export type NewSharedFiles = Pick<
+  Link,
+  'publicId' | 'expiresAt' | 'maxDownloads'
+>;
+
+export interface MovedToShare {
+  share: Link;
+  files: StoredFile[];
+}
+
 export interface StoredFileRepository {
+  moveToNewShare(
+    dropId: string,
+    filePublicIds: string[],
+    share: NewSharedFiles,
+    closeDrop: boolean,
+  ): Promise<MovedToShare>;
   findByLinkId(linkId: string): Promise<StoredFile[]>;
   summarizeByLinkIds(linkIds: string[]): Promise<FilesSummary[]>;
   summarizeCountedByLinkIds(linkIds: string[]): Promise<FilesSummary[]>;

@@ -141,6 +141,22 @@ describe('DropDetail page', () => {
     expect(await screen.findByRole('heading', { name: 'Documents' })).toBeInTheDocument()
   })
 
+  it('disables the share button until a file is ready', async () => {
+    vi.mocked(getDrop).mockResolvedValue(dropWith(dropFile('verifying')))
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Créer un partage' })).toBeDisabled()
+  })
+
+  it('opens the share dialog when a file is ready', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Créer un partage' }))
+
+    expect(await screen.findByRole('checkbox', { name: 'Fermer le dépôt' })).toBeChecked()
+  })
+
   it('shows an empty state without files', async () => {
     vi.mocked(getDrop).mockResolvedValue(dropWith())
     renderPage()

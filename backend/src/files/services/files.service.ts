@@ -2,6 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { StoredFile } from '../entities/stored-file.entity.js';
 import type {
   FilesSummary,
+  MovedToShare,
+  NewSharedFiles,
   StoredFileRepository,
 } from '../persistence/stored-file.repository.js';
 
@@ -22,6 +24,20 @@ export class FilesService {
 
   findInLink(linkId: string, filePublicId: string): Promise<StoredFile | null> {
     return this.repository.findInLink(linkId, filePublicId);
+  }
+
+  moveToNewShare(
+    dropId: string,
+    filePublicIds: string[],
+    share: NewSharedFiles,
+    closeDrop: boolean,
+  ): Promise<MovedToShare> {
+    return this.repository.moveToNewShare(
+      dropId,
+      filePublicIds,
+      share,
+      closeDrop,
+    );
   }
 
   async summarizeLinks(

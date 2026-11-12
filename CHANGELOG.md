@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7 — 2026-11-12
+
+- Depuis la fiche d'un dépôt, le bouton « Créer un partage » permet de choisir parmi les fichiers prêts ceux à partager, avec un slug, une expiration et un nombre de téléchargements maximum facultatifs ; la fiche du nouveau partage s'ouvre ensuite.
+- Les fichiers sont déplacés vers le partage et non copiés : ils ne comptent donc pas deux fois dans la place utilisée, et ils disparaissent de la liste du dépôt.
+- L'option « Fermer le dépôt », cochée par défaut, désactive le dépôt en même temps que le partage est créé.
+- Le lien d'envoi d'un dépôt ne donne plus aucun accès aux fichiers déplacés dans un partage.
+
 ## 0.1.6 — 2026-11-12
 
 - Nouvelle fiche de dépôt (`/drops/<slug>`) : réglages, état, nombre de vues, place utilisée, et liste des fichiers reçus avec leur état, leur expéditeur (ou « Anonyme ») et leur date de réception. L'état d'un fichier en cours de vérification se met à jour tout seul.

@@ -303,6 +303,24 @@
       "deleted": "Fichier supprimé.",
       "deleteTitle": "Supprimer ce fichier ?",
       "deleteDescription": "{{name}} sera supprimé définitivement. Un envoi en cours sera annulé."
+    },
+    "share": {
+      "action": "Créer un partage",
+      "title": "Créer un partage à partir de ce dépôt",
+      "description": "Les fichiers choisis sont déplacés vers un nouveau partage /d/, pas copiés : ils n'appartiennent plus au dépôt.",
+      "files": "Fichiers à partager",
+      "closeDrop": "Fermer le dépôt",
+      "closeDropHelp": "Désactive le dépôt pour que plus personne ne puisse y envoyer de fichiers avec son lien.",
+      "submit": "Créer le partage",
+      "validation": {
+        "noFile": "Choisissez au moins un fichier",
+        "tooManyFiles": "{{max}} fichiers au maximum"
+      },
+      "errors": {
+        "invalid": "Fichiers, slug, expiration ou limite invalide.",
+        "notFound": "Un fichier ou ce dépôt n'existe plus. La liste a été actualisée.",
+        "notReady": "Un fichier n'est plus prêt. La liste a été actualisée."
+      }
     }
   },
   "shares": {

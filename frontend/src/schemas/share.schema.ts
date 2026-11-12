@@ -14,7 +14,7 @@ function isValidMaxDownloads(value: string): boolean {
   return value === '' || (POSITIVE_INTEGER_REGEX.test(value) && Number(value) <= SHARE_MAX_DOWNLOADS_LIMIT)
 }
 
-function maxDownloadsField(t: TFunction) {
+export function maxDownloadsField(t: TFunction) {
   return z
     .string()
     .trim()

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Not, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { isDuplicateEntry } from '../../common/database-errors.js';
+import { DropNotFoundException } from '../../common/exceptions/drops/drop-not-found.exception.js';
+import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
+import { FileNotReadyException } from '../../common/exceptions/files/file-not-ready.exception.js';
+import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { FileIdTakenException } from '../../common/exceptions/files/file-id-taken.exception.js';
 import { LinkBytesLimitExceededException } from '../../common/exceptions/files/link-bytes-limit-exceeded.exception.js';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
@@ -11,6 +15,8 @@ import { type FileStatus, StoredFile } from '../entities/stored-file.entity.js';
 import type {
   FilesSummary,
   FileTransition,
+  MovedToShare,
+  NewSharedFiles,
   NewStoredFile,
   StoredFileRepository,
   UploadLimits,
@@ -156,6 +162,63 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
     } catch (error) {
       if (isDuplicateEntry(error)) {
         throw new FileIdTakenException();
+      }
+      throw error;
+    }
+  }
+
+  async moveToNewShare(
+    dropId: string,
+    filePublicIds: string[],
+    share: NewSharedFiles,
+    closeDrop: boolean,
+  ): Promise<MovedToShare> {
+    try {
+      return await this.repository.manager.transaction(async (manager) => {
+        const links = manager.getRepository(Link);
+        const drop = await links
+          .createQueryBuilder('link')
+          .setLock('pessimistic_write')
+          .where('link.id = :id', { id: dropId })
+          .getOne();
+        if (!drop || drop.type !== 'drop' || drop.deletedAt) {
+          throw new DropNotFoundException();
+        }
+        const files = manager.getRepository(StoredFile);
+        const moved = await files.find({
+          where: {
+            linkId: drop.id,
+            publicId: In(filePublicIds),
+            deletedAt: IsNull(),
+          },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (moved.length !== filePublicIds.length) {
+          throw new FileNotFoundException();
+        }
+        if (moved.some((file) => file.status !== 'ready')) {
+          throw new FileNotReadyException();
+        }
+        const created = await links.save(
+          links.create({ ...share, type: 'share', destination: null }),
+        );
+        await files.update(
+          { id: In(moved.map((file) => file.id)) },
+          { linkId: created.id, uploadTokenHash: null },
+        );
+        if (closeDrop) {
+          await links.update({ id: drop.id }, { disabled: true });
+        }
+        return {
+          share: created,
+          files: moved.map((file) =>
+            Object.assign(file, { linkId: created.id, uploadTokenHash: null }),
+          ),
+        };
+      });
+    } catch (error) {
+      if (isDuplicateEntry(error)) {
+        throw new SlugAlreadyTakenException();
       }
       throw error;
     }

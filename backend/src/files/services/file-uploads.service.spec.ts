@@ -92,6 +92,7 @@ describe('FileUploadsService', () => {
 
   beforeEach(() => {
     repository = {
+      moveToNewShare: vi.fn(),
       findByLinkId: vi.fn(),
       summarizeByLinkIds: vi.fn(),
       summarizeCountedByLinkIds: vi.fn(),
