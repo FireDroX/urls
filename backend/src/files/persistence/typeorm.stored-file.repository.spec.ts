@@ -1,4 +1,4 @@
-import { IsNull, QueryFailedError, type Repository } from 'typeorm';
+import { IsNull, Not, QueryFailedError, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LinkBytesLimitExceededException } from '../../common/exceptions/files/link-bytes-limit-exceeded.exception.js';
 import { TooManyFilesException } from '../../common/exceptions/files/too-many-files.exception.js';
@@ -268,6 +268,54 @@ describe('TypeormStoredFileRepository', () => {
     );
   });
 
+  describe('cancel claim', () => {
+    it('clears the token hash of a live file of the link that still carries it', async () => {
+      const update = vi.fn().mockResolvedValue({ affected: 1 });
+      Object.assign(ormRepository, { update });
+
+      await expect(
+        repository.claimForCancel('file-uuid', 'drop-uuid', 'hash'),
+      ).resolves.toBe(true);
+
+      expect(update).toHaveBeenCalledWith(
+        {
+          id: 'file-uuid',
+          linkId: 'drop-uuid',
+          uploadTokenHash: 'hash',
+          deletedAt: IsNull(),
+        },
+        { uploadTokenHash: null },
+      );
+    });
+
+    it('reports a lost claim when no row matches', async () => {
+      Object.assign(ormRepository, {
+        update: vi.fn().mockResolvedValue({ affected: 0 }),
+      });
+
+      await expect(
+        repository.claimForCancel('file-uuid', 'drop-uuid', 'hash'),
+      ).resolves.toBe(false);
+    });
+
+    it('restores the hash only on a still claimed live file of the same link', async () => {
+      const update = vi.fn().mockResolvedValue({ affected: 1 });
+      Object.assign(ormRepository, { update });
+
+      await repository.releaseCancelClaim('file-uuid', 'drop-uuid', 'hash');
+
+      expect(update).toHaveBeenCalledWith(
+        {
+          id: 'file-uuid',
+          linkId: 'drop-uuid',
+          uploadTokenHash: IsNull(),
+          deletedAt: IsNull(),
+        },
+        { uploadTokenHash: 'hash' },
+      );
+    });
+  });
+
   describe('with link', () => {
     function linkQuery(result: unknown) {
       const builder = {
@@ -425,6 +473,18 @@ describe('TypeormStoredFileRepository', () => {
         'share-uuid',
         'share-uuid',
       ]);
+    });
+
+    it('only takes files that still carry their token hash', async () => {
+      await repository.moveToNewShare('drop-uuid', ids, share, true);
+
+      expect(files.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            uploadTokenHash: Not(IsNull()),
+          }) as unknown,
+        }),
+      );
     });
 
     it('keeps the drop open when closeDrop is false', async () => {

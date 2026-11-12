@@ -231,7 +231,37 @@ export class FileUploadsService {
     uploadToken?: string,
   ): Promise<void> {
     const file = await this.find(link, filePublicId, uploadToken);
-    await this.deletion.erase(file, link, audit);
+    if (link.type !== 'drop') {
+      await this.deletion.erase(file, link, audit);
+      return;
+    }
+    const tokenHash = file.uploadTokenHash;
+    if (
+      !tokenHash ||
+      !(await this.repository.claimForCancel(file.id, link.id, tokenHash))
+    ) {
+      throw new FileNotFoundException();
+    }
+    try {
+      await this.deletion.erase(file, link, audit);
+    } catch (error) {
+      await this.releaseClaimQuietly(file, link, tokenHash);
+      throw error;
+    }
+  }
+
+  private async releaseClaimQuietly(
+    file: StoredFile,
+    link: Link,
+    tokenHash: string,
+  ): Promise<void> {
+    try {
+      await this.repository.releaseCancelClaim(file.id, link.id, tokenHash);
+    } catch {
+      this.logger.warn(
+        `Could not restore the cancel claim of file ${file.publicId}`,
+      );
+    }
   }
 
   status(

@@ -65,5 +65,15 @@ export interface StoredFileRepository {
     from: FileStatus,
     changes: FileTransition,
   ): Promise<boolean>;
+  claimForCancel(
+    id: string,
+    linkId: string,
+    uploadTokenHash: string,
+  ): Promise<boolean>;
+  releaseCancelClaim(
+    id: string,
+    linkId: string,
+    uploadTokenHash: string,
+  ): Promise<void>;
   softDelete(id: string): Promise<void>;
 }

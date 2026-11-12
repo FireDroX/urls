@@ -190,6 +190,7 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
             linkId: drop.id,
             publicId: In(filePublicIds),
             deletedAt: IsNull(),
+            uploadTokenHash: Not(IsNull()),
           },
           lock: { mode: 'pessimistic_write' },
         });
@@ -234,6 +235,29 @@ export class TypeormStoredFileRepository implements StoredFileRepository {
       changes,
     );
     return (result.affected ?? 0) > 0;
+  }
+
+  async claimForCancel(
+    id: string,
+    linkId: string,
+    uploadTokenHash: string,
+  ): Promise<boolean> {
+    const result = await this.repository.update(
+      { id, linkId, uploadTokenHash, deletedAt: IsNull() },
+      { uploadTokenHash: null },
+    );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async releaseCancelClaim(
+    id: string,
+    linkId: string,
+    uploadTokenHash: string,
+  ): Promise<void> {
+    await this.repository.update(
+      { id, linkId, uploadTokenHash: IsNull(), deletedAt: IsNull() },
+      { uploadTokenHash },
+    );
   }
 
   async softDelete(id: string): Promise<void> {
