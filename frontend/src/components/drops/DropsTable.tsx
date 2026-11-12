@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { Copy, Ellipsis, Pencil, Power, PowerOff, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { dropUrl, type Drop } from '#api/drops'
+import { Link as RouterLink } from 'react-router'
+import { dropDetailPath, dropUrl, type Drop } from '#api/drops'
 import { DropStateBadge } from '#components/drops/DropStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -33,7 +34,15 @@ function DropRow({ drop, formatDate, actions }: DropRowProps) {
 
   return (
     <TableRow>
-      <TableCell className="max-w-56 truncate">{drop.title ?? t('drops.untitled')}</TableCell>
+      <TableCell className="max-w-56 truncate">
+        <RouterLink
+          to={dropDetailPath(drop.id)}
+          className="font-medium underline-offset-4 hover:underline"
+          title={t('drops.open', { slug: drop.id })}
+        >
+          {drop.title ?? t('drops.untitled')}
+        </RouterLink>
+      </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
           <span className="font-mono">{dropUrl(drop.id)}</span>

@@ -20,6 +20,10 @@ export class FilesService {
     return this.repository.findByLinkId(linkId);
   }
 
+  findInLink(linkId: string, filePublicId: string): Promise<StoredFile | null> {
+    return this.repository.findInLink(linkId, filePublicId);
+  }
+
   async summarizeLinks(
     linkIds: string[],
   ): Promise<Map<string, LinkFilesSummary>> {

@@ -197,6 +197,7 @@
       "share": "Share",
       "drop": "Drop box",
       "shareDeleted": "share deleted",
+      "dropDeleted": "drop deleted",
       "linkDeleted": "link deleted"
     },
     "usage": {
@@ -275,7 +276,33 @@
     "errors": {
       "invalid": "Invalid title, slug, limit or expiry.",
       "notFound": "This drop no longer exists.",
-      "slugTaken": "This slug is already taken."
+      "slugTaken": "This slug is already taken.",
+      "fileNotFound": "This file no longer exists.",
+      "storageUnavailable": "Storage is unreachable. The file was kept, try again later."
+    },
+    "notFoundTitle": "Drop not found",
+    "backToList": "Back to drops",
+    "open": "Open drop {{slug}}",
+    "detail": {
+      "views": "Views",
+      "files": "Files received",
+      "size": "Size received"
+    },
+    "files": {
+      "title": "Received files",
+      "emptyTitle": "No files received yet",
+      "emptyBody": "Files sent through the /u/ link will show up here.",
+      "name": "Name",
+      "uploader": "Sender",
+      "anonymous": "Anonymous",
+      "size": "Size",
+      "status": "Status",
+      "receivedAt": "Received",
+      "download": "Download {{name}}",
+      "delete": "Delete {{name}}",
+      "deleted": "File deleted.",
+      "deleteTitle": "Delete this file?",
+      "deleteDescription": "{{name}} will be permanently deleted. An upload in progress will be canceled."
     }
   },
   "shares": {

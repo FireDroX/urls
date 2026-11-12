@@ -1,4 +1,5 @@
 import type { ResponseDto } from '#api/response-dto'
+import type { FileStatus } from '#api/shares'
 import { apiClient } from '#lib/api-client'
 
 export type DropState = 'open' | 'full' | 'expired' | 'disabled'
@@ -15,6 +16,22 @@ export interface Drop {
   state: DropState
   createdAt: string
   updatedAt: string
+}
+
+export interface DropFile {
+  id: string
+  name: string
+  size: number
+  mime: string | null
+  status: FileStatus
+  uploaderName: string | null
+  createdAt: string
+  completedAt: string | null
+}
+
+export interface DropDetail extends Drop {
+  viewCount: number
+  files: DropFile[]
 }
 
 export interface CreateDropPayload {
@@ -35,6 +52,10 @@ function dropApiPath(id: string): string {
   return `${DROPS_PATH}/${encodeURIComponent(id)}`
 }
 
+export function dropDetailPath(id: string): string {
+  return `/drops/${encodeURIComponent(id)}`
+}
+
 export function dropPath(id: string): string {
   return `/u/${encodeURIComponent(id)}`
 }
@@ -45,6 +66,11 @@ export function dropUrl(id: string, origin = window.location.origin): string {
 
 export async function listDrops(): Promise<Drop[]> {
   const { data } = await apiClient.get<ResponseDto<Drop[]>>(DROPS_PATH)
+  return data.data
+}
+
+export async function getDrop(id: string, signal?: AbortSignal): Promise<DropDetail> {
+  const { data } = await apiClient.get<ResponseDto<DropDetail>>(dropApiPath(id), { signal })
   return data.data
 }
 
@@ -60,4 +86,8 @@ export async function updateDrop(id: string, payload: UpdateDropPayload): Promis
 
 export async function deleteDrop(id: string): Promise<void> {
   await apiClient.delete(dropApiPath(id))
+}
+
+export async function deleteDropFile(id: string, fileId: string): Promise<void> {
+  await apiClient.delete(`${dropApiPath(id)}/files/${encodeURIComponent(fileId)}`)
 }

@@ -10,6 +10,11 @@ import {
   PUBLIC_ID_LENGTH,
   SHARE_FILES_MAX,
 } from '../../common/variables.global.js';
+import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
+import { StorageUnavailableException } from '../../common/exceptions/storage/storage-unavailable.exception.js';
+import type { EventsService } from '../../events/services/events.service.js';
+import type { StoredFile } from '../../files/entities/stored-file.entity.js';
+import type { FileDeletionService } from '../../files/services/file-deletion.service.js';
 import type { FilesService } from '../../files/services/files.service.js';
 import type { Link } from '../../links/entities/link.entity.js';
 import { DropsMapper } from '../mapper/drops.mapper.js';
@@ -51,7 +56,13 @@ describe('DropsService', () => {
     save: ReturnType<typeof vi.fn>;
     softDelete: ReturnType<typeof vi.fn>;
   };
-  let files: { summarizeCountedLinks: ReturnType<typeof vi.fn> };
+  let files: {
+    summarizeCountedLinks: ReturnType<typeof vi.fn>;
+    listForLink: ReturnType<typeof vi.fn>;
+    findInLink: ReturnType<typeof vi.fn>;
+  };
+  let events: { countViews: ReturnType<typeof vi.fn> };
+  let fileDeletion: { erase: ReturnType<typeof vi.fn> };
   let audit: { record: ReturnType<typeof vi.fn> };
   let service: DropsService;
 
@@ -63,12 +74,20 @@ describe('DropsService', () => {
       save: vi.fn((drop: Link) => Promise.resolve(drop)),
       softDelete: vi.fn().mockResolvedValue(undefined),
     };
-    files = { summarizeCountedLinks: vi.fn().mockResolvedValue(new Map()) };
+    files = {
+      summarizeCountedLinks: vi.fn().mockResolvedValue(new Map()),
+      listForLink: vi.fn().mockResolvedValue([]),
+      findInLink: vi.fn().mockResolvedValue(null),
+    };
+    events = { countViews: vi.fn().mockResolvedValue(0) };
+    fileDeletion = { erase: vi.fn().mockResolvedValue(undefined) };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     service = new DropsService(
       repository as unknown as DropRepository,
       files as unknown as FilesService,
       audit as unknown as AuditLogService,
+      events as unknown as EventsService,
+      fileDeletion as unknown as FileDeletionService,
     );
   });
 
@@ -105,7 +124,24 @@ describe('DropsService', () => {
         fileCount: 1,
         totalSize: 1000,
         state: 'full',
+        files: [],
+        viewCount: 0,
       });
+    });
+
+    it('adds the received files and the view count', async () => {
+      const drop = buildDrop();
+      const received = { id: 'f-uuid', publicId: 'file1234' } as StoredFile;
+      repository.findByPublicId.mockResolvedValue(drop);
+      files.listForLink.mockResolvedValue([received]);
+      events.countViews.mockResolvedValue(7);
+
+      await expect(service.get('drop1234')).resolves.toMatchObject({
+        files: [received],
+        viewCount: 7,
+      });
+      expect(files.listForLink).toHaveBeenCalledWith('drop-uuid');
+      expect(events.countViews).toHaveBeenCalledWith('drop-uuid');
     });
 
     it('is expired once its date has passed', async () => {
@@ -124,6 +160,62 @@ describe('DropsService', () => {
       await expect(service.get('drop1234')).resolves.toMatchObject({
         state: 'open',
       });
+    });
+  });
+
+  describe('removeFile', () => {
+    const file = { id: 'f-uuid', publicId: 'file1234' } as StoredFile;
+
+    it('erases the file without any upload token', async () => {
+      const drop = buildDrop({ disabled: true });
+      repository.findByPublicId.mockResolvedValue(drop);
+      files.findInLink.mockResolvedValue(file);
+
+      await service.removeFile('drop1234', 'file1234', USER_ID);
+
+      expect(files.findInLink).toHaveBeenCalledWith('drop-uuid', 'file1234');
+      expect(fileDeletion.erase).toHaveBeenCalledWith(file, drop, {
+        action: 'files.deleted',
+        userId: USER_ID,
+      });
+    });
+
+    it('answers 404 for an unknown or malformed drop', async () => {
+      await expect(
+        service.removeFile('drop1234', 'file1234', USER_ID),
+      ).rejects.toBeInstanceOf(DropNotFoundException);
+      await expect(
+        service.removeFile('a b', 'file1234', USER_ID),
+      ).rejects.toBeInstanceOf(DropNotFoundException);
+      expect(files.findInLink).not.toHaveBeenCalled();
+    });
+
+    it('answers 404 for a file outside the drop', async () => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+
+      await expect(
+        service.removeFile('drop1234', 'file1234', USER_ID),
+      ).rejects.toBeInstanceOf(FileNotFoundException);
+      expect(fileDeletion.erase).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed file id before any query', async () => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+
+      await expect(
+        service.removeFile('drop1234', 'a b', USER_ID),
+      ).rejects.toBeInstanceOf(FileNotFoundException);
+      expect(files.findInLink).not.toHaveBeenCalled();
+    });
+
+    it('propagates an unreachable storage', async () => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+      files.findInLink.mockResolvedValue(file);
+      fileDeletion.erase.mockRejectedValue(new StorageUnavailableException());
+
+      await expect(
+        service.removeFile('drop1234', 'file1234', USER_ID),
+      ).rejects.toBeInstanceOf(StorageUnavailableException);
     });
   });
 

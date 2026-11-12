@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { extractErrorMessage } from '#lib/api-errors'
 import i18n from '#lib/i18n'
 import { DifferentFileError, FileHashError } from '#lib/share-errors'
-import { dropErrorMessages, dropUploadErrorMessage } from './drop-errors'
+import { dropErrorMessages, dropFileDeleteErrorMessages, dropUploadErrorMessage } from './drop-errors'
 import { toUploadError } from './upload-error'
 
 const t = i18n.t.bind(i18n)
@@ -40,6 +40,15 @@ describe('dropErrorMessages', () => {
     expect(extractErrorMessage(apiError(429), undefined, dropErrorMessages(t))).toBe(
       'Trop de requêtes, réessayez dans un instant.',
     )
+  })
+})
+
+describe('dropFileDeleteErrorMessages', () => {
+  it.each([
+    [404, "Ce fichier n'existe plus."],
+    [503, 'Le stockage est injoignable. Le fichier est conservé, réessayez plus tard.'],
+  ])('translates %i', (status, message) => {
+    expect(extractErrorMessage(apiError(status), undefined, dropFileDeleteErrorMessages(t))).toBe(message)
   })
 })
 
