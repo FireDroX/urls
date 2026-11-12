@@ -102,6 +102,7 @@ export const FILE_STATUSES = [
 ] as const;
 export const FILE_NAME_INPUT_MAX_LENGTH = 1024;
 export const FILE_NAME_MAX_LENGTH = 255;
+export const FILE_PUBLIC_ID_MAX_LENGTH = 16;
 export const FILE_MIN_SIZE_BYTES = 1;
 export const FILE_MAX_SIZE_BYTES = 20 * 1024 ** 3;
 export const FILE_PART_SIZE_BYTES = 32 * 1024 ** 2;

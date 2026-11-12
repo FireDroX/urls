@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { SHARE_FILES_MAX } from '../../../common/variables.global.js';
+import {
+  FILE_PUBLIC_ID_MAX_LENGTH,
+  SHARE_FILES_MAX,
+} from '../../../common/variables.global.js';
 import { createShareSchema } from '../../../shares/dto/in/create-share.dto.js';
-
-const FILE_PUBLIC_ID_MAX_LENGTH = 16;
 
 export const shareDropFilesSchema = z.strictObject({
   ...createShareSchema.shape,

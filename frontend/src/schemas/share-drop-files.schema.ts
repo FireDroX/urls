@@ -1,11 +1,10 @@
 import type { TFunction } from 'i18next'
 import { z } from 'zod'
 import type { ShareDropFilesPayload } from '#api/drops'
+import { DROP_MAX_FILES_LIMIT } from '#schemas/drop.schema'
 import { expiresAtField, slugField } from '#schemas/link.schema'
 import { maxDownloadsField } from '#schemas/share.schema'
 import { fromDateTimeLocal } from '#utils/datetime-local'
-
-export const SHARE_FILES_MAX = 50
 
 export function createShareDropFilesSchema(t: TFunction) {
   return z.object({
@@ -15,7 +14,7 @@ export function createShareDropFilesSchema(t: TFunction) {
     fileIds: z
       .array(z.string())
       .min(1, t('drops.share.validation.noFile'))
-      .max(SHARE_FILES_MAX, t('drops.share.validation.tooManyFiles', { max: SHARE_FILES_MAX })),
+      .max(DROP_MAX_FILES_LIMIT, t('drops.share.validation.tooManyFiles', { max: DROP_MAX_FILES_LIMIT })),
     closeDrop: z.boolean(),
   })
 }

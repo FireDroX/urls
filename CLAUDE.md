@@ -16,7 +16,7 @@ Ce dépôt a un graphe de connaissance à `graphify-out/` :
 
 Le plan de référence est `Plan url.addrien.fr.md` (phases 0 à 4, exigences de sécurité transverses) et la maquette `Maquette url.addrien.fr.html` (thème sombre, Montserrat / Noto Sans, accent orange) ; les deux restent hors dépôt (`.gitignore`). Une fonctionnalité n'est terminée qu'avec ses limites, ses codes d'erreur et ses contrôles d'intégrité.
 
-État : phases 1 (redirections `/r/`) et 2 (partages `/d/`, fichiers stockés) livrées. **Phase 3** (dépôts `/u/`) : colonnes et API admin des dépôts (`/api/drops`), aperçu public, API publique d'envoi de fichiers, page publique `/u/:id` fiche admin `/drops/:id` (fichiers reçus) et création d'un partage à partir d'un dépôt en place.
+État : phases 1 (redirections `/r/`) et 2 (partages `/d/`, fichiers stockés) livrées. **Phase 3** (dépôts `/u/`) : colonnes et API admin des dépôts (`/api/drops`), aperçu public, API publique d'envoi de fichiers, page publique `/u/:id`, fiche admin `/drops/:id` (fichiers reçus) et création d'un partage à partir d'un dépôt en place.
 
 ## Commandes
 
