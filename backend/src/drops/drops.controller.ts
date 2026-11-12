@@ -18,6 +18,7 @@ import {
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiServiceUnavailableResponse,
   ApiTags,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
@@ -31,7 +32,10 @@ import {
   LINK_CREATE_THROTTLE_LIMIT,
   LINK_CREATE_THROTTLE_TTL_MS,
 } from '../common/variables.global.js';
-import type { DropResponseDto } from './dto/out/drop-response.dto.js';
+import type {
+  DropDetailResponseDto,
+  DropResponseDto,
+} from './dto/out/drop-response.dto.js';
 import { DropsExceptionFilter } from './filter/drops.exception.filter.js';
 import { DropsMapper } from './mapper/drops.mapper.js';
 import { DropsService } from './services/drops.service.js';
@@ -63,8 +67,10 @@ export class DropsController {
     description: 'Dépôt inconnu.',
     type: ErrorResponseDto,
   })
-  async get(@Param('id') id: string): Promise<ResponseDto<DropResponseDto>> {
-    return DropsMapper.toResponse(await this.dropsService.get(id));
+  async get(
+    @Param('id') id: string,
+  ): Promise<ResponseDto<DropDetailResponseDto>> {
+    return DropsMapper.toDetailResponse(await this.dropsService.get(id));
   }
 
   @Post()
@@ -127,5 +133,27 @@ export class DropsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     await this.dropsService.remove(id, user.id);
+  }
+
+  @Delete(':id/files/:fileId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Supprimer un fichier reçu (ou annuler un envoi en cours)',
+  })
+  @ApiNoContentResponse({ description: 'Fichier supprimé.' })
+  @ApiNotFoundResponse({
+    description: 'Dépôt ou fichier inconnu.',
+    type: ErrorResponseDto,
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'Stockage injoignable : le fichier est conservé.',
+    type: ErrorResponseDto,
+  })
+  async removeFile(
+    @Param('id') id: string,
+    @Param('fileId') fileId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.dropsService.removeFile(id, fileId, user.id);
   }
 }

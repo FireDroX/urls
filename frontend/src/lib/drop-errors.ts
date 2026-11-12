@@ -17,6 +17,13 @@ export function dropErrorMessages(t: TFunction): MessagesByStatus {
   }
 }
 
+export function dropFileDeleteErrorMessages(t: TFunction): MessagesByStatus {
+  return {
+    [NOT_FOUND]: t('drops.errors.fileNotFound'),
+    [SERVICE_UNAVAILABLE]: t('drops.errors.storageUnavailable'),
+  }
+}
+
 export function dropUploadErrorMessage(error: unknown, t: TFunction): string {
   if (error instanceof DifferentFileError) {
     return t('dropUpload.errors.differentFile')

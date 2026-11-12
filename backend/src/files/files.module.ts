@@ -22,6 +22,6 @@ import { FilesService } from './services/files.service.js';
     FilesAdminService,
     FileVerificationService,
   ],
-  exports: [FilesService, FileUploadsService],
+  exports: [FilesService, FileUploadsService, FileDeletionService],
 })
 export class FilesModule {}

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6 — 2026-11-12
+
+- Nouvelle fiche de dépôt (`/drops/<slug>`) : réglages, état, nombre de vues, place utilisée, et liste des fichiers reçus avec leur état, leur expéditeur (ou « Anonyme ») et leur date de réception. L'état d'un fichier en cours de vérification se met à jour tout seul.
+- Depuis la fiche d'un dépôt, un fichier reçu se télécharge directement, et se supprime après confirmation, y compris un envoi abandonné en cours. Si le stockage est injoignable, le fichier est conservé et un message l'indique.
+- Le titre d'un dépôt dans la liste ouvre sa fiche, et l'origine d'un fichier dans la page « Fichiers » renvoie vers le dépôt (ou indique qu'il a été supprimé).
+
 ## 0.1.5 — 2026-11-11
 
 - Nouvelle page publique `/u/<slug>` : un visiteur y voit le titre du dépôt, le nombre de fichiers et la place restants, la date de fermeture éventuelle, et peut envoyer des fichiers par glisser-déposer ou sélection, avec un nom facultatif. Un captcha est demandé pour chaque fichier, juste avant son envoi. Chaque fichier affiche sa progression, peut être annulé, et indique s'il est refusé (trop gros, plus de place, dépôt fermé) puis s'il est reçu ou rejeté.

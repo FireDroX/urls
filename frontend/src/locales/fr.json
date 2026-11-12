@@ -197,6 +197,7 @@
       "share": "Partage",
       "drop": "Dépôt",
       "shareDeleted": "partage supprimé",
+      "dropDeleted": "dépôt supprimé",
       "linkDeleted": "lien supprimé"
     },
     "usage": {
@@ -275,7 +276,33 @@
     "errors": {
       "invalid": "Titre, slug, limite ou expiration invalide.",
       "notFound": "Ce dépôt n'existe plus.",
-      "slugTaken": "Ce slug est déjà pris."
+      "slugTaken": "Ce slug est déjà pris.",
+      "fileNotFound": "Ce fichier n'existe plus.",
+      "storageUnavailable": "Le stockage est injoignable. Le fichier est conservé, réessayez plus tard."
+    },
+    "notFoundTitle": "Dépôt introuvable",
+    "backToList": "Retour aux dépôts",
+    "open": "Ouvrir le dépôt {{slug}}",
+    "detail": {
+      "views": "Vues",
+      "files": "Fichiers reçus",
+      "size": "Taille reçue"
+    },
+    "files": {
+      "title": "Fichiers reçus",
+      "emptyTitle": "Aucun fichier reçu pour l'instant",
+      "emptyBody": "Les fichiers envoyés via le lien /u/ apparaîtront ici.",
+      "name": "Nom",
+      "uploader": "Expéditeur",
+      "anonymous": "Anonyme",
+      "size": "Taille",
+      "status": "État",
+      "receivedAt": "Reçu le",
+      "download": "Télécharger {{name}}",
+      "delete": "Supprimer {{name}}",
+      "deleted": "Fichier supprimé.",
+      "deleteTitle": "Supprimer ce fichier ?",
+      "deleteDescription": "{{name}} sera supprimé définitivement. Un envoi en cours sera annulé."
     }
   },
   "shares": {

@@ -11,7 +11,9 @@ const STATUS_BY_EXCEPTION: Record<string, number> = {
   ValidationException: HttpStatus.BAD_REQUEST,
   DropNotFoundException: HttpStatus.NOT_FOUND,
   DropExpiredException: HttpStatus.GONE,
+  FileNotFoundException: HttpStatus.NOT_FOUND,
   SlugAlreadyTakenException: HttpStatus.CONFLICT,
+  StorageUnavailableException: HttpStatus.SERVICE_UNAVAILABLE,
 };
 
 @Catch()

@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
+import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDrop, deleteDrop, listDrops, updateDrop, type Drop } from '#api/drops'
 import { dropFormDefaults } from '#schemas/drop.schema'
@@ -41,6 +42,14 @@ function apiError(status: number, headers: Record<string, string> = {}): AxiosEr
   return new AxiosError('failed', undefined, undefined, undefined, response)
 }
 
+function renderDrops() {
+  return render(
+    <MemoryRouter>
+      <Drops />
+    </MemoryRouter>,
+  )
+}
+
 async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole('button', { name: 'Actions pour docs' }))
 }
@@ -56,7 +65,7 @@ beforeEach(() => {
 
 describe('Drops page', () => {
   it('lists the drops with title, URL, files, size, state and expiry', async () => {
-    render(<Drops />)
+    renderDrops()
 
     const row = (await screen.findByText(`${window.location.origin}/u/docs`)).closest('tr')!
     expect(within(row).getByText('Documents')).toBeInTheDocument()
@@ -66,9 +75,15 @@ describe('Drops page', () => {
     expect(within(row).getByText('Jamais')).toBeInTheDocument()
   })
 
+  it('links the title to the drop detail', async () => {
+    renderDrops()
+
+    expect(await screen.findByRole('link', { name: 'Documents' })).toHaveAttribute('href', '/drops/docs')
+  })
+
   it('falls back to a translated title for an untitled drop', async () => {
     vi.mocked(listDrops).mockResolvedValue([{ ...drop, title: null, state: 'full' }])
-    render(<Drops />)
+    renderDrops()
 
     expect(await screen.findByText('Sans titre')).toBeInTheDocument()
     expect(screen.getByText('Plein')).toBeInTheDocument()
@@ -76,7 +91,7 @@ describe('Drops page', () => {
 
   it('shows an empty state', async () => {
     vi.mocked(listDrops).mockResolvedValue([])
-    render(<Drops />)
+    renderDrops()
 
     expect(await screen.findByText("Aucun dépôt pour l'instant")).toBeInTheDocument()
   })
@@ -84,7 +99,7 @@ describe('Drops page', () => {
   it('offers a retry when loading fails', async () => {
     const user = userEvent.setup()
     vi.mocked(listDrops).mockRejectedValueOnce(new Error('down'))
-    render(<Drops />)
+    renderDrops()
 
     await user.click(await screen.findByRole('button', { name: 'Réessayer' }))
 
@@ -94,7 +109,7 @@ describe('Drops page', () => {
   it('copies the full /u/ URL', async () => {
     const user = userEvent.setup()
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
-    render(<Drops />)
+    renderDrops()
 
     await user.click(await screen.findByRole('button', { name: 'Copier le lien docs' }))
 
@@ -104,7 +119,7 @@ describe('Drops page', () => {
   it('proposes a 7 day expiry and posts the creation', async () => {
     const user = userEvent.setup()
     vi.mocked(createDrop).mockResolvedValue({ ...drop, id: 'recus', title: 'Reçus' })
-    render(<Drops />)
+    renderDrops()
 
     await openCreateForm(user)
     const expectedExpiry = dropFormDefaults().expiresAt
@@ -127,7 +142,7 @@ describe('Drops page', () => {
   it('creates a drop without expiry once cleared', async () => {
     const user = userEvent.setup()
     vi.mocked(createDrop).mockResolvedValue(drop)
-    render(<Drops />)
+    renderDrops()
 
     await openCreateForm(user)
     await user.click(screen.getByRole('button', { name: 'Aucune' }))
@@ -143,7 +158,7 @@ describe('Drops page', () => {
     ['Taille totale maximum', '76', '75 Gio au maximum'],
   ])('refuses %s = %s before calling the API', async (label, value, message) => {
     const user = userEvent.setup()
-    render(<Drops />)
+    renderDrops()
 
     await openCreateForm(user)
     const input = screen.getByLabelText(label)
@@ -157,7 +172,7 @@ describe('Drops page', () => {
 
   it('refuses a title that is too long', async () => {
     const user = userEvent.setup()
-    render(<Drops />)
+    renderDrops()
 
     await openCreateForm(user)
     await user.click(screen.getByLabelText('Titre (facultatif)'))
@@ -171,7 +186,7 @@ describe('Drops page', () => {
   it('translates a taken slug', async () => {
     const user = userEvent.setup()
     vi.mocked(createDrop).mockRejectedValue(apiError(409))
-    render(<Drops />)
+    renderDrops()
 
     await openCreateForm(user)
     await user.type(screen.getByLabelText('Slug (facultatif)'), 'docs')
@@ -183,7 +198,7 @@ describe('Drops page', () => {
   it('translates a throttled creation', async () => {
     const user = userEvent.setup()
     vi.mocked(createDrop).mockRejectedValue(apiError(429, { 'retry-after': '30' }))
-    render(<Drops />)
+    renderDrops()
 
     await openCreateForm(user)
     await user.click(screen.getByRole('button', { name: 'Créer' }))
@@ -194,7 +209,7 @@ describe('Drops page', () => {
   it('sends only the changed fields when editing', async () => {
     const user = userEvent.setup()
     vi.mocked(updateDrop).mockResolvedValue({ ...drop, maxFiles: 8 })
-    render(<Drops />)
+    renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
@@ -209,7 +224,7 @@ describe('Drops page', () => {
 
   it('calls no API when nothing changed', async () => {
     const user = userEvent.setup()
-    render(<Drops />)
+    renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
@@ -222,7 +237,7 @@ describe('Drops page', () => {
   it('translates a drop that no longer exists when editing', async () => {
     const user = userEvent.setup()
     vi.mocked(updateDrop).mockRejectedValue(apiError(404))
-    render(<Drops />)
+    renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
@@ -235,7 +250,7 @@ describe('Drops page', () => {
   it('disables a drop', async () => {
     const user = userEvent.setup()
     vi.mocked(updateDrop).mockResolvedValue({ ...drop, disabled: true, state: 'disabled' })
-    render(<Drops />)
+    renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Désactiver' }))
@@ -247,7 +262,7 @@ describe('Drops page', () => {
   it('deletes a drop only after confirmation', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteDrop).mockResolvedValue()
-    render(<Drops />)
+    renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Supprimer' }))
@@ -261,7 +276,7 @@ describe('Drops page', () => {
   it('keeps the dialog open with a translated error when the deletion fails', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteDrop).mockRejectedValue(apiError(404))
-    render(<Drops />)
+    renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Supprimer' }))

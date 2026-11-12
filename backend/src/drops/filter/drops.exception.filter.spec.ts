@@ -2,6 +2,8 @@ import type { ArgumentsHost } from '@nestjs/common';
 import type { Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { DropExpiredException } from '../../common/exceptions/drops/drop-expired.exception.js';
+import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
+import { StorageUnavailableException } from '../../common/exceptions/storage/storage-unavailable.exception.js';
 import { DropNotFoundException } from '../../common/exceptions/drops/drop-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
@@ -37,6 +39,14 @@ describe('DropsExceptionFilter', () => {
       status: 410,
       body: { error: 'Drop expired' },
     });
+  });
+
+  it('answers 404 for an unknown file', () => {
+    expect(respondTo(new FileNotFoundException()).status).toBe(404);
+  });
+
+  it('answers 503 when the storage is unreachable', () => {
+    expect(respondTo(new StorageUnavailableException()).status).toBe(503);
   });
 
   it('answers 409 for a taken slug', () => {

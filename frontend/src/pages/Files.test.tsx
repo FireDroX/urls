@@ -120,12 +120,22 @@ describe('Files page', () => {
     expect(screen.queryByRole('button', { name: /Télécharger/ })).not.toBeInTheDocument()
   })
 
-  it('shows a drop box origin as plain text', async () => {
+  it('links a drop box origin to its detail page', async () => {
+    vi.mocked(listFiles).mockResolvedValue(
+      list([{ ...file, link: { ...file.link, type: 'drop', publicId: 'docs' } }]),
+    )
+    renderAt('/files')
+
+    expect(await screen.findByRole('link', { name: 'Dépôt docs' })).toHaveAttribute('href', '/drops/docs')
+  })
+
+  it('shows a deleted drop box origin as plain text', async () => {
     vi.mocked(listFiles).mockResolvedValue(list([{ ...orphan, link: { ...orphan.link, type: 'drop' } }]))
     renderAt('/files')
 
     expect(await screen.findByText('Dépôt gone')).toBeInTheDocument()
-    expect(screen.getByText('lien supprimé')).toBeInTheDocument()
+    expect(screen.getByText('dépôt supprimé')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Dépôt gone' })).not.toBeInTheDocument()
   })
 
   it('shows a loading state, then the empty states', async () => {

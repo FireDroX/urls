@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AuditLogService } from '../../audit/services/audit-log.service.js';
 import { dropState } from '../../common/drop-state.js';
+import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
 import { DropNotFoundException } from '../../common/exceptions/drops/drop-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { parseDto } from '../../common/parse-dto.js';
@@ -12,6 +13,9 @@ import {
   type DropState,
   PUBLIC_ID_GENERATION_ATTEMPTS,
 } from '../../common/variables.global.js';
+import { EventsService } from '../../events/services/events.service.js';
+import type { StoredFile } from '../../files/entities/stored-file.entity.js';
+import { FileDeletionService } from '../../files/services/file-deletion.service.js';
 import {
   FilesService,
   type LinkFilesSummary,
@@ -29,6 +33,11 @@ export interface DropSummary extends LinkFilesSummary {
   state: DropState;
 }
 
+export interface DropDetail extends DropSummary {
+  files: StoredFile[];
+  viewCount: number;
+}
+
 const NO_FILES: LinkFilesSummary = { fileCount: 0, totalSize: 0 };
 
 function summarize(drop: Link, usage: LinkFilesSummary): DropSummary {
@@ -42,6 +51,8 @@ export class DropsService {
     private readonly repository: DropRepository,
     private readonly files: FilesService,
     private readonly auditLog: AuditLogService,
+    private readonly events: EventsService,
+    private readonly fileDeletion: FileDeletionService,
   ) {}
 
   async list(): Promise<DropSummary[]> {
@@ -54,8 +65,33 @@ export class DropsService {
     );
   }
 
-  async get(publicId: string): Promise<DropSummary> {
-    return this.withUsage(await this.find(publicId));
+  async get(publicId: string): Promise<DropDetail> {
+    const drop = await this.find(publicId);
+    const [summary, files, viewCount] = await Promise.all([
+      this.withUsage(drop),
+      this.files.listForLink(drop.id),
+      this.events.countViews(drop.id),
+    ]);
+    return { ...summary, files, viewCount };
+  }
+
+  async removeFile(
+    publicId: string,
+    filePublicId: string,
+    userId: string,
+  ): Promise<void> {
+    const drop = await this.find(publicId);
+    if (!isWellFormedLinkId(filePublicId)) {
+      throw new FileNotFoundException();
+    }
+    const file = await this.files.findInLink(drop.id, filePublicId);
+    if (!file) {
+      throw new FileNotFoundException();
+    }
+    await this.fileDeletion.erase(file, drop, {
+      action: 'files.deleted',
+      userId,
+    });
   }
 
   async create(input: unknown, userId: string): Promise<DropSummary> {

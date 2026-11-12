@@ -15,6 +15,7 @@ import { Settings } from '#pages/Settings'
 import { ShareDetail } from '#pages/ShareDetail'
 import { ShareDownload } from '#pages/ShareDownload'
 import { Files } from '#pages/Files'
+import { DropDetail } from '#pages/DropDetail'
 import { Drops } from '#pages/Drops'
 import { Shares } from '#pages/Shares'
 
@@ -50,6 +51,7 @@ export function App() {
           <Route path="/shares" element={<Shares />} />
           <Route path="/shares/:id" element={<ShareDetail />} />
           <Route path="/drops" element={<Drops />} />
+          <Route path="/drops/:id" element={<DropDetail />} />
           <Route path="/files" element={<Files />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/account" element={<Navigate to="/settings" replace />} />
