@@ -228,7 +228,12 @@ describe('TagsService', () => {
     it('answers 409 when another tag has the name', async () => {
       repository.findByPublicId.mockResolvedValue(buildTag());
       repository.findByNameKey.mockResolvedValue(
-        buildTag({ id: 'other', publicId: 'zzz', name: 'Home' }),
+        buildTag({
+          id: 'other',
+          publicId: 'zzz',
+          name: 'Home',
+          nameKey: 'home',
+        }),
       );
 
       await expect(
@@ -245,7 +250,18 @@ describe('TagsService', () => {
       const result = await service.update('abc123', { name: 'WORK' }, USER_ID);
 
       expect(result.tag.name).toBe('WORK');
+      expect(result.tag.nameKey).toBe('work');
       expect(result.linkCount).toBe(3);
+    });
+
+    it('stores the new name key when renaming', async () => {
+      repository.findByPublicId.mockResolvedValue(buildTag());
+
+      await service.update('abc123', { name: 'Home' }, USER_ID);
+
+      expect(repository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Home', nameKey: 'home' }),
+      );
     });
 
     it('saves only the changed fields and audits them', async () => {

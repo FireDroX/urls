@@ -11,6 +11,7 @@ const STATUS_BY_EXCEPTION: Record<string, number> = {
   ValidationException: HttpStatus.BAD_REQUEST,
   TagNotFoundException: HttpStatus.NOT_FOUND,
   TagNameAlreadyTakenException: HttpStatus.CONFLICT,
+  TagPublicIdTakenException: HttpStatus.CONFLICT,
 };
 
 @Catch()

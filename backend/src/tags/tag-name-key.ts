@@ -1,3 +1,3 @@
 export function tagNameKey(name: string): string {
-  return name.normalize('NFC').toLowerCase();
+  return name.normalize('NFC').toLowerCase().normalize('NFC');
 }

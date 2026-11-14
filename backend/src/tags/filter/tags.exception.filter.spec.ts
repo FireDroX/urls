@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { TagNameAlreadyTakenException } from '../../common/exceptions/tags/tag-name-already-taken.exception.js';
 import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
+import { TagPublicIdTakenException } from '../../common/exceptions/tags/tag-public-id-taken.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
 import { TagsExceptionFilter } from './tags.exception.filter.js';
 
@@ -36,6 +37,10 @@ describe('TagsExceptionFilter', () => {
       status: 409,
       body: { error: 'Tag name already taken' },
     });
+  });
+
+  it('answers 409 when the generated public id stays taken', () => {
+    expect(respondTo(new TagPublicIdTakenException()).status).toBe(409);
   });
 
   it('answers 400 for an invalid body', () => {
