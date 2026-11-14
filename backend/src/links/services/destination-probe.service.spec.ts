@@ -25,6 +25,17 @@ function reply(status: number, location: string | null = null) {
   return { status, location };
 }
 
+function delayedReply(delayMs: number, response: ReturnType<typeof reply>) {
+  return ({ signal }: { signal: AbortSignal }) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => resolve(response), delayMs);
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        reject(new Error('aborted'));
+      });
+    });
+}
+
 describe('DestinationProbe', () => {
   let transport: { resolve: Mock; send: Mock };
   let probe: DestinationProbe;
@@ -250,6 +261,24 @@ describe('DestinationProbe', () => {
       statusCode: null,
       errorKind: 'timeout',
     });
+  });
+
+  it('shares the timeout budget across hops', async () => {
+    vi.useFakeTimers();
+    const hopDelay = Math.ceil(LINK_CHECK_TIMEOUT_MS * 0.6);
+    transport.send
+      .mockImplementationOnce(delayedReply(hopDelay, reply(302, '/b')))
+      .mockImplementationOnce(delayedReply(hopDelay, reply(200)));
+
+    const pending = probe.check('https://example.com/a');
+    await vi.advanceTimersByTimeAsync(LINK_CHECK_TIMEOUT_MS);
+
+    expect(await pending).toEqual({
+      outcome: 'broken',
+      statusCode: null,
+      errorKind: 'timeout',
+    });
+    expect(transport.send).toHaveBeenCalledTimes(2);
   });
 
   it('times out while resolving the name', async () => {

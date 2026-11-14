@@ -134,7 +134,8 @@ export class LinksController {
   @HttpCode(HttpStatus.OK)
   @Throttle(CHECK_THROTTLE)
   @ApiOperation({
-    summary: 'Vérifier la destination d’une redirection (HEAD, sans la suivre)',
+    summary:
+      'Vérifier la destination d’une redirection (requête HEAD, redirections suivies, sans jamais contacter une adresse interne)',
   })
   @ApiOkResponse({ description: 'Résultat de la vérification.' })
   @ApiNotFoundResponse({ description: 'Lien inconnu.', type: ErrorResponseDto })
