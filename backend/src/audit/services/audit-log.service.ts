@@ -24,7 +24,10 @@ export type AuditAction =
   | 'drops.files.cancelled'
   | 'tags.created'
   | 'tags.updated'
-  | 'tags.deleted';
+  | 'tags.deleted'
+  | 'folders.created'
+  | 'folders.updated'
+  | 'folders.deleted';
 
 export interface AuditEntry {
   action: AuditAction;

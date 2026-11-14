@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 — 2026-11-14
+
+- Les dossiers existent désormais côté API : l'administrateur peut les créer, les renommer et les supprimer. Le nom est unique sans distinction de casse (accents et emoji distincts), supprimer un dossier ne supprime jamais ses liens (ils en sortent simplement), et la liste indique combien de liens contient chaque dossier.
+
 ## 0.2.1 — 2026-11-14
 
 - Les tags existent désormais côté API : l'administrateur peut les créer (nom unique sans distinction de casse (mais accents et emoji distincts), et couleur au format `#rrggbb`), les renommer, les recolorer et les supprimer, et la liste indique combien de liens utilisent chaque tag.

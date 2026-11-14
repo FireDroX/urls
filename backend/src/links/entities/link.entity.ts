@@ -15,6 +15,7 @@ export type LinkType = (typeof LINK_TYPES)[number];
 @Entity('links')
 @Index('UQ_links_public_id', ['publicId'], { unique: true })
 @Index('IDX_links_type_created_at', ['type', 'createdAt'])
+@Index('IDX_links_folder_id', ['folderId'])
 export class Link {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -67,6 +68,9 @@ export class Link {
 
   @Column({ type: 'int', unsigned: true, name: 'max_files', nullable: true })
   maxFiles: number | null;
+
+  @Column({ type: 'varchar', length: 36, name: 'folder_id', nullable: true })
+  folderId: string | null;
 
   @Column({ type: 'boolean', default: false })
   disabled: boolean;

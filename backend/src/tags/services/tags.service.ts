@@ -9,7 +9,7 @@ import {
   isWellFormedLinkId,
 } from '../../common/public-id.js';
 import { PUBLIC_ID_GENERATION_ATTEMPTS } from '../../common/variables.global.js';
-import { tagNameKey } from '../tag-name-key.js';
+import { toNameKey } from '../../common/name-key.js';
 import { createTagSchema } from '../dto/in/create-tag.dto.js';
 import { updateTagSchema } from '../dto/in/update-tag.dto.js';
 import type { Tag } from '../entities/tag.entity.js';
@@ -33,7 +33,7 @@ export class TagsService {
 
   async create(input: unknown, userId: string): Promise<TagWithLinkCount> {
     const { name, color } = parseDto(createTagSchema, input);
-    const nameKey = tagNameKey(name);
+    const nameKey = toNameKey(name);
     if (await this.repository.findByNameKey(nameKey)) {
       throw new TagNameAlreadyTakenException();
     }
@@ -56,7 +56,7 @@ export class TagsService {
     const tag = await this.find(publicId);
     const changes: Record<string, string> = {};
     if (dto.name !== undefined && dto.name !== tag.name) {
-      const nameKey = tagNameKey(dto.name);
+      const nameKey = toNameKey(dto.name);
       const existing = await this.repository.findByNameKey(nameKey);
       if (existing && existing.id !== tag.id) {
         throw new TagNameAlreadyTakenException();

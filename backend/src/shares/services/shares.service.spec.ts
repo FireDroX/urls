@@ -35,6 +35,7 @@ function buildShare(overrides: Partial<Link> = {}): Link {
     title: null,
     maxTotalBytes: null,
     maxFiles: null,
+    folderId: null,
     disabled: false,
     createdAt: new Date('2026-11-01T00:00:00Z'),
     updatedAt: new Date('2026-11-01T00:00:00Z'),
