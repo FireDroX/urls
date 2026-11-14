@@ -187,7 +187,7 @@ describe('LinkCheckSweepService', () => {
     expect(checks.checkLink).toHaveBeenCalledWith(edited);
   });
 
-  it('skips a redirect deleted or changed type during the pass, without probing it', async () => {
+  it('skips a redirect deleted or renamed during the pass, without probing it', async () => {
     linksService.get
       .mockResolvedValueOnce(links[0])
       .mockRejectedValueOnce(new LinkNotFoundException())
@@ -209,5 +209,23 @@ describe('LinkCheckSweepService', () => {
       errors: 0,
     });
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('counts a failed re-read as an error and keeps going', async () => {
+    linksService.get
+      .mockResolvedValueOnce(links[0])
+      .mockRejectedValueOnce(new Error('connection lost'))
+      .mockResolvedValueOnce(links[2]);
+
+    const run = service.run();
+    await vi.runAllTimersAsync();
+    const summary = await run;
+
+    expect(
+      (checks.checkLink.mock.calls as [Link][]).map(([link]) => link.publicId),
+    ).toEqual(['a', 'c']);
+    expect(summary).toMatchObject({ checked: 2, gone: 0, errors: 1 });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toBe('Link check failed for b: Error');
   });
 });
