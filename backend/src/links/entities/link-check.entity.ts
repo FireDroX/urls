@@ -31,7 +31,12 @@ export class LinkCheck {
   @Column({ type: 'varchar', length: 32, name: 'error_kind', nullable: true })
   errorKind: LinkCheckErrorKind | null;
 
-  @Column({ type: 'int', unsigned: true, name: 'consecutive_failures' })
+  @Column({
+    type: 'int',
+    unsigned: true,
+    name: 'consecutive_failures',
+    default: 0,
+  })
   consecutiveFailures: number;
 
   @Column({ type: 'datetime', precision: 6, name: 'checked_at' })
