@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuditModule } from './audit/audit.module.js';
@@ -36,6 +37,7 @@ import { UsersModule } from './users/users.module.js';
     ThrottlerModule.forRoot([
       { ttl: GLOBAL_THROTTLE_TTL_MS, limit: GLOBAL_THROTTLE_LIMIT },
     ]),
+    ScheduleModule.forRoot(),
     JwtAuthModule,
     HealthModule,
     SecurityModule,

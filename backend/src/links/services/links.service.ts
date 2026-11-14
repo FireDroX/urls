@@ -44,6 +44,10 @@ export class LinksService {
     return this.repository.findAllByType(REDIRECT);
   }
 
+  listDueForCheck(limit: number): Promise<Link[]> {
+    return this.repository.findRedirectsDueForCheck(limit);
+  }
+
   async get(publicId: string): Promise<Link> {
     if (!isWellFormedLinkId(publicId)) {
       throw new LinkNotFoundException();
@@ -100,10 +104,14 @@ export class LinksService {
     const dto = parseDto(updateLinkSchema, input);
     const link = await this.get(publicId);
     if (dto.slug !== undefined) link.publicId = dto.slug;
+    const destinationChanged =
+      dto.destination !== undefined && dto.destination !== link.destination;
     if (dto.destination !== undefined) link.destination = dto.destination;
     if (dto.expiresAt !== undefined) link.expiresAt = dto.expiresAt;
     if (dto.disabled !== undefined) link.disabled = dto.disabled;
-    const saved = await this.repository.save(link);
+    const saved = destinationChanged
+      ? await this.repository.saveWithCheckReset(link)
+      : await this.repository.save(link);
     await this.auditLog.record({
       action: 'links.updated',
       userId,

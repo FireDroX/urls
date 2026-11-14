@@ -9,6 +9,8 @@ export interface LinkRepository {
   findAllByType(type: LinkType): Promise<Link[]>;
   findByPublicId(publicId: string): Promise<Link | null>;
   insert(link: NewLink): Promise<Link>;
+  findRedirectsDueForCheck(limit: number): Promise<Link[]>;
   save(link: Link): Promise<Link>;
+  saveWithCheckReset(link: Link): Promise<Link>;
   softDelete(id: string): Promise<void>;
 }
