@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.1 — 2026-11-14
+## 0.2.0 — 2026-11-14
 
 - Côté API, on peut désormais contrôler si la destination d'une redirection répond encore (fonctionne, cassée ou non vérifiée) ; le résultat, avec le code HTTP obtenu et la date du contrôle, est enregistré.
 - Sécurité : la vérification ne contacte jamais une adresse interne ou privée. Une telle destination reste utilisable comme redirection mais est signalée comme non vérifiée.
