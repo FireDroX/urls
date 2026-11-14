@@ -35,6 +35,29 @@ describe('LinksMapper', () => {
     expect(JSON.stringify(data)).not.toContain(link.id);
   });
 
+  it('maps a check with the public id and an ISO date', () => {
+    const { data } = LinksMapper.toCheckResponse({
+      link: { id: 'uuid-1', publicId: 'abc123' } as Link,
+      check: {
+        linkId: 'uuid-1',
+        outcome: 'broken',
+        statusCode: 404,
+        errorKind: null,
+        consecutiveFailures: 2,
+        checkedAt: new Date('2026-11-14T10:00:00Z'),
+      },
+    });
+
+    expect(data).toEqual({
+      id: 'abc123',
+      outcome: 'broken',
+      statusCode: 404,
+      errorKind: null,
+      consecutiveFailures: 2,
+      checkedAt: '2026-11-14T10:00:00.000Z',
+    });
+  });
+
   it('redirects with a 302, never a permanent redirect', () => {
     expect(LinksMapper.toRedirect('https://example.com/')).toEqual({
       url: 'https://example.com/',
