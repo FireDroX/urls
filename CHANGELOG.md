@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-11-14
+
+- Les tags existent désormais côté API : l'administrateur peut les créer (nom unique, sans distinction de casse, et couleur au format `#rrggbb`), les renommer, les recolorer et les supprimer, et la liste indique combien de liens utilisent chaque tag.
+
 ## 0.2.0 — 2026-11-14
 
 - Côté API, on peut désormais contrôler si la destination d'une redirection répond encore (fonctionne, cassée ou non vérifiée) ; le résultat, avec le code HTTP obtenu et la date du contrôle, est enregistré.

@@ -17,6 +17,7 @@ import { EventsModule } from './events/events.module.js';
 import { FilesModule } from './files/files.module.js';
 import { HealthModule } from './health/health.module.js';
 import { LinksModule } from './links/links.module.js';
+import { TagsModule } from './tags/tags.module.js';
 import { SecurityModule } from './security/security.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { DropsModule } from './drops/drops.module.js';
@@ -44,6 +45,7 @@ import { UsersModule } from './users/users.module.js';
     SettingsModule,
     EventsModule,
     LinksModule,
+    TagsModule,
     FilesModule,
     SharesModule,
     DropsModule,

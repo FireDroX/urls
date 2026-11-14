@@ -182,3 +182,7 @@ export const S3_CHECKSUM_MODE = 'WHEN_REQUIRED';
 export const SUPPORTED_LOCALES: readonly string[] = ['fr', 'en'];
 export const DEFAULT_LOCALE = 'fr';
 export const SETTING_VALUE_MAX_LENGTH = 255;
+
+export const TAG_NAME_MAX_LENGTH = 50;
+export const TAG_COLOR_REGEX = /^#[0-9a-f]{6}$/;
+export const DEFAULT_TAG_COLOR = '#6b7280';
