@@ -21,6 +21,7 @@ function buildTag(overrides: Partial<Tag> = {}): Tag {
     id: 'internal-uuid',
     publicId: 'abc123',
     name: 'Work',
+    nameKey: 'work',
     color: '#112233',
     createdAt: new Date('2026-11-01T00:00:00Z'),
     updatedAt: new Date('2026-11-01T00:00:00Z'),
@@ -33,7 +34,7 @@ describe('TagsService', () => {
     listWithLinkCounts: ReturnType<typeof vi.fn>;
     countLinks: ReturnType<typeof vi.fn>;
     findByPublicId: ReturnType<typeof vi.fn>;
-    findByName: ReturnType<typeof vi.fn>;
+    findByNameKey: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
@@ -46,7 +47,7 @@ describe('TagsService', () => {
       listWithLinkCounts: vi.fn().mockResolvedValue([]),
       countLinks: vi.fn().mockResolvedValue(3),
       findByPublicId: vi.fn().mockResolvedValue(null),
-      findByName: vi.fn().mockResolvedValue(null),
+      findByNameKey: vi.fn().mockResolvedValue(null),
       insert: vi.fn((tag: NewTag) => Promise.resolve(buildTag(tag))),
       save: vi.fn((tag: Tag) => Promise.resolve(tag)),
       remove: vi.fn().mockResolvedValue(undefined),
@@ -126,13 +127,52 @@ describe('TagsService', () => {
     });
 
     it('answers 409 when the name is already taken', async () => {
-      repository.findByName.mockResolvedValue(buildTag());
+      repository.findByNameKey.mockResolvedValue(buildTag());
 
       await expect(
         service.create({ name: 'work' }, USER_ID),
       ).rejects.toBeInstanceOf(TagNameAlreadyTakenException);
       expect(repository.insert).not.toHaveBeenCalled();
       expect(audit.record).not.toHaveBeenCalled();
+    });
+    describe('name uniqueness', () => {
+      beforeEach(() => {
+        const stored = new Map<string, Tag>();
+        repository.findByNameKey.mockImplementation(
+          (key: string) => stored.get(key) ?? null,
+        );
+        repository.insert.mockImplementation((newTag: NewTag) => {
+          const tag = buildTag(newTag);
+          stored.set(newTag.nameKey, tag);
+          return tag;
+        });
+      });
+
+      it('rejects a name that differs only by case', async () => {
+        await service.create({ name: 'Café' }, USER_ID);
+
+        await expect(
+          service.create({ name: 'café' }, USER_ID),
+        ).rejects.toBeInstanceOf(TagNameAlreadyTakenException);
+      });
+
+      it('allows a name that differs by an accent', async () => {
+        await service.create({ name: 'café' }, USER_ID);
+
+        await expect(
+          service.create({ name: 'cafe' }, USER_ID),
+        ).resolves.toBeDefined();
+      });
+
+      it('allows two different emoji names', async () => {
+        await service.create({ name: '🔥' }, USER_ID);
+        await service.create({ name: '🎉' }, USER_ID);
+        await service.create({ name: 'Projets 🔥' }, USER_ID);
+
+        await expect(
+          service.create({ name: 'Projets 🎉' }, USER_ID),
+        ).resolves.toBeDefined();
+      });
     });
 
     it('answers 409 when the database reports the name duplicate', async () => {
@@ -187,7 +227,7 @@ describe('TagsService', () => {
 
     it('answers 409 when another tag has the name', async () => {
       repository.findByPublicId.mockResolvedValue(buildTag());
-      repository.findByName.mockResolvedValue(
+      repository.findByNameKey.mockResolvedValue(
         buildTag({ id: 'other', publicId: 'zzz', name: 'Home' }),
       );
 
@@ -200,7 +240,7 @@ describe('TagsService', () => {
     it('allows recasing the tag own name', async () => {
       const tag = buildTag();
       repository.findByPublicId.mockResolvedValue(tag);
-      repository.findByName.mockResolvedValue(tag);
+      repository.findByNameKey.mockResolvedValue(tag);
 
       const result = await service.update('abc123', { name: 'WORK' }, USER_ID);
 
@@ -217,7 +257,7 @@ describe('TagsService', () => {
         USER_ID,
       );
 
-      expect(repository.findByName).not.toHaveBeenCalled();
+      expect(repository.findByNameKey).not.toHaveBeenCalled();
       expect(audit.record).toHaveBeenCalledWith({
         action: 'tags.updated',
         userId: USER_ID,

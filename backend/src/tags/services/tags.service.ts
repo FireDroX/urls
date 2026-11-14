@@ -9,6 +9,7 @@ import {
   isWellFormedLinkId,
 } from '../../common/public-id.js';
 import { PUBLIC_ID_GENERATION_ATTEMPTS } from '../../common/variables.global.js';
+import { tagNameKey } from '../tag-name-key.js';
 import { createTagSchema } from '../dto/in/create-tag.dto.js';
 import { updateTagSchema } from '../dto/in/update-tag.dto.js';
 import type { Tag } from '../entities/tag.entity.js';
@@ -32,10 +33,11 @@ export class TagsService {
 
   async create(input: unknown, userId: string): Promise<TagWithLinkCount> {
     const { name, color } = parseDto(createTagSchema, input);
-    if (await this.repository.findByName(name)) {
+    const nameKey = tagNameKey(name);
+    if (await this.repository.findByNameKey(nameKey)) {
       throw new TagNameAlreadyTakenException();
     }
-    const tag = await this.insertWithGeneratedId({ name, color });
+    const tag = await this.insertWithGeneratedId({ name, nameKey, color });
     await this.auditLog.record({
       action: 'tags.created',
       userId,
@@ -54,11 +56,13 @@ export class TagsService {
     const tag = await this.find(publicId);
     const changes: Record<string, string> = {};
     if (dto.name !== undefined && dto.name !== tag.name) {
-      const existing = await this.repository.findByName(dto.name);
+      const nameKey = tagNameKey(dto.name);
+      const existing = await this.repository.findByNameKey(nameKey);
       if (existing && existing.id !== tag.id) {
         throw new TagNameAlreadyTakenException();
       }
       tag.name = dto.name;
+      tag.nameKey = nameKey;
       changes.name = dto.name;
     }
     if (dto.color !== undefined && dto.color !== tag.color) {

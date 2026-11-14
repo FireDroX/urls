@@ -9,7 +9,7 @@ import {
 
 @Entity('tags')
 @Index('UQ_tags_public_id', ['publicId'], { unique: true })
-@Index('UQ_tags_name', ['name'], { unique: true })
+@Index('UQ_tags_name_key', ['nameKey'], { unique: true })
 export class Tag {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -30,6 +30,15 @@ export class Tag {
     collation: 'utf8mb4_unicode_ci',
   })
   name: string;
+
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'name_key',
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_bin',
+  })
+  nameKey: string;
 
   @Column({
     type: 'varchar',

@@ -11,7 +11,7 @@ import type {
   TagWithLinkCount,
 } from './tag.repository.js';
 
-const NAME_INDEX = 'UQ_tags_name';
+const NAME_INDEX = 'UQ_tags_name_key';
 
 @Injectable()
 export class TypeormTagRepository implements TagRepository {
@@ -58,8 +58,8 @@ export class TypeormTagRepository implements TagRepository {
     return this.repository.findOneBy({ publicId });
   }
 
-  findByName(name: string): Promise<Tag | null> {
-    return this.repository.findOneBy({ name });
+  findByNameKey(nameKey: string): Promise<Tag | null> {
+    return this.repository.findOneBy({ nameKey });
   }
 
   insert(tag: NewTag): Promise<Tag> {

@@ -2,7 +2,7 @@
 
 ## 0.2.1 — 2026-11-14
 
-- Les tags existent désormais côté API : l'administrateur peut les créer (nom unique, sans distinction de casse, et couleur au format `#rrggbb`), les renommer, les recolorer et les supprimer, et la liste indique combien de liens utilisent chaque tag.
+- Les tags existent désormais côté API : l'administrateur peut les créer (nom unique sans distinction de casse (mais accents et emoji distincts), et couleur au format `#rrggbb`), les renommer, les recolorer et les supprimer, et la liste indique combien de liens utilisent chaque tag.
 
 ## 0.2.0 — 2026-11-14
 
