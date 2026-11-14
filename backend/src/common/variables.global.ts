@@ -184,6 +184,6 @@ export const DEFAULT_LOCALE = 'fr';
 export const SETTING_VALUE_MAX_LENGTH = 255;
 
 export const TAG_NAME_MAX_LENGTH = 50;
-export const FOLDER_NAME_MAX_LENGTH = 100;
 export const TAG_COLOR_REGEX = /^#[0-9a-f]{6}$/;
 export const DEFAULT_TAG_COLOR = '#6b7280';
+export const FOLDER_NAME_MAX_LENGTH = 100;

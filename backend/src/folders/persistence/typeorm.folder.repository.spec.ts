@@ -24,6 +24,7 @@ describe('TypeormFolderRepository', () => {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
     createQueryBuilder: ReturnType<typeof vi.fn>;
   };
   let repository: TypeormFolderRepository;
@@ -33,6 +34,7 @@ describe('TypeormFolderRepository', () => {
       create: vi.fn((folder: unknown) => folder),
       save: vi.fn((folder: unknown) => Promise.resolve(folder)),
       findOneBy: vi.fn().mockResolvedValue(null),
+      delete: vi.fn().mockResolvedValue({ affected: 1 }),
       createQueryBuilder: vi.fn(),
     };
     repository = new TypeormFolderRepository(
@@ -69,6 +71,12 @@ describe('TypeormFolderRepository', () => {
     await repository.findByNameKey('work');
 
     expect(typeorm.findOneBy).toHaveBeenCalledWith({ nameKey: 'work' });
+  });
+
+  it('deletes a folder by its internal id', async () => {
+    await repository.remove({ id: 'f1' } as Folder);
+
+    expect(typeorm.delete).toHaveBeenCalledWith({ id: 'f1' });
   });
 
   describe('link counts', () => {
