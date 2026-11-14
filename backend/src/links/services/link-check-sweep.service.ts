@@ -5,6 +5,7 @@ import {
   LINK_CHECK_CRON,
   LINK_CHECK_DELAY_MS,
 } from '../../common/variables.global.js';
+import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
 import type { Link } from '../entities/link.entity.js';
 import { LinkChecksService } from './link-checks.service.js';
 import { LinksService } from './links.service.js';
@@ -17,6 +18,7 @@ export interface LinkCheckSweepSummary {
   ok: number;
   broken: number;
   skipped: number;
+  gone: number;
   errors: number;
 }
 
@@ -43,7 +45,7 @@ export class LinkCheckSweepService {
       );
       const summary = await this.checkAll(links);
       this.logger.log(
-        `Link check pass done: checked=${summary.checked} ok=${summary.ok} broken=${summary.broken} skipped=${summary.skipped} errors=${summary.errors}`,
+        `Link check pass done: checked=${summary.checked} ok=${summary.ok} broken=${summary.broken} skipped=${summary.skipped} gone=${summary.gone} errors=${summary.errors}`,
       );
       return summary;
     } catch (error) {
@@ -62,15 +64,21 @@ export class LinkCheckSweepService {
       ok: 0,
       broken: 0,
       skipped: 0,
+      gone: 0,
       errors: 0,
     };
     for (const [index, link] of links.entries()) {
       if (index > 0) await pause(LINK_CHECK_DELAY_MS);
       try {
-        const check = await this.linkChecksService.checkLink(link);
+        const current = await this.linksService.get(link.publicId);
+        const check = await this.linkChecksService.checkLink(current);
         summary.checked++;
         summary[check.outcome]++;
       } catch (error) {
+        if (error instanceof LinkNotFoundException) {
+          summary.gone++;
+          continue;
+        }
         summary.errors++;
         this.logger.warn(
           `Link check failed for ${link.publicId}: ${error instanceof Error ? error.name : 'UnknownError'}`,

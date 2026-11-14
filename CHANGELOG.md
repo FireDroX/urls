@@ -2,7 +2,7 @@
 
 ## 0.2.3 — 2026-11-15
 
-- Les redirections sont désormais revérifiées automatiquement chaque jour : les plus anciennement contrôlées (ou jamais contrôlées) passent en premier, une à une, sans jamais enregistrer ni afficher leur destination dans les journaux.
+- Les redirections sont désormais revérifiées automatiquement chaque jour : les plus anciennement contrôlées (ou jamais contrôlées) passent en premier, une à une, sans jamais enregistrer ni afficher leur destination dans les journaux. Chaque passe en traite au plus 50 : avec beaucoup de redirections, chacune est revérifiée tous les quelques jours plutôt que chaque jour.
 - Modifier la destination d'une redirection oublie le résultat de son précédent contrôle, qui ne concernait plus la bonne adresse.
 
 ## 0.2.2 — 2026-11-14

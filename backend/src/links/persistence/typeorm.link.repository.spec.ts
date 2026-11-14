@@ -1,8 +1,12 @@
-import { QueryFailedError, type Repository } from 'typeorm';
+import {
+  getMetadataArgsStorage,
+  QueryFailedError,
+  type Repository,
+} from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { LinkCheck } from '../entities/link-check.entity.js';
-import type { Link } from '../entities/link.entity.js';
+import { Link } from '../entities/link.entity.js';
 import { TypeormLinkRepository } from './typeorm.link.repository.js';
 
 const link = { id: 'link-uuid', publicId: 'abc123' } as Link;
@@ -23,6 +27,7 @@ describe('TypeormLinkRepository', () => {
       'orderBy',
       'addOrderBy',
       'limit',
+      'withDeleted',
     ]) {
       builder[name] = vi.fn().mockReturnValue(builder);
     }
@@ -65,6 +70,17 @@ describe('TypeormLinkRepository', () => {
       ]);
       expect(builder.limit).toHaveBeenCalledWith(50);
     });
+
+    it('leaves soft-deleted links out', async () => {
+      await repository.findRedirectsDueForCheck(50);
+
+      const deleteDate = getMetadataArgsStorage().columns.find(
+        (column) =>
+          column.target === Link && column.propertyName === 'deletedAt',
+      );
+      expect(deleteDate?.mode).toBe('deleteDate');
+      expect(builder.withDeleted).not.toHaveBeenCalled();
+    });
   });
 
   describe('saveWithCheckReset', () => {
@@ -80,7 +96,9 @@ describe('TypeormLinkRepository', () => {
 
     it('maps a duplicate entry to SlugAlreadyTakenException', async () => {
       manager.save.mockRejectedValue(
-        new QueryFailedError('UPDATE', [], { code: 'ER_DUP_ENTRY' } as Error),
+        new QueryFailedError('UPDATE', [], {
+          code: 'ER_DUP_ENTRY',
+        } as unknown as Error),
       );
 
       await expect(repository.saveWithCheckReset(link)).rejects.toBeInstanceOf(

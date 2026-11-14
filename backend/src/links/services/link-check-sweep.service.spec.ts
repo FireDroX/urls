@@ -12,6 +12,7 @@ import {
   LINK_CHECK_BATCH_SIZE,
   LINK_CHECK_DELAY_MS,
 } from '../../common/variables.global.js';
+import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
 import type { LinkCheck } from '../entities/link-check.entity.js';
 import type { Link } from '../entities/link.entity.js';
 import { LinkCheckSweepService } from './link-check-sweep.service.js';
@@ -27,7 +28,10 @@ const links = ['a', 'b', 'c'].map(
 const checkOf = (outcome: string) => ({ outcome }) as LinkCheck;
 
 describe('LinkCheckSweepService', () => {
-  let linksService: { listDueForCheck: ReturnType<typeof vi.fn> };
+  let linksService: {
+    listDueForCheck: ReturnType<typeof vi.fn>;
+    get: ReturnType<typeof vi.fn>;
+  };
   let checks: { checkLink: ReturnType<typeof vi.fn> };
   let service: LinkCheckSweepService;
   let log: MockInstance<(message: string) => void>;
@@ -46,7 +50,12 @@ describe('LinkCheckSweepService', () => {
     error = vi
       .spyOn(Logger.prototype, 'error')
       .mockImplementation(() => undefined);
-    linksService = { listDueForCheck: vi.fn().mockResolvedValue(links) };
+    linksService = {
+      listDueForCheck: vi.fn().mockResolvedValue(links),
+      get: vi.fn((publicId: string) =>
+        Promise.resolve(links.find((item) => item.publicId === publicId)),
+      ),
+    };
     checks = { checkLink: vi.fn().mockResolvedValue(checkOf('ok')) };
     service = new LinkCheckSweepService(
       linksService as unknown as LinksService,
@@ -111,7 +120,7 @@ describe('LinkCheckSweepService', () => {
     await vi.advanceTimersByTimeAsync(LINK_CHECK_DELAY_MS);
     await run;
     expect(
-      checks.checkLink.mock.calls.map(([link]: [Link]) => link.publicId),
+      (checks.checkLink.mock.calls as [Link][]).map(([link]) => link.publicId),
     ).toEqual(['a', 'b', 'c']);
   });
 
@@ -139,9 +148,11 @@ describe('LinkCheckSweepService', () => {
       ok: 1,
       broken: 1,
       skipped: 0,
+      gone: 0,
       errors: 1,
     });
-    expect(loggedText()).toContain('b');
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toBe('Link check failed for b: Error');
     expect(loggedText()).not.toContain('secret-host');
     expect(loggedText()).not.toContain('token');
   });
@@ -158,7 +169,45 @@ describe('LinkCheckSweepService', () => {
 
     expect(log).toHaveBeenCalledTimes(1);
     expect(log.mock.calls[0][0]).toBe(
-      'Link check pass done: checked=3 ok=1 broken=1 skipped=1 errors=0',
+      'Link check pass done: checked=3 ok=1 broken=1 skipped=1 gone=0 errors=0',
     );
+  });
+
+  it('probes the redirect as it is now, not as it was when the batch was read', async () => {
+    const edited = {
+      publicId: 'a',
+      destination: 'https://new.example',
+    } as Link;
+    linksService.get.mockResolvedValueOnce(edited);
+    linksService.listDueForCheck.mockResolvedValue([links[0]]);
+
+    await service.run();
+
+    expect(linksService.get).toHaveBeenCalledWith('a');
+    expect(checks.checkLink).toHaveBeenCalledWith(edited);
+  });
+
+  it('skips a redirect deleted or changed type during the pass, without probing it', async () => {
+    linksService.get
+      .mockResolvedValueOnce(links[0])
+      .mockRejectedValueOnce(new LinkNotFoundException())
+      .mockResolvedValueOnce(links[2]);
+
+    const run = service.run();
+    await vi.runAllTimersAsync();
+    const summary = await run;
+
+    expect(
+      (checks.checkLink.mock.calls as [Link][]).map(([link]) => link.publicId),
+    ).toEqual(['a', 'c']);
+    expect(summary).toEqual({
+      checked: 2,
+      ok: 2,
+      broken: 0,
+      skipped: 0,
+      gone: 1,
+      errors: 0,
+    });
+    expect(warn).not.toHaveBeenCalled();
   });
 });

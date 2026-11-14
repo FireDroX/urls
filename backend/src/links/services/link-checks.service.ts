@@ -22,7 +22,6 @@ export class LinkChecksService {
 
   async check(publicId: string): Promise<LinkCheckReport> {
     const link = await this.linksService.get(publicId);
-    if (!link.destination) throw new LinkNotFoundException();
     return { link, check: await this.checkLink(link) };
   }
 
