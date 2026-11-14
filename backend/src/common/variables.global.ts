@@ -79,6 +79,26 @@ export const LINK_CREATE_THROTTLE_TTL_MS = 60_000;
 export const LINK_CREATE_THROTTLE_LIMIT = 20;
 export const LINK_REDIRECT_THROTTLE_TTL_MS = 60_000;
 export const LINK_REDIRECT_THROTTLE_LIMIT = 30;
+export const LINK_CHECK_THROTTLE_TTL_MS = 60_000;
+export const LINK_CHECK_THROTTLE_LIMIT = 10;
+export const LINK_CHECK_TIMEOUT_MS = 10_000;
+export const LINK_CHECK_MAX_REDIRECTS = 5;
+export const LINK_CHECK_USER_AGENT = 'Mozilla/5.0 (compatible; link-checker)';
+export const LINK_CHECK_OUTCOMES = ['ok', 'broken', 'skipped'] as const;
+export type LinkCheckOutcome = (typeof LINK_CHECK_OUTCOMES)[number];
+export const LINK_CHECK_ERROR_KINDS = [
+  'dns',
+  'connection',
+  'tls',
+  'timeout',
+  'too_many_redirects',
+  'invalid_redirect',
+] as const;
+export type LinkCheckErrorKind = (typeof LINK_CHECK_ERROR_KINDS)[number];
+export const LINK_CHECK_REDIRECT_STATUSES: readonly number[] = [
+  301, 302, 303, 307, 308,
+];
+export const LINK_CHECK_GET_FALLBACK_STATUSES: readonly number[] = [405, 501];
 export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
 export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000;

@@ -1,7 +1,9 @@
 import { HttpStatus, type HttpRedirectResponse } from '@nestjs/common';
 import { ResponseDto } from '../../common/dto/response.dto.js';
 import { LINK_STATS_TIME_ZONE } from '../../common/variables.global.js';
+import type { LinkCheckResponseDto } from '../dto/out/link-check-response.dto.js';
 import type { LinkResponseDto } from '../dto/out/link-response.dto.js';
+import type { LinkCheckReport } from '../services/link-checks.service.js';
 import type { LinkStatsResponseDto } from '../dto/out/link-stats-response.dto.js';
 import type { Link } from '../entities/link.entity.js';
 import type { LinkStats } from '../services/links.service.js';
@@ -36,6 +38,20 @@ export class LinksMapper {
         country: value,
         clicks,
       })),
+    });
+  }
+
+  static toCheckResponse({
+    link,
+    check,
+  }: LinkCheckReport): ResponseDto<LinkCheckResponseDto> {
+    return new ResponseDto({
+      id: link.publicId,
+      outcome: check.outcome,
+      statusCode: check.statusCode,
+      errorKind: check.errorKind,
+      consecutiveFailures: check.consecutiveFailures,
+      checkedAt: check.checkedAt.toISOString(),
     });
   }
 

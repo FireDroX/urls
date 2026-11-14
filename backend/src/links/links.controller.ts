@@ -17,6 +17,7 @@ import {
   ApiConflictResponse,
   ApiCookieAuth,
   ApiNoContentResponse,
+  ApiOkResponse,
   ApiNotFoundResponse,
   ApiOperation,
   ApiQuery,
@@ -30,16 +31,20 @@ import { ResponseDto } from '../common/dto/response.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import type { AuthenticatedUser } from '../common/strategies/jwt.strategy.js';
 import {
+  LINK_CHECK_THROTTLE_LIMIT,
+  LINK_CHECK_THROTTLE_TTL_MS,
   LINK_CREATE_THROTTLE_LIMIT,
   LINK_CREATE_THROTTLE_TTL_MS,
   LINK_STATS_DEFAULT_DAYS,
   LINK_STATS_MAX_DAYS,
   LINK_STATS_MIN_DAYS,
 } from '../common/variables.global.js';
+import type { LinkCheckResponseDto } from './dto/out/link-check-response.dto.js';
 import type { LinkResponseDto } from './dto/out/link-response.dto.js';
 import type { LinkStatsResponseDto } from './dto/out/link-stats-response.dto.js';
 import { LinksExceptionFilter } from './filter/links.exception.filter.js';
 import { LinksMapper } from './mapper/links.mapper.js';
+import { LinkChecksService } from './services/link-checks.service.js';
 import { LinksService } from './services/links.service.js';
 
 const CREATE_THROTTLE = {
@@ -49,13 +54,23 @@ const CREATE_THROTTLE = {
   },
 };
 
+const CHECK_THROTTLE = {
+  default: {
+    limit: LINK_CHECK_THROTTLE_LIMIT,
+    ttl: LINK_CHECK_THROTTLE_TTL_MS,
+  },
+};
+
 @ApiTags('Links')
 @ApiCookieAuth()
 @Controller('links')
 @UseGuards(JwtAuthGuard)
 @UseFilters(LinksExceptionFilter)
 export class LinksController {
-  constructor(private readonly linksService: LinksService) {}
+  constructor(
+    private readonly linksService: LinksService,
+    private readonly linkChecksService: LinkChecksService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Lister les redirections' })
@@ -113,6 +128,22 @@ export class LinksController {
     return LinksMapper.toResponse(
       await this.linksService.create(body, user.id),
     );
+  }
+
+  @Post(':id/check')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(CHECK_THROTTLE)
+  @ApiOperation({
+    summary:
+      'Vérifier la destination d’une redirection (requête HEAD, redirections suivies, sans jamais contacter une adresse interne)',
+  })
+  @ApiOkResponse({ description: 'Résultat de la vérification.' })
+  @ApiNotFoundResponse({ description: 'Lien inconnu.', type: ErrorResponseDto })
+  @ApiTooManyRequestsResponse({ description: 'Trop de vérifications.' })
+  async check(
+    @Param('id') id: string,
+  ): Promise<ResponseDto<LinkCheckResponseDto>> {
+    return LinksMapper.toCheckResponse(await this.linkChecksService.check(id));
   }
 
   @Patch(':id')
