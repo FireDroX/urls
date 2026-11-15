@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type { Link } from '../../links/entities/link.entity.js';
+import { EMPTY_LINK_ORGANIZATION } from '../../links/link-organization.js';
 import { DropsMapper } from './drops.mapper.js';
 
 describe('DropsMapper.toDetailResponse', () => {
@@ -35,6 +36,7 @@ describe('DropsMapper.toDetailResponse', () => {
 
     const { data } = DropsMapper.toDetailResponse({
       drop,
+      organization: EMPTY_LINK_ORGANIZATION,
       fileCount: 1,
       totalSize: 12,
       state: 'open',

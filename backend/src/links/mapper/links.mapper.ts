@@ -1,11 +1,12 @@
 import { HttpStatus, type HttpRedirectResponse } from '@nestjs/common';
 import { ResponseDto } from '../../common/dto/response.dto.js';
 import { LINK_STATS_TIME_ZONE } from '../../common/variables.global.js';
+import { LinkOrganizationMapper } from './link-organization.mapper.js';
 import type { LinkCheckResponseDto } from '../dto/out/link-check-response.dto.js';
 import type { LinkResponseDto } from '../dto/out/link-response.dto.js';
 import type { LinkCheckReport } from '../services/link-checks.service.js';
 import type { LinkStatsResponseDto } from '../dto/out/link-stats-response.dto.js';
-import type { Link } from '../entities/link.entity.js';
+import type { LinkWithOrganization } from '../link-organization.js';
 import type { LinkStats } from '../services/links.service.js';
 
 export class LinksMapper {
@@ -13,12 +14,14 @@ export class LinksMapper {
     return { url: destination, statusCode: HttpStatus.FOUND };
   }
 
-  static toResponse(link: Link): ResponseDto<LinkResponseDto> {
-    return new ResponseDto(LinksMapper.toDto(link));
+  static toResponse(item: LinkWithOrganization): ResponseDto<LinkResponseDto> {
+    return new ResponseDto(LinksMapper.toDto(item));
   }
 
-  static toListResponse(links: Link[]): ResponseDto<LinkResponseDto[]> {
-    return new ResponseDto(links.map((link) => LinksMapper.toDto(link)));
+  static toListResponse(
+    items: LinkWithOrganization[],
+  ): ResponseDto<LinkResponseDto[]> {
+    return new ResponseDto(items.map((item) => LinksMapper.toDto(item)));
   }
 
   static toStatsResponse(stats: LinkStats): ResponseDto<LinkStatsResponseDto> {
@@ -55,13 +58,17 @@ export class LinksMapper {
     });
   }
 
-  private static toDto(link: Link): LinkResponseDto {
+  private static toDto({
+    link,
+    organization,
+  }: LinkWithOrganization): LinkResponseDto {
     return {
       id: link.publicId,
       type: link.type,
       destination: link.destination,
       expiresAt: link.expiresAt?.toISOString() ?? null,
       disabled: link.disabled,
+      ...LinkOrganizationMapper.toDto(organization),
       createdAt: link.createdAt.toISOString(),
       updatedAt: link.updatedAt.toISOString(),
     };

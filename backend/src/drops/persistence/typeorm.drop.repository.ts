@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { isDuplicateEntry } from '../../common/database-errors.js';
-import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { Link } from '../../links/entities/link.entity.js';
+import type { ResolvedOrganization } from '../../links/link-organization.js';
+import { saveWithOrganization } from '../../links/persistence/link-organization.writer.js';
 import type { DropRepository, NewDrop } from './drop.repository.js';
 
 const DROP = 'drop';
@@ -26,28 +26,27 @@ export class TypeormDropRepository implements DropRepository {
     return this.repository.findOneBy({ publicId, type: DROP });
   }
 
-  insert(drop: NewDrop): Promise<Link> {
+  insert(drop: NewDrop, organization: ResolvedOrganization): Promise<Link> {
     return this.persist(
       this.repository.create({ ...drop, type: DROP, destination: null }),
+      organization,
     );
   }
 
-  save(drop: Link): Promise<Link> {
-    return this.persist(drop);
+  save(drop: Link, organization: ResolvedOrganization): Promise<Link> {
+    return this.persist(drop, organization);
   }
 
   async softDelete(id: string): Promise<void> {
     await this.repository.softDelete({ id, type: DROP });
   }
 
-  private async persist(drop: Link): Promise<Link> {
-    try {
-      return await this.repository.save(drop);
-    } catch (error) {
-      if (isDuplicateEntry(error)) {
-        throw new SlugAlreadyTakenException();
-      }
-      throw error;
-    }
+  private persist(
+    drop: Link,
+    organization: ResolvedOrganization,
+  ): Promise<Link> {
+    return this.repository.manager.transaction((manager) =>
+      saveWithOrganization(manager, drop, organization),
+    );
   }
 }

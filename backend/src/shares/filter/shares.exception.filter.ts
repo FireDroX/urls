@@ -12,6 +12,8 @@ const STATUS_BY_EXCEPTION: Record<string, number> = {
   InvalidTurnstileTokenException: HttpStatus.BAD_REQUEST,
   ShareNotFoundException: HttpStatus.NOT_FOUND,
   ShareExpiredException: HttpStatus.GONE,
+  TagNotFoundException: HttpStatus.NOT_FOUND,
+  FolderNotFoundException: HttpStatus.NOT_FOUND,
   SlugAlreadyTakenException: HttpStatus.CONFLICT,
 };
 

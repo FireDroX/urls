@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   expiresAtSchema,
+  linkOrganizationShape,
   slugSchema,
 } from '../../../links/dto/in/link-fields.schema.js';
 import {
@@ -15,6 +16,7 @@ export const createDropSchema = z.strictObject({
   expiresAt: expiresAtSchema.nullable().optional(),
   maxFiles: maxFilesSchema,
   maxTotalBytes: maxTotalBytesSchema,
+  ...linkOrganizationShape,
 });
 
 export type CreateDropDto = z.infer<typeof createDropSchema>;

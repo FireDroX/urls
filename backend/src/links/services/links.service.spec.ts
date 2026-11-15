@@ -18,11 +18,15 @@ import type {
   EventsService,
   LinkClickStats,
 } from '../../events/services/events.service.js';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
 import type { Link } from '../entities/link.entity.js';
+import { EMPTY_LINK_ORGANIZATION } from '../link-organization.js';
 import type {
   LinkRepository,
   NewLink,
 } from '../persistence/link.repository.js';
+import type { LinkOrganizationService } from './link-organization.service.js';
 import { LinksService } from './links.service.js';
 
 const USER_ID = 'user-1';
@@ -73,6 +77,11 @@ describe('LinksService', () => {
     saveWithCheckReset: ReturnType<typeof vi.fn>;
     softDelete: ReturnType<typeof vi.fn>;
   };
+  let organization: {
+    resolve: ReturnType<typeof vi.fn>;
+    loadFor: ReturnType<typeof vi.fn>;
+    loadOne: ReturnType<typeof vi.fn>;
+  };
   let audit: { record: ReturnType<typeof vi.fn> };
   let events: {
     recordClick: ReturnType<typeof vi.fn>;
@@ -89,6 +98,11 @@ describe('LinksService', () => {
       saveWithCheckReset: vi.fn((link: Link) => Promise.resolve(link)),
       softDelete: vi.fn().mockResolvedValue(undefined),
     };
+    organization = {
+      resolve: vi.fn().mockResolvedValue({}),
+      loadFor: vi.fn().mockResolvedValue(new Map()),
+      loadOne: vi.fn().mockResolvedValue(EMPTY_LINK_ORGANIZATION),
+    };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     events = {
       recordClick: vi.fn().mockResolvedValue(undefined),
@@ -98,12 +112,13 @@ describe('LinksService', () => {
       repository as unknown as LinkRepository,
       audit as unknown as AuditLogService,
       events as unknown as EventsService,
+      organization as unknown as LinkOrganizationService,
     );
   });
 
   describe('create', () => {
     it('creates a redirect with a generated public id and audits it', async () => {
-      const link = await service.create(
+      const { link } = await service.create(
         { destination: 'https://example.com/page' },
         USER_ID,
       );
@@ -142,6 +157,7 @@ describe('LinksService', () => {
           destination: 'http://example.com/',
           expiresAt: new Date(FUTURE),
         }),
+        {},
       );
     });
 
@@ -265,6 +281,147 @@ describe('LinksService', () => {
     );
   });
 
+  describe('tags and folder', () => {
+    it('creates with tags and a folder resolved before the insert and audits public ids', async () => {
+      organization.resolve.mockResolvedValue({
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+
+      await service.create(
+        {
+          destination: 'https://example.com',
+          tagIds: ['tagpub'],
+          folderId: 'folderpub',
+        },
+        USER_ID,
+      );
+
+      expect(organization.resolve).toHaveBeenCalledWith(
+        expect.objectContaining({ tagIds: ['tagpub'], folderId: 'folderpub' }),
+      );
+      expect(repository.insert).toHaveBeenCalledWith(expect.anything(), {
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            tagIds: ['tagpub'],
+            folderId: 'folderpub',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('audits empty tags and no folder when none is given', async () => {
+      await service.create({ destination: 'https://example.com' }, USER_ID);
+
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            tagIds: [],
+            folderId: null,
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('does not insert when a tag is unknown', async () => {
+      organization.resolve.mockRejectedValue(new TagNotFoundException());
+
+      await expect(
+        service.create(
+          { destination: 'https://example.com', tagIds: ['nope'] },
+          USER_ID,
+        ),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.insert).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('does not insert when the folder is unknown', async () => {
+      organization.resolve.mockRejectedValue(new FolderNotFoundException());
+
+      await expect(
+        service.create(
+          { destination: 'https://example.com', folderId: 'nope' },
+          USER_ID,
+        ),
+      ).rejects.toBeInstanceOf(FolderNotFoundException);
+      expect(repository.insert).not.toHaveBeenCalled();
+    });
+
+    it('replaces the tags and leaves the folder on update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+      organization.resolve.mockResolvedValue({
+        tagIds: ['t1', 't2'],
+        folderId: null,
+      });
+
+      await service.update(
+        'abc123',
+        { tagIds: ['a', 'b'], folderId: null },
+        USER_ID,
+      );
+
+      expect(repository.save).toHaveBeenCalledWith(expect.anything(), {
+        tagIds: ['t1', 't2'],
+        folderId: null,
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            changes: { tagIds: ['a', 'b'], folderId: null },
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('leaves tags and folder unchanged when absent from the update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+
+      await service.update('abc123', { disabled: true }, USER_ID);
+
+      const [input] = organization.resolve.mock.calls[0] as [object];
+      expect(input).not.toHaveProperty('tagIds');
+      expect(repository.save).toHaveBeenCalledWith(expect.anything(), {});
+    });
+
+    it('does not save when the update names an unknown tag', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+      organization.resolve.mockRejectedValue(new TagNotFoundException());
+
+      await expect(
+        service.update('abc123', { tagIds: ['nope'] }, USER_ID),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('loads the organization of a whole list in one call', async () => {
+      const links = [buildLink(), buildLink({ id: 'other', publicId: 'zzz' })];
+      repository.findAllByType.mockResolvedValue(links);
+
+      const result = await service.list();
+
+      expect(organization.loadFor).toHaveBeenCalledTimes(1);
+      expect(organization.loadFor).toHaveBeenCalledWith(links);
+      expect(organization.loadOne).not.toHaveBeenCalled();
+      expect(result.map((item) => item.organization)).toEqual([
+        EMPTY_LINK_ORGANIZATION,
+        EMPTY_LINK_ORGANIZATION,
+      ]);
+    });
+
+    it('loads the organization of one link for the detail', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+
+      await service.detail('abc123');
+
+      expect(organization.loadOne).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('list', () => {
     it('lists redirects only', async () => {
       await service.list();
@@ -279,7 +436,7 @@ describe('LinksService', () => {
     });
 
     it('updates every editable field and audits the change', async () => {
-      const link = await service.update(
+      const { link } = await service.update(
         'abc123',
         {
           destination: 'https://other.example/',
@@ -331,7 +488,11 @@ describe('LinksService', () => {
         buildLink({ expiresAt: new Date(FUTURE) }),
       );
 
-      const link = await service.update('abc123', { expiresAt: null }, USER_ID);
+      const { link } = await service.update(
+        'abc123',
+        { expiresAt: null },
+        USER_ID,
+      );
 
       expect(link.expiresAt).toBeNull();
     });

@@ -5,8 +5,13 @@ import {
 } from '../../../common/variables.global.js';
 import { createShareSchema } from '../../../shares/dto/in/create-share.dto.js';
 
+const shareFields = createShareSchema.omit({
+  tagIds: true,
+  folderId: true,
+}).shape;
+
 export const shareDropFilesSchema = z.strictObject({
-  ...createShareSchema.shape,
+  ...shareFields,
   fileIds: z
     .array(z.string().trim().min(1).max(FILE_PUBLIC_ID_MAX_LENGTH))
     .min(1)

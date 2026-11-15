@@ -1,7 +1,10 @@
 import { QueryFailedError, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
-import type { Link } from '../../links/entities/link.entity.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
+import { Link } from '../../links/entities/link.entity.js';
+import { LinkTag } from '../../tags/entities/link-tag.entity.js';
 import { TypeormDropRepository } from './typeorm.drop.repository.js';
 
 const NEW_DROP = {
@@ -12,23 +15,44 @@ const NEW_DROP = {
   maxTotalBytes: 1000,
 };
 
+function foreignKeyError(constraint: string): QueryFailedError {
+  return new QueryFailedError('INSERT', [], {
+    code: 'ER_NO_REFERENCED_ROW_2',
+    sqlMessage: `Cannot add or update a child row (CONSTRAINT \`${constraint}\`)`,
+  } as unknown as Error);
+}
+
 describe('TypeormDropRepository', () => {
+  let manager: {
+    save: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+    insert: ReturnType<typeof vi.fn>;
+  };
   let orm: {
     find: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
-    save: ReturnType<typeof vi.fn>;
     softDelete: ReturnType<typeof vi.fn>;
+    manager: { transaction: ReturnType<typeof vi.fn> };
   };
   let repository: TypeormDropRepository;
 
   beforeEach(() => {
+    manager = {
+      save: vi.fn((_entity: unknown, value: unknown) => Promise.resolve(value)),
+      delete: vi.fn().mockResolvedValue(undefined),
+      insert: vi.fn().mockResolvedValue(undefined),
+    };
     orm = {
       find: vi.fn().mockResolvedValue([]),
       findOneBy: vi.fn().mockResolvedValue(null),
       create: vi.fn((value: unknown) => value),
-      save: vi.fn((value: unknown) => Promise.resolve(value)),
       softDelete: vi.fn().mockResolvedValue(undefined),
+      manager: {
+        transaction: vi.fn((run: (m: unknown) => Promise<unknown>) =>
+          run(manager),
+        ),
+      },
     };
     repository = new TypeormDropRepository(orm as unknown as Repository<Link>);
   });
@@ -51,14 +75,56 @@ describe('TypeormDropRepository', () => {
     });
   });
 
-  it('inserts a drop without destination', async () => {
-    await repository.insert(NEW_DROP);
+  it('inserts a drop without destination, in a transaction', async () => {
+    await repository.insert(NEW_DROP, {});
 
-    expect(orm.save).toHaveBeenCalledWith({
+    expect(orm.manager.transaction).toHaveBeenCalledTimes(1);
+    expect(manager.save).toHaveBeenCalledWith(Link, {
       ...NEW_DROP,
       type: 'drop',
       destination: null,
     });
+  });
+
+  it('writes the folder and replaces the tags', async () => {
+    await repository.insert(NEW_DROP, {
+      tagIds: ['t1', 't2'],
+      folderId: 'folder-uuid',
+    });
+
+    expect(manager.save).toHaveBeenCalledWith(
+      Link,
+      expect.objectContaining({ folderId: 'folder-uuid' }),
+    );
+    expect(manager.delete).toHaveBeenCalledWith(LinkTag, expect.anything());
+    expect(manager.insert).toHaveBeenCalledWith(LinkTag, [
+      expect.objectContaining({ tagId: 't1' }),
+      expect.objectContaining({ tagId: 't2' }),
+    ]);
+    expect(manager.delete.mock.invocationCallOrder[0]).toBeLessThan(
+      manager.insert.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('removes every tag and leaves the folder alone for an empty list', async () => {
+    const drop = { id: 'drop-uuid', folderId: 'kept' } as Link;
+
+    await repository.save(drop, { tagIds: [] });
+
+    expect(manager.delete).toHaveBeenCalledWith(LinkTag, {
+      linkId: 'drop-uuid',
+    });
+    expect(manager.insert).not.toHaveBeenCalled();
+    expect(drop.folderId).toBe('kept');
+  });
+
+  it('takes the folder out with null and keeps the tags when absent', async () => {
+    const drop = { id: 'drop-uuid', folderId: 'old' } as Link;
+
+    await repository.save(drop, { folderId: null });
+
+    expect(drop.folderId).toBeNull();
+    expect(manager.delete).not.toHaveBeenCalled();
   });
 
   it('soft deletes within drops', async () => {
@@ -71,10 +137,10 @@ describe('TypeormDropRepository', () => {
   });
 
   it.each([
-    ['insert', () => repository.insert(NEW_DROP)],
-    ['save', () => repository.save({} as Link)],
+    ['insert', () => repository.insert(NEW_DROP, {})],
+    ['save', () => repository.save({} as Link, {})],
   ])('turns a duplicate slug into a conflict on %s', async (_name, run) => {
-    orm.save.mockRejectedValue(
+    manager.save.mockRejectedValue(
       new QueryFailedError('INSERT', [], {
         code: 'ER_DUP_ENTRY',
       } as unknown as Error),
@@ -83,10 +149,27 @@ describe('TypeormDropRepository', () => {
     await expect(run()).rejects.toBeInstanceOf(SlugAlreadyTakenException);
   });
 
+  it('turns an unknown tag into TagNotFoundException out of the transaction', async () => {
+    manager.insert.mockRejectedValue(foreignKeyError('FK_link_tags_tag'));
+
+    await expect(
+      repository.insert(NEW_DROP, { tagIds: ['gone'] }),
+    ).rejects.toBeInstanceOf(TagNotFoundException);
+  });
+
+  it('turns an unknown folder into FolderNotFoundException out of the transaction', async () => {
+    manager.save.mockRejectedValue(foreignKeyError('FK_links_folder'));
+
+    await expect(
+      repository.insert(NEW_DROP, { folderId: 'gone' }),
+    ).rejects.toBeInstanceOf(FolderNotFoundException);
+    expect(manager.insert).not.toHaveBeenCalled();
+  });
+
   it('lets other errors through', async () => {
     const failure = new Error('connection lost');
-    orm.save.mockRejectedValue(failure);
+    manager.save.mockRejectedValue(failure);
 
-    await expect(repository.insert(NEW_DROP)).rejects.toBe(failure);
+    await expect(repository.insert(NEW_DROP, {})).rejects.toBe(failure);
   });
 });

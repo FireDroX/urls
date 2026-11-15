@@ -5,6 +5,7 @@ import {
   LINK_SLUG_MAX_LENGTH,
   LINK_SLUG_MIN_LENGTH,
   LINK_SLUG_REGEX,
+  LINK_TAGS_MAX,
   RESERVED_LINK_SLUGS,
 } from '../../../common/variables.global.js';
 
@@ -40,3 +41,20 @@ export const expiresAtSchema = z.iso
   .datetime({ offset: true })
   .transform((value) => new Date(value))
   .refine((date) => date.getTime() > Date.now(), 'must be in the future');
+
+const organizationIdSchema = z.string().trim().min(1).max(LINK_SLUG_MAX_LENGTH);
+
+export const tagIdsSchema = z
+  .array(organizationIdSchema)
+  .max(LINK_TAGS_MAX)
+  .refine(
+    (ids) => new Set(ids).size === ids.length,
+    'must not contain duplicates',
+  );
+
+export const folderIdSchema = organizationIdSchema.nullable();
+
+export const linkOrganizationShape = {
+  tagIds: tagIdsSchema.optional(),
+  folderId: folderIdSchema.optional(),
+};

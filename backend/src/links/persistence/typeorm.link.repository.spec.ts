@@ -5,6 +5,7 @@ import {
 } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
+import { LinkTag } from '../../tags/entities/link-tag.entity.js';
 import { LinkCheck } from '../entities/link-check.entity.js';
 import { Link } from '../entities/link.entity.js';
 import { TypeormLinkRepository } from './typeorm.link.repository.js';
@@ -16,6 +17,7 @@ describe('TypeormLinkRepository', () => {
   let manager: {
     save: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
+    insert?: ReturnType<typeof vi.fn>;
   };
   let repository: TypeormLinkRepository;
 
@@ -85,10 +87,31 @@ describe('TypeormLinkRepository', () => {
 
   describe('saveWithCheckReset', () => {
     it('saves the link and drops its check in one transaction', async () => {
-      const saved = await repository.saveWithCheckReset(link);
+      const saved = await repository.saveWithCheckReset(link, {});
 
       expect(saved).toBe(link);
-      expect(manager.save).toHaveBeenCalledWith(link);
+      expect(manager.save).toHaveBeenCalledWith(Link, link);
+      expect(manager.delete).toHaveBeenCalledWith(LinkCheck, {
+        linkId: 'link-uuid',
+      });
+    });
+
+    it('writes the tags and the folder in the same transaction', async () => {
+      manager.insert = vi.fn().mockResolvedValue(undefined);
+      const edited = { ...link };
+
+      await repository.saveWithCheckReset(edited, {
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+
+      expect(edited.folderId).toBe('folder-uuid');
+      expect(manager.delete).toHaveBeenCalledWith(LinkTag, {
+        linkId: 'link-uuid',
+      });
+      expect(manager.insert).toHaveBeenCalledWith(LinkTag, [
+        { linkId: 'link-uuid', tagId: 'tag-uuid' },
+      ]);
       expect(manager.delete).toHaveBeenCalledWith(LinkCheck, {
         linkId: 'link-uuid',
       });
@@ -101,9 +124,9 @@ describe('TypeormLinkRepository', () => {
         } as unknown as Error),
       );
 
-      await expect(repository.saveWithCheckReset(link)).rejects.toBeInstanceOf(
-        SlugAlreadyTakenException,
-      );
+      await expect(
+        repository.saveWithCheckReset(link, {}),
+      ).rejects.toBeInstanceOf(SlugAlreadyTakenException);
       expect(manager.delete).not.toHaveBeenCalled();
     });
   });

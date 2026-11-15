@@ -21,6 +21,12 @@ import {
   type LinkFilesSummary,
 } from '../../files/services/files.service.js';
 import type { Link } from '../../links/entities/link.entity.js';
+import {
+  EMPTY_LINK_ORGANIZATION,
+  type LinkOrganization,
+  type ResolvedOrganization,
+} from '../../links/link-organization.js';
+import { LinkOrganizationService } from '../../links/services/link-organization.service.js';
 import type {
   MovedToShare,
   NewSharedFiles,
@@ -42,6 +48,7 @@ import type {
 
 export interface DropSummary extends LinkFilesSummary {
   drop: Link;
+  organization: LinkOrganization;
   state: DropState;
 }
 
@@ -52,8 +59,17 @@ export interface DropDetail extends DropSummary {
 
 const NO_FILES: LinkFilesSummary = { fileCount: 0, totalSize: 0 };
 
-function summarize(drop: Link, usage: LinkFilesSummary): DropSummary {
-  return { drop, ...usage, state: dropState(drop, usage, new Date()) };
+function summarize(
+  drop: Link,
+  usage: LinkFilesSummary,
+  organization: LinkOrganization,
+): DropSummary {
+  return {
+    drop,
+    organization,
+    ...usage,
+    state: dropState(drop, usage, new Date()),
+  };
 }
 
 @Injectable()
@@ -65,6 +81,7 @@ export class DropsService {
     private readonly auditLog: AuditLogService,
     private readonly events: EventsService,
     private readonly fileDeletion: FileDeletionService,
+    private readonly organization: LinkOrganizationService,
   ) {}
 
   async list(): Promise<DropSummary[]> {
@@ -72,8 +89,13 @@ export class DropsService {
     const usages = await this.files.summarizeCountedLinks(
       drops.map((drop) => drop.id),
     );
+    const organizations = await this.organization.loadFor(drops);
     return drops.map((drop) =>
-      summarize(drop, usages.get(drop.id) ?? NO_FILES),
+      summarize(
+        drop,
+        usages.get(drop.id) ?? NO_FILES,
+        organizations.get(drop.id) ?? EMPTY_LINK_ORGANIZATION,
+      ),
     );
   }
 
@@ -108,6 +130,7 @@ export class DropsService {
 
   async create(input: unknown, userId: string): Promise<DropSummary> {
     const dto = parseDto(createDropSchema, input);
+    const organization = await this.organization.resolve(dto);
     const fields = {
       title: dto.title ?? null,
       expiresAt: dto.expiresAt ?? null,
@@ -115,15 +138,22 @@ export class DropsService {
       maxTotalBytes: dto.maxTotalBytes,
     };
     const drop = dto.slug
-      ? await this.repository.insert({ ...fields, publicId: dto.slug })
-      : await this.insertWithGeneratedId(fields);
+      ? await this.repository.insert(
+          { ...fields, publicId: dto.slug },
+          organization,
+        )
+      : await this.insertWithGeneratedId(fields, organization);
     await this.auditLog.record({
       action: 'drops.created',
       userId,
       targetId: drop.publicId,
-      metadata: fields,
+      metadata: {
+        ...fields,
+        tagIds: dto.tagIds ?? [],
+        folderId: dto.folderId ?? null,
+      },
     });
-    return summarize(drop, NO_FILES);
+    return summarize(drop, NO_FILES, await this.organization.loadOne(drop));
   }
 
   async shareFiles(
@@ -198,13 +228,14 @@ export class DropsService {
   ): Promise<DropSummary> {
     const dto = parseDto(updateDropSchema, input);
     const drop = await this.find(publicId);
+    const organization = await this.organization.resolve(dto);
     if (dto.slug !== undefined) drop.publicId = dto.slug;
     if (dto.title !== undefined) drop.title = dto.title;
     if (dto.expiresAt !== undefined) drop.expiresAt = dto.expiresAt;
     if (dto.maxFiles !== undefined) drop.maxFiles = dto.maxFiles;
     if (dto.maxTotalBytes !== undefined) drop.maxTotalBytes = dto.maxTotalBytes;
     if (dto.disabled !== undefined) drop.disabled = dto.disabled;
-    const saved = await this.repository.save(drop);
+    const saved = await this.repository.save(drop, organization);
     await this.auditLog.record({
       action: 'drops.updated',
       userId,
@@ -236,19 +267,23 @@ export class DropsService {
   }
 
   private async withUsage(drop: Link): Promise<DropSummary> {
-    const usages = await this.files.summarizeCountedLinks([drop.id]);
-    return summarize(drop, usages.get(drop.id) ?? NO_FILES);
+    const [usages, organization] = await Promise.all([
+      this.files.summarizeCountedLinks([drop.id]),
+      this.organization.loadOne(drop),
+    ]);
+    return summarize(drop, usages.get(drop.id) ?? NO_FILES, organization);
   }
 
   private async insertWithGeneratedId(
     fields: Omit<NewDrop, 'publicId'>,
+    organization: ResolvedOrganization,
   ): Promise<Link> {
     for (let attempt = 1; ; attempt++) {
       try {
-        return await this.repository.insert({
-          ...fields,
-          publicId: generatePublicId(),
-        });
+        return await this.repository.insert(
+          { ...fields, publicId: generatePublicId() },
+          organization,
+        );
       } catch (error) {
         if (
           !(error instanceof SlugAlreadyTakenException) ||

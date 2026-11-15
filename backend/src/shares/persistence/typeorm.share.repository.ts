@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { isDuplicateEntry } from '../../common/database-errors.js';
-import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { Link } from '../../links/entities/link.entity.js';
+import type { ResolvedOrganization } from '../../links/link-organization.js';
+import { saveWithOrganization } from '../../links/persistence/link-organization.writer.js';
 import type { NewShare, ShareRepository } from './share.repository.js';
 
 const SHARE = 'share';
@@ -26,14 +26,15 @@ export class TypeormShareRepository implements ShareRepository {
     return this.repository.findOneBy({ publicId, type: SHARE });
   }
 
-  insert(share: NewShare): Promise<Link> {
+  insert(share: NewShare, organization: ResolvedOrganization): Promise<Link> {
     return this.persist(
       this.repository.create({ ...share, type: SHARE, destination: null }),
+      organization,
     );
   }
 
-  save(share: Link): Promise<Link> {
-    return this.persist(share);
+  save(share: Link, organization: ResolvedOrganization): Promise<Link> {
+    return this.persist(share, organization);
   }
 
   async softDelete(id: string): Promise<void> {
@@ -58,14 +59,12 @@ export class TypeormShareRepository implements ShareRepository {
     return result.affected === 1;
   }
 
-  private async persist(share: Link): Promise<Link> {
-    try {
-      return await this.repository.save(share);
-    } catch (error) {
-      if (isDuplicateEntry(error)) {
-        throw new SlugAlreadyTakenException();
-      }
-      throw error;
-    }
+  private persist(
+    share: Link,
+    organization: ResolvedOrganization,
+  ): Promise<Link> {
+    return this.repository.manager.transaction((manager) =>
+      saveWithOrganization(manager, share, organization),
+    );
   }
 }

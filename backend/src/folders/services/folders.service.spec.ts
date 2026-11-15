@@ -71,6 +71,24 @@ describe('FoldersService', () => {
     });
   });
 
+  describe('findByPublicId', () => {
+    it('returns the folder', async () => {
+      const folder = buildFolder();
+      repository.findByPublicId.mockResolvedValue(folder);
+
+      await expect(service.findByPublicId('abc123')).resolves.toBe(folder);
+    });
+
+    it('answers 404 for an unknown or malformed id', async () => {
+      await expect(service.findByPublicId('missing')).rejects.toBeInstanceOf(
+        FolderNotFoundException,
+      );
+      await expect(service.findByPublicId('bad id!')).rejects.toBeInstanceOf(
+        FolderNotFoundException,
+      );
+    });
+  });
+
   describe('create', () => {
     it('trims the name and audits', async () => {
       const { folder, linkCount } = await service.create(

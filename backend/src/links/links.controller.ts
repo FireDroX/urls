@@ -82,7 +82,7 @@ export class LinksController {
   @ApiOperation({ summary: 'Détail d’une redirection' })
   @ApiNotFoundResponse({ description: 'Lien inconnu.', type: ErrorResponseDto })
   async get(@Param('id') id: string): Promise<ResponseDto<LinkResponseDto>> {
-    return LinksMapper.toResponse(await this.linksService.get(id));
+    return LinksMapper.toResponse(await this.linksService.detail(id));
   }
 
   @Get(':id/stats')

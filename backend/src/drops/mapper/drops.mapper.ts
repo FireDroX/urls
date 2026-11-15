@@ -1,4 +1,5 @@
 import { ResponseDto } from '../../common/dto/response.dto.js';
+import { LinkOrganizationMapper } from '../../links/mapper/link-organization.mapper.js';
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type {
   DropDetailResponseDto,
@@ -63,6 +64,7 @@ export class DropsMapper {
 
   private static toDto({
     drop,
+    organization,
     fileCount,
     totalSize,
     state,
@@ -74,6 +76,7 @@ export class DropsMapper {
       maxFiles: drop.maxFiles ?? 0,
       expiresAt: drop.expiresAt?.toISOString() ?? null,
       disabled: drop.disabled,
+      ...LinkOrganizationMapper.toDto(organization),
       fileCount,
       totalSize,
       state,

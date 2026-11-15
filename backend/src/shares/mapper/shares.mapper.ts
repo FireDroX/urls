@@ -1,4 +1,5 @@
 import { ResponseDto } from '../../common/dto/response.dto.js';
+import { LinkOrganizationMapper } from '../../links/mapper/link-organization.mapper.js';
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type {
   PublicShareFileResponseDto,
@@ -58,6 +59,7 @@ export class SharesMapper {
 
   private static toDto({
     share,
+    organization,
     fileCount,
     totalSize,
   }: ShareSummary): ShareResponseDto {
@@ -67,6 +69,7 @@ export class SharesMapper {
       maxDownloads: share.maxDownloads,
       downloadCount: share.downloadCount,
       disabled: share.disabled,
+      ...LinkOrganizationMapper.toDto(organization),
       fileCount,
       totalSize,
       createdAt: share.createdAt.toISOString(),

@@ -16,6 +16,7 @@ import type { Link } from '../../links/entities/link.entity.js';
 import type { TurnstileService } from '../../security/services/turnstile.service.js';
 import type { StorageService } from '../../storage/services/storage.service.js';
 import type { ShareRepository } from '../persistence/share.repository.js';
+import { EMPTY_LINK_ORGANIZATION } from '../../links/link-organization.js';
 import { PublicSharesService } from './public-shares.service.js';
 
 const VISITOR: Visitor = {
@@ -121,6 +122,7 @@ describe('PublicSharesService', () => {
 
       expect(result).toEqual({
         share: buildShare(),
+        organization: EMPTY_LINK_ORGANIZATION,
         files: ready,
         fileCount: 2,
         totalSize: 150_000_050,

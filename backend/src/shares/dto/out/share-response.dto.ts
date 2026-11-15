@@ -1,3 +1,7 @@
+import type {
+  LinkFolderDto,
+  LinkTagDto,
+} from '../../../links/dto/out/link-organization.dto.js';
 import type { FileStatus } from '../../../files/entities/stored-file.entity.js';
 
 export interface ShareResponseDto {
@@ -6,6 +10,8 @@ export interface ShareResponseDto {
   maxDownloads: number | null;
   downloadCount: number;
   disabled: boolean;
+  tags: LinkTagDto[];
+  folder: LinkFolderDto | null;
   fileCount: number;
   totalSize: number;
   createdAt: string;

@@ -31,6 +31,22 @@ export class TagsService {
     return this.repository.listWithLinkCounts();
   }
 
+  async findAllByPublicIds(publicIds: string[]): Promise<Tag[]> {
+    if (publicIds.length === 0) {
+      return [];
+    }
+    if (!publicIds.every(isWellFormedLinkId)) {
+      throw new TagNotFoundException();
+    }
+    const tags = await this.repository.findByPublicIds(publicIds);
+    if (
+      new Set(tags.map((tag) => tag.publicId)).size !== new Set(publicIds).size
+    ) {
+      throw new TagNotFoundException();
+    }
+    return tags;
+  }
+
   async create(input: unknown, userId: string): Promise<TagWithLinkCount> {
     const { name, color } = parseDto(createTagSchema, input);
     const nameKey = toNameKey(name);

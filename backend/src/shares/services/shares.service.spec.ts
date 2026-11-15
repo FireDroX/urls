@@ -13,6 +13,11 @@ import {
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type { FilesService } from '../../files/services/files.service.js';
 import type { Link } from '../../links/entities/link.entity.js';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
+import { EMPTY_LINK_ORGANIZATION } from '../../links/link-organization.js';
+import type { LinkOrganizationService } from '../../links/services/link-organization.service.js';
+
 import type {
   NewShare,
   ShareRepository,
@@ -78,6 +83,11 @@ describe('SharesService', () => {
     summarizeLinks: ReturnType<typeof vi.fn>;
   };
   let events: { countViews: ReturnType<typeof vi.fn> };
+  let organization: {
+    resolve: ReturnType<typeof vi.fn>;
+    loadFor: ReturnType<typeof vi.fn>;
+    loadOne: ReturnType<typeof vi.fn>;
+  };
   let audit: { record: ReturnType<typeof vi.fn> };
   let service: SharesService;
 
@@ -96,12 +106,18 @@ describe('SharesService', () => {
       summarizeLinks: vi.fn().mockResolvedValue(new Map()),
     };
     events = { countViews: vi.fn().mockResolvedValue(0) };
+    organization = {
+      resolve: vi.fn().mockResolvedValue({}),
+      loadFor: vi.fn().mockResolvedValue(new Map()),
+      loadOne: vi.fn().mockResolvedValue(EMPTY_LINK_ORGANIZATION),
+    };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     service = new SharesService(
       repository as unknown as ShareRepository,
       files as unknown as FilesService,
       events as unknown as EventsService,
       audit as unknown as AuditLogService,
+      organization as unknown as LinkOrganizationService,
     );
   });
 
@@ -121,8 +137,18 @@ describe('SharesService', () => {
 
       expect(files.summarizeLinks).toHaveBeenCalledWith(['a', 'b']);
       expect(summaries).toEqual([
-        { share: first, fileCount: 2, totalSize: 300 },
-        { share: second, fileCount: 0, totalSize: 0 },
+        {
+          share: first,
+          organization: EMPTY_LINK_ORGANIZATION,
+          fileCount: 2,
+          totalSize: 300,
+        },
+        {
+          share: second,
+          organization: EMPTY_LINK_ORGANIZATION,
+          fileCount: 0,
+          totalSize: 0,
+        },
       ]);
     });
   });
@@ -144,6 +170,7 @@ describe('SharesService', () => {
       expect(events.countViews).toHaveBeenCalledWith('share-uuid');
       expect(detail).toEqual({
         share,
+        organization: EMPTY_LINK_ORGANIZATION,
         files: fileList,
         fileCount: 2,
         totalSize: 150_000_050,
@@ -165,6 +192,123 @@ describe('SharesService', () => {
         service.get('a'.repeat(LINK_SLUG_MAX_LENGTH + 1)),
       ).rejects.toBeInstanceOf(ShareNotFoundException);
       expect(repository.findByPublicId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('tags and folder', () => {
+    it('creates with tags and a folder resolved before the insert and audits public ids', async () => {
+      organization.resolve.mockResolvedValue({
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+
+      await service.create(
+        { tagIds: ['tagpub'], folderId: 'folderpub' },
+        USER_ID,
+      );
+
+      expect(repository.insert).toHaveBeenCalledWith(expect.anything(), {
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            tagIds: ['tagpub'],
+            folderId: 'folderpub',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('audits empty tags and no folder when none is given', async () => {
+      await service.create({}, USER_ID);
+
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            tagIds: [],
+            folderId: null,
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('does not insert when a tag is unknown', async () => {
+      organization.resolve.mockRejectedValue(new TagNotFoundException());
+
+      await expect(
+        service.create({ tagIds: ['tagpub'], folderId: 'folderpub' }, USER_ID),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.insert).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('does not insert when the folder is unknown', async () => {
+      organization.resolve.mockRejectedValue(new FolderNotFoundException());
+
+      await expect(
+        service.create({ tagIds: ['tagpub'], folderId: 'folderpub' }, USER_ID),
+      ).rejects.toBeInstanceOf(FolderNotFoundException);
+      expect(repository.insert).not.toHaveBeenCalled();
+    });
+
+    it('replaces the tags and leaves the folder on update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildShare());
+      organization.resolve.mockResolvedValue({
+        tagIds: ['t1', 't2'],
+        folderId: null,
+      });
+
+      await service.update(
+        'share123',
+        { tagIds: ['a', 'b'], folderId: null },
+        USER_ID,
+      );
+
+      expect(repository.save).toHaveBeenCalledWith(expect.anything(), {
+        tagIds: ['t1', 't2'],
+        folderId: null,
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            changes: { tagIds: ['a', 'b'], folderId: null },
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('leaves tags and folder unchanged when absent from the update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildShare());
+
+      await service.update('share123', { disabled: true }, USER_ID);
+
+      expect(repository.save).toHaveBeenCalledWith(expect.anything(), {});
+    });
+
+    it('does not save when the update names an unknown tag', async () => {
+      repository.findByPublicId.mockResolvedValue(buildShare());
+      organization.resolve.mockRejectedValue(new TagNotFoundException());
+
+      await expect(
+        service.update('share123', { tagIds: ['nope'] }, USER_ID),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('loads the organization of the whole list in one call', async () => {
+      const rows = [
+        buildShare({ id: 'a', publicId: 'first' }),
+        buildShare({ id: 'b', publicId: 'second' }),
+      ];
+      repository.findAll.mockResolvedValue(rows);
+
+      await service.list();
+
+      expect(organization.loadFor).toHaveBeenCalledTimes(1);
+      expect(organization.loadFor).toHaveBeenCalledWith(rows);
+      expect(organization.loadOne).not.toHaveBeenCalled();
     });
   });
 
@@ -201,11 +345,14 @@ describe('SharesService', () => {
         USER_ID,
       );
 
-      expect(repository.insert).toHaveBeenCalledWith({
-        publicId: 'my-Share_1',
-        expiresAt: new Date(FUTURE),
-        maxDownloads: 3,
-      });
+      expect(repository.insert).toHaveBeenCalledWith(
+        {
+          publicId: 'my-Share_1',
+          expiresAt: new Date(FUTURE),
+          maxDownloads: 3,
+        },
+        {},
+      );
     });
 
     it('retries when a generated id collides', async () => {

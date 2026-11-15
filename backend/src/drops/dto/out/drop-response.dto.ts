@@ -1,3 +1,7 @@
+import type {
+  LinkFolderDto,
+  LinkTagDto,
+} from '../../../links/dto/out/link-organization.dto.js';
 import type { FileStatus } from '../../../files/entities/stored-file.entity.js';
 import type { DropState } from '../../../common/variables.global.js';
 
@@ -8,6 +12,8 @@ export interface DropResponseDto {
   maxFiles: number;
   expiresAt: string | null;
   disabled: boolean;
+  tags: LinkTagDto[];
+  folder: LinkFolderDto | null;
   fileCount: number;
   totalSize: number;
   state: DropState;
