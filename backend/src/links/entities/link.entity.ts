@@ -4,17 +4,21 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { bigintToNumber } from '../../common/bigint-to-number.js';
 import type { LINK_TYPES } from '../../common/variables.global.js';
+import { Folder } from '../../folders/entities/folder.entity.js';
 
 export type LinkType = (typeof LINK_TYPES)[number];
 
 @Entity('links')
 @Index('UQ_links_public_id', ['publicId'], { unique: true })
 @Index('IDX_links_type_created_at', ['type', 'createdAt'])
+@Index('IDX_links_folder_id', ['folderId'])
 export class Link {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -67,6 +71,16 @@ export class Link {
 
   @Column({ type: 'int', unsigned: true, name: 'max_files', nullable: true })
   maxFiles: number | null;
+
+  @Column({ type: 'varchar', length: 36, name: 'folder_id', nullable: true })
+  folderId: string | null;
+
+  @ManyToOne(() => Folder, { onDelete: 'SET NULL' })
+  @JoinColumn({
+    name: 'folder_id',
+    foreignKeyConstraintName: 'FK_links_folder',
+  })
+  folder?: Folder | null;
 
   @Column({ type: 'boolean', default: false })
   disabled: boolean;

@@ -29,6 +29,7 @@ function buildDrop(overrides: Partial<Link> = {}): Link {
     title: 'Photos du week-end',
     maxTotalBytes: 1000,
     maxFiles: 5,
+    folderId: null,
     disabled: false,
     createdAt: new Date('2026-11-01T00:00:00Z'),
     updatedAt: new Date('2026-11-01T00:00:00Z'),
