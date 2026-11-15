@@ -7,6 +7,27 @@ import { Link } from '../../links/entities/link.entity.js';
 import { LinkTag } from '../../tags/entities/link-tag.entity.js';
 import { TypeormDropRepository } from './typeorm.drop.repository.js';
 
+function buildQueryBuilder() {
+  const qb = {
+    where: vi.fn(),
+    andWhere: vi.fn(),
+    orderBy: vi.fn(),
+    addOrderBy: vi.fn(),
+    skip: vi.fn(),
+    take: vi.fn(),
+    getManyAndCount: vi.fn().mockResolvedValue([[], 0]),
+  };
+  qb.where.mockReturnValue(qb);
+  qb.andWhere.mockReturnValue(qb);
+  qb.orderBy.mockReturnValue(qb);
+  qb.addOrderBy.mockReturnValue(qb);
+  qb.skip.mockReturnValue(qb);
+  qb.take.mockReturnValue(qb);
+  return qb;
+}
+
+const NOW = new Date('2026-11-15T00:00:00Z');
+
 const NEW_DROP = {
   publicId: 'drop1234',
   title: null,
@@ -29,7 +50,7 @@ describe('TypeormDropRepository', () => {
     insert: ReturnType<typeof vi.fn>;
   };
   let orm: {
-    find: ReturnType<typeof vi.fn>;
+    createQueryBuilder: ReturnType<typeof vi.fn>;
     findOneBy: ReturnType<typeof vi.fn>;
     create: ReturnType<typeof vi.fn>;
     softDelete: ReturnType<typeof vi.fn>;
@@ -44,7 +65,7 @@ describe('TypeormDropRepository', () => {
       insert: vi.fn().mockResolvedValue(undefined),
     };
     orm = {
-      find: vi.fn().mockResolvedValue([]),
+      createQueryBuilder: vi.fn(),
       findOneBy: vi.fn().mockResolvedValue(null),
       create: vi.fn((value: unknown) => value),
       softDelete: vi.fn().mockResolvedValue(undefined),
@@ -57,13 +78,25 @@ describe('TypeormDropRepository', () => {
     repository = new TypeormDropRepository(orm as unknown as Repository<Link>);
   });
 
-  it('lists drops only, newest first', async () => {
-    await repository.findAll();
+  it('lists a page of drops only, through the shared list query', async () => {
+    const qb = buildQueryBuilder();
+    orm.createQueryBuilder.mockReturnValue(qb);
+    const query = {
+      sort: 'created_desc',
+      page: 2,
+      pageSize: 10,
+      state: 'full',
+    };
 
-    expect(orm.find).toHaveBeenCalledWith({
-      where: { type: 'drop' },
-      order: { createdAt: 'DESC' },
+    const result = await repository.findPage(query as never, NOW);
+
+    expect(orm.createQueryBuilder).toHaveBeenCalledWith('link');
+    expect(qb.where).toHaveBeenCalledWith('link.type = :type', {
+      type: 'drop',
     });
+    expect(qb.skip).toHaveBeenCalledWith(10);
+    expect(qb.take).toHaveBeenCalledWith(10);
+    expect(result).toEqual({ items: [], total: 0 });
   });
 
   it('finds by public id within drops', async () => {

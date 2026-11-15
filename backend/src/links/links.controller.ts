@@ -27,6 +27,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ErrorResponseDto } from '../common/dto/error-response.dto.js';
+import type { PageResponseDto } from '../common/dto/page-response.dto.js';
 import { ResponseDto } from '../common/dto/response.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import type { AuthenticatedUser } from '../common/strategies/jwt.strategy.js';
@@ -74,8 +75,10 @@ export class LinksController {
 
   @Get()
   @ApiOperation({ summary: 'Lister les redirections' })
-  async list(): Promise<ResponseDto<LinkResponseDto[]>> {
-    return LinksMapper.toListResponse(await this.linksService.list());
+  async list(
+    @Query() query: unknown,
+  ): Promise<ResponseDto<PageResponseDto<LinkResponseDto>>> {
+    return LinksMapper.toListResponse(await this.linksService.list(query));
   }
 
   @Get(':id')

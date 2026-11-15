@@ -36,10 +36,11 @@ describe('shares api', () => {
   })
 
   it('lists the shares and unwraps the envelope', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(envelope([{ id: 'photos' }]))
+    const result = { items: [{ id: 'photos' }], total: 1, page: 1, pageSize: 50 }
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(result))
 
-    await expect(listShares()).resolves.toEqual([{ id: 'photos' }])
-    expect(apiClient.get).toHaveBeenCalledWith('/shares')
+    await expect(listShares({ sort: 'slug_asc' })).resolves.toEqual(result)
+    expect(apiClient.get).toHaveBeenCalledWith('/shares', { params: { sort: 'slug_asc' } })
   })
 
   it('gets a share with an abort signal', async () => {

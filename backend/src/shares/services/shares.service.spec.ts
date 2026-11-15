@@ -72,7 +72,7 @@ function buildFile(overrides: Partial<StoredFile> = {}): StoredFile {
 
 describe('SharesService', () => {
   let repository: {
-    findAll: ReturnType<typeof vi.fn>;
+    findPage: ReturnType<typeof vi.fn>;
     findByPublicId: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -93,7 +93,7 @@ describe('SharesService', () => {
 
   beforeEach(() => {
     repository = {
-      findAll: vi.fn().mockResolvedValue([]),
+      findPage: vi.fn().mockResolvedValue({ items: [], total: 0 }),
       findByPublicId: vi.fn().mockResolvedValue(null),
       insert: vi.fn((share: NewShare) =>
         Promise.resolve(buildShare({ ...share })),
@@ -125,7 +125,10 @@ describe('SharesService', () => {
     it('attaches the file count and total size of each share', async () => {
       const first = buildShare({ id: 'a', publicId: 'first' });
       const second = buildShare({ id: 'b', publicId: 'second' });
-      repository.findAll.mockResolvedValue([first, second]);
+      repository.findPage.mockResolvedValue({
+        items: [first, second],
+        total: 7,
+      });
       files.summarizeLinks.mockResolvedValue(
         new Map([
           ['a', { fileCount: 2, totalSize: 300 }],
@@ -133,7 +136,13 @@ describe('SharesService', () => {
         ]),
       );
 
-      const summaries = await service.list();
+      const {
+        items: summaries,
+        total,
+        page,
+        pageSize,
+      } = await service.list({ page: '2', pageSize: '2' });
+      expect([total, page, pageSize]).toEqual([7, 2, 2]);
 
       expect(files.summarizeLinks).toHaveBeenCalledWith(['a', 'b']);
       expect(summaries).toEqual([
@@ -150,6 +159,30 @@ describe('SharesService', () => {
           totalSize: 0,
         },
       ]);
+    });
+  });
+
+  describe('list query', () => {
+    it('passes the parsed query and the current date to the repository', async () => {
+      await service.list({ q: ' a_b ', state: 'expired', sort: 'slug_asc' });
+
+      expect(repository.findPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          q: 'a_b',
+          state: 'expired',
+          sort: 'slug_asc',
+          page: 1,
+          pageSize: 50,
+        }),
+        expect.any(Date),
+      );
+    });
+
+    it('rejects a state that is not a share state', async () => {
+      await expect(service.list({ state: 'full' })).rejects.toBeInstanceOf(
+        ValidationException,
+      );
+      expect(repository.findPage).not.toHaveBeenCalled();
     });
   });
 
@@ -302,9 +335,9 @@ describe('SharesService', () => {
         buildShare({ id: 'a', publicId: 'first' }),
         buildShare({ id: 'b', publicId: 'second' }),
       ];
-      repository.findAll.mockResolvedValue(rows);
+      repository.findPage.mockResolvedValue({ items: rows, total: 2 });
 
-      await service.list();
+      await service.list({});
 
       expect(organization.loadFor).toHaveBeenCalledTimes(1);
       expect(organization.loadFor).toHaveBeenCalledWith(rows);

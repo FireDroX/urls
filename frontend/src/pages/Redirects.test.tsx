@@ -8,6 +8,10 @@ import { createLink, deleteLink, listLinks, updateLink, type Link } from '#api/l
 import { listTags } from '#api/tags'
 import { Redirects } from './Redirects'
 
+function pageOf<T>(items: T[]) {
+  return { items, total: items.length, page: 1, pageSize: 100 }
+}
+
 vi.mock('#api/links', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#api/links')>()),
   listLinks: vi.fn(),
@@ -48,7 +52,7 @@ async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.resetAllMocks()
-  vi.mocked(listLinks).mockResolvedValue([link])
+  vi.mocked(listLinks).mockResolvedValue(pageOf([link]))
   vi.mocked(listTags).mockResolvedValue([
     { id: 'tagA', name: 'Docs', color: '#112233', linkCount: 0, createdAt: '', updatedAt: '' },
     { id: 'tagB', name: 'Work', color: '#fde047', linkCount: 0, createdAt: '', updatedAt: '' },
@@ -196,9 +200,9 @@ describe('Redirects page', () => {
 
 describe('Redirects page (tags and folder)', () => {
   it('shows the tags and the folder of a row', async () => {
-    vi.mocked(listLinks).mockResolvedValue([
+    vi.mocked(listLinks).mockResolvedValue(pageOf([
       { ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } },
-    ])
+    ]))
     render(<Redirects />, { wrapper: MemoryRouter })
 
     const row = (await screen.findByText('/r/docs')).closest('tr')!
@@ -226,9 +230,9 @@ describe('Redirects page (tags and folder)', () => {
 
   it('does not send tags or folder when editing something else', async () => {
     const user = userEvent.setup()
-    vi.mocked(listLinks).mockResolvedValue([
+    vi.mocked(listLinks).mockResolvedValue(pageOf([
       { ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } },
-    ])
+    ]))
     vi.mocked(updateLink).mockResolvedValue(link)
     render(<Redirects />, { wrapper: MemoryRouter })
 

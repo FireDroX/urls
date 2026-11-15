@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { fetchAllPages } from '#utils/fetch-all-pages'
 import { listDrops, type Drop } from '#api/drops'
 
 export type DropsState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; drops: Drop[] }
@@ -17,7 +18,7 @@ export function useDrops(): UseDrops {
 
   useEffect(() => {
     let cancelled = false
-    listDrops()
+    fetchAllPages(listDrops)
       .then((drops) => {
         if (!cancelled) setState({ status: 'ready', drops })
       })

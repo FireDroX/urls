@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseFilters,
   UseGuards,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { ErrorResponseDto } from '../common/dto/error-response.dto.js';
+import type { PageResponseDto } from '../common/dto/page-response.dto.js';
 import { ResponseDto } from '../common/dto/response.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import type { AuthenticatedUser } from '../common/strategies/jwt.strategy.js';
@@ -56,8 +58,10 @@ export class SharesController {
 
   @Get()
   @ApiOperation({ summary: 'Lister les partages' })
-  async list(): Promise<ResponseDto<ShareResponseDto[]>> {
-    return SharesMapper.toListResponse(await this.sharesService.list());
+  async list(
+    @Query() query: unknown,
+  ): Promise<ResponseDto<PageResponseDto<ShareResponseDto>>> {
+    return SharesMapper.toListResponse(await this.sharesService.list(query));
   }
 
   @Get(':id')

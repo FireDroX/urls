@@ -1,4 +1,5 @@
 import type { LinkOrganization, LinkOrganizationPayload } from '#api/link-organization'
+import type { ListParams, Page } from '#api/list-params'
 import type { ResponseDto } from '#api/response-dto'
 import type { CreateSharePayload, FileStatus, ShareDetail } from '#api/shares'
 import { apiClient } from '#lib/api-client'
@@ -65,8 +66,8 @@ export function dropUrl(id: string, origin = window.location.origin): string {
   return `${origin}${dropPath(id)}`
 }
 
-export async function listDrops(): Promise<Drop[]> {
-  const { data } = await apiClient.get<ResponseDto<Drop[]>>(DROPS_PATH)
+export async function listDrops(params?: ListParams): Promise<Page<Drop>> {
+  const { data } = await apiClient.get<ResponseDto<Page<Drop>>>(DROPS_PATH, { params })
   return data.data
 }
 

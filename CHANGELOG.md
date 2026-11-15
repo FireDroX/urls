@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7 — 2026-11-17
+
+- Côté API, les listes des redirections, des partages et des dépôts se recherchent (slug, destination, titre), se filtrent par tag, par dossier (ou sans dossier) et par état, se trient et se paginent ; un tag ou un dossier inconnu donne une liste vide.
+
 ## 0.2.6 — 2026-11-15
 
 - Les formulaires des redirections, des partages et des dépôts permettent désormais de choisir leurs tags (20 au plus) et leur dossier ; les listes et les fiches affichent les tags en pastilles de couleur et le dossier.

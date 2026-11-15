@@ -3,6 +3,7 @@ import { AuditLogService } from '../../audit/services/audit-log.service.js';
 import { LinkExpiredException } from '../../common/exceptions/links/link-expired.exception.js';
 import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
+import type { ListPage } from '../../common/list-query.js';
 import { parseDto } from '../../common/parse-dto.js';
 import {
   generatePublicId,
@@ -15,6 +16,7 @@ import {
   type LinkClickStats,
 } from '../../events/services/events.service.js';
 import { createLinkSchema } from '../dto/in/create-link.dto.js';
+import { listLinksQuerySchema } from '../dto/in/list-links-query.dto.js';
 import { linkStatsQuerySchema } from '../dto/in/link-stats-query.dto.js';
 import { updateLinkSchema } from '../dto/in/update-link.dto.js';
 import type { Link } from '../entities/link.entity.js';
@@ -47,13 +49,22 @@ export class LinksService {
     private readonly organization: LinkOrganizationService,
   ) {}
 
-  async list(): Promise<LinkWithOrganization[]> {
-    const links = await this.repository.findAllByType(REDIRECT);
+  async list(query: unknown): Promise<ListPage<LinkWithOrganization>> {
+    const parsed = parseDto(listLinksQuerySchema, query);
+    const { items: links, total } = await this.repository.findPage(
+      parsed,
+      new Date(),
+    );
     const organizations = await this.organization.loadFor(links);
-    return links.map((link) => ({
-      link,
-      organization: organizations.get(link.id) ?? EMPTY_LINK_ORGANIZATION,
-    }));
+    return {
+      items: links.map((link) => ({
+        link,
+        organization: organizations.get(link.id) ?? EMPTY_LINK_ORGANIZATION,
+      })),
+      total,
+      page: parsed.page,
+      pageSize: parsed.pageSize,
+    };
   }
 
   async detail(publicId: string): Promise<LinkWithOrganization> {

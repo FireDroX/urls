@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { fetchAllPages } from '#utils/fetch-all-pages'
 import { listLinks, type Link } from '#api/links'
 
 export type LinksState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; links: Link[] }
@@ -17,7 +18,7 @@ export function useLinks(): UseLinks {
 
   useEffect(() => {
     let cancelled = false
-    listLinks()
+    fetchAllPages(listLinks)
       .then((links) => {
         if (!cancelled) setState({ status: 'ready', links })
       })

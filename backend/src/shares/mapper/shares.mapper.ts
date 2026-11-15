@@ -1,4 +1,6 @@
+import type { PageResponseDto } from '../../common/dto/page-response.dto.js';
 import { ResponseDto } from '../../common/dto/response.dto.js';
+import type { ListPage } from '../../common/list-query.js';
 import { LinkOrganizationMapper } from '../../links/mapper/link-organization.mapper.js';
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type {
@@ -19,11 +21,12 @@ import type {
 
 export class SharesMapper {
   static toListResponse(
-    summaries: ShareSummary[],
-  ): ResponseDto<ShareResponseDto[]> {
-    return new ResponseDto(
-      summaries.map((summary) => SharesMapper.toDto(summary)),
-    );
+    page: ListPage<ShareSummary>,
+  ): ResponseDto<PageResponseDto<ShareResponseDto>> {
+    return new ResponseDto({
+      ...page,
+      items: page.items.map((item) => SharesMapper.toDto(item)),
+    });
   }
 
   static toDetailResponse(

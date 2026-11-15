@@ -10,6 +10,10 @@ import { listTags } from '#api/tags'
 import { UploadsProvider } from '#components/UploadsProvider'
 import { Shares } from './Shares'
 
+function pageOf<T>(items: T[]) {
+  return { items, total: items.length, page: 1, pageSize: 100 }
+}
+
 vi.mock('#api/shares', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#api/shares')>()),
   listShares: vi.fn(),
@@ -67,7 +71,7 @@ async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.resetAllMocks()
-  vi.mocked(listShares).mockResolvedValue([share])
+  vi.mocked(listShares).mockResolvedValue(pageOf([share]))
   vi.mocked(listTags).mockResolvedValue([])
   vi.mocked(listFolders).mockResolvedValue([])
 })
@@ -84,7 +88,7 @@ describe('Shares page', () => {
   })
 
   it('shows an empty state', async () => {
-    vi.mocked(listShares).mockResolvedValue([])
+    vi.mocked(listShares).mockResolvedValue(pageOf([]))
     render(<Shares />, { wrapper: Wrapper })
 
     expect(await screen.findByText("Aucun partage pour l'instant")).toBeInTheDocument()
@@ -217,7 +221,7 @@ describe('Shares page', () => {
 
 describe('Shares page (tags and folder)', () => {
   it('shows the tags and the folder of a row', async () => {
-    vi.mocked(listShares).mockResolvedValue([{ ...share, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }])
+    vi.mocked(listShares).mockResolvedValue(pageOf([{ ...share, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }]))
     render(<Shares />, { wrapper: Wrapper })
 
     const row = (await screen.findByText('/d/photos')).closest('tr')!

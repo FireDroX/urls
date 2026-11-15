@@ -1,5 +1,7 @@
 import { HttpStatus, type HttpRedirectResponse } from '@nestjs/common';
+import type { PageResponseDto } from '../../common/dto/page-response.dto.js';
 import { ResponseDto } from '../../common/dto/response.dto.js';
+import type { ListPage } from '../../common/list-query.js';
 import { LINK_STATS_TIME_ZONE } from '../../common/variables.global.js';
 import { LinkOrganizationMapper } from './link-organization.mapper.js';
 import type { LinkCheckResponseDto } from '../dto/out/link-check-response.dto.js';
@@ -19,9 +21,12 @@ export class LinksMapper {
   }
 
   static toListResponse(
-    items: LinkWithOrganization[],
-  ): ResponseDto<LinkResponseDto[]> {
-    return new ResponseDto(items.map((item) => LinksMapper.toDto(item)));
+    page: ListPage<LinkWithOrganization>,
+  ): ResponseDto<PageResponseDto<LinkResponseDto>> {
+    return new ResponseDto({
+      ...page,
+      items: page.items.map((item) => LinksMapper.toDto(item)),
+    });
   }
 
   static toStatsResponse(stats: LinkStats): ResponseDto<LinkStatsResponseDto> {

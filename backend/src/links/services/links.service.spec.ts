@@ -70,7 +70,7 @@ function buildLink(overrides: Partial<Link> = {}): Link {
 
 describe('LinksService', () => {
   let repository: {
-    findAllByType: ReturnType<typeof vi.fn>;
+    findPage: ReturnType<typeof vi.fn>;
     findByPublicId: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -91,7 +91,7 @@ describe('LinksService', () => {
 
   beforeEach(() => {
     repository = {
-      findAllByType: vi.fn().mockResolvedValue([]),
+      findPage: vi.fn().mockResolvedValue({ items: [], total: 0 }),
       findByPublicId: vi.fn().mockResolvedValue(null),
       insert: vi.fn((link: NewLink) => Promise.resolve(buildLink(link))),
       save: vi.fn((link: Link) => Promise.resolve(link)),
@@ -400,9 +400,9 @@ describe('LinksService', () => {
 
     it('loads the organization of a whole list in one call', async () => {
       const links = [buildLink(), buildLink({ id: 'other', publicId: 'zzz' })];
-      repository.findAllByType.mockResolvedValue(links);
+      repository.findPage.mockResolvedValue({ items: links, total: 2 });
 
-      const result = await service.list();
+      const { items: result } = await service.list({});
 
       expect(organization.loadFor).toHaveBeenCalledTimes(1);
       expect(organization.loadFor).toHaveBeenCalledWith(links);
@@ -423,10 +423,37 @@ describe('LinksService', () => {
   });
 
   describe('list', () => {
-    it('lists redirects only', async () => {
-      await service.list();
+    it('returns the page with its total and the defaults', async () => {
+      repository.findPage.mockResolvedValue({
+        items: [buildLink()],
+        total: 12,
+      });
 
-      expect(repository.findAllByType).toHaveBeenCalledWith('redirect');
+      const result = await service.list({});
+
+      expect(result).toMatchObject({ total: 12, page: 1, pageSize: 50 });
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('passes the parsed query and the current date to the repository', async () => {
+      await service.list({ q: 'x', state: 'disabled', page: '3' });
+
+      expect(repository.findPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          q: 'x',
+          state: 'disabled',
+          page: 3,
+          sort: 'created_desc',
+        }),
+        expect.any(Date),
+      );
+    });
+
+    it('rejects an invalid query without reading', async () => {
+      await expect(service.list({ page: '0' })).rejects.toBeInstanceOf(
+        ValidationException,
+      );
+      expect(repository.findPage).not.toHaveBeenCalled();
     });
   });
 

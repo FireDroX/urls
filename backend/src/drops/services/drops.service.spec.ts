@@ -55,7 +55,7 @@ function buildDrop(overrides: Partial<Link> = {}): Link {
 
 describe('DropsService', () => {
   let repository: {
-    findAll: ReturnType<typeof vi.fn>;
+    findPage: ReturnType<typeof vi.fn>;
     findByPublicId: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -79,7 +79,7 @@ describe('DropsService', () => {
 
   beforeEach(() => {
     repository = {
-      findAll: vi.fn().mockResolvedValue([]),
+      findPage: vi.fn().mockResolvedValue({ items: [], total: 0 }),
       findByPublicId: vi.fn().mockResolvedValue(null),
       insert: vi.fn((drop: NewDrop) => Promise.resolve(buildDrop({ ...drop }))),
       save: vi.fn((drop: Link) => Promise.resolve(drop)),
@@ -118,12 +118,21 @@ describe('DropsService', () => {
     it('aggregates every drop in one call and sets the state', async () => {
       const first = buildDrop({ id: 'a', publicId: 'first' });
       const second = buildDrop({ id: 'b', publicId: 'second', disabled: true });
-      repository.findAll.mockResolvedValue([first, second]);
+      repository.findPage.mockResolvedValue({
+        items: [first, second],
+        total: 9,
+      });
       files.summarizeCountedLinks.mockResolvedValue(
         new Map([['a', { fileCount: 5, totalSize: 10 }]]),
       );
 
-      const summaries = await service.list();
+      const {
+        items: summaries,
+        total,
+        page,
+        pageSize,
+      } = await service.list({});
+      expect([total, page, pageSize]).toEqual([9, 1, 50]);
 
       expect(files.summarizeCountedLinks).toHaveBeenCalledTimes(1);
       expect(files.summarizeCountedLinks).toHaveBeenCalledWith(['a', 'b']);
@@ -143,6 +152,28 @@ describe('DropsService', () => {
           state: 'disabled',
         },
       ]);
+    });
+  });
+
+  describe('list query', () => {
+    it('passes the parsed query and the current date to the repository', async () => {
+      await service.list({ folder: 'none', state: 'full', tag: 'abc12345' });
+
+      expect(repository.findPage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folder: 'none',
+          state: 'full',
+          tag: 'abc12345',
+        }),
+        expect.any(Date),
+      );
+    });
+
+    it('rejects a state that is not a drop state', async () => {
+      await expect(service.list({ state: 'active' })).rejects.toBeInstanceOf(
+        ValidationException,
+      );
+      expect(repository.findPage).not.toHaveBeenCalled();
     });
   });
 
@@ -501,9 +532,9 @@ describe('DropsService', () => {
         buildDrop({ id: 'a', publicId: 'first' }),
         buildDrop({ id: 'b', publicId: 'second' }),
       ];
-      repository.findAll.mockResolvedValue(rows);
+      repository.findPage.mockResolvedValue({ items: rows, total: 2 });
 
-      await service.list();
+      await service.list({});
 
       expect(organization.loadFor).toHaveBeenCalledTimes(1);
       expect(organization.loadFor).toHaveBeenCalledWith(rows);

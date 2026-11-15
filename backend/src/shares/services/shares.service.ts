@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AuditLogService } from '../../audit/services/audit-log.service.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { ShareNotFoundException } from '../../common/exceptions/shares/share-not-found.exception.js';
+import type { ListPage } from '../../common/list-query.js';
 import { parseDto } from '../../common/parse-dto.js';
 import {
   generatePublicId,
@@ -22,6 +23,7 @@ import {
 } from '../../links/link-organization.js';
 import { LinkOrganizationService } from '../../links/services/link-organization.service.js';
 import { createShareSchema } from '../dto/in/create-share.dto.js';
+import { listSharesQuerySchema } from '../dto/in/list-shares-query.dto.js';
 import { updateShareSchema } from '../dto/in/update-share.dto.js';
 import type {
   NewShare,
@@ -66,18 +68,27 @@ export class SharesService {
     private readonly organization: LinkOrganizationService,
   ) {}
 
-  async list(): Promise<ShareSummary[]> {
-    const shares = await this.repository.findAll();
+  async list(query: unknown): Promise<ListPage<ShareSummary>> {
+    const parsed = parseDto(listSharesQuerySchema, query);
+    const { items: shares, total } = await this.repository.findPage(
+      parsed,
+      new Date(),
+    );
     const summaries = await this.files.summarizeLinks(
       shares.map((share) => share.id),
     );
     const organizations = await this.organization.loadFor(shares);
-    return shares.map((share) => ({
-      share,
-      organization: organizations.get(share.id) ?? EMPTY_LINK_ORGANIZATION,
-      fileCount: summaries.get(share.id)?.fileCount ?? 0,
-      totalSize: summaries.get(share.id)?.totalSize ?? 0,
-    }));
+    return {
+      items: shares.map((share) => ({
+        share,
+        organization: organizations.get(share.id) ?? EMPTY_LINK_ORGANIZATION,
+        fileCount: summaries.get(share.id)?.fileCount ?? 0,
+        totalSize: summaries.get(share.id)?.totalSize ?? 0,
+      })),
+      total,
+      page: parsed.page,
+      pageSize: parsed.pageSize,
+    };
   }
 
   async get(publicId: string): Promise<ShareDetail> {

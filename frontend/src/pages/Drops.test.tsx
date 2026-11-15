@@ -9,6 +9,10 @@ import { listTags } from '#api/tags'
 import { dropFormDefaults } from '#schemas/drop.schema'
 import { Drops } from './Drops'
 
+function pageOf<T>(items: T[]) {
+  return { items, total: items.length, page: 1, pageSize: 100 }
+}
+
 vi.mock('#api/drops', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#api/drops')>()),
   listDrops: vi.fn(),
@@ -69,7 +73,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(listTags).mockResolvedValue([])
   vi.mocked(listFolders).mockResolvedValue([])
-  vi.mocked(listDrops).mockResolvedValue([drop])
+  vi.mocked(listDrops).mockResolvedValue(pageOf([drop]))
 })
 
 describe('Drops page', () => {
@@ -91,7 +95,7 @@ describe('Drops page', () => {
   })
 
   it('falls back to a translated title for an untitled drop', async () => {
-    vi.mocked(listDrops).mockResolvedValue([{ ...drop, title: null, state: 'full' }])
+    vi.mocked(listDrops).mockResolvedValue(pageOf([{ ...drop, title: null, state: 'full' }]))
     renderDrops()
 
     expect(await screen.findByText('Sans titre')).toBeInTheDocument()
@@ -99,7 +103,7 @@ describe('Drops page', () => {
   })
 
   it('shows an empty state', async () => {
-    vi.mocked(listDrops).mockResolvedValue([])
+    vi.mocked(listDrops).mockResolvedValue(pageOf([]))
     renderDrops()
 
     expect(await screen.findByText("Aucun dépôt pour l'instant")).toBeInTheDocument()
@@ -297,7 +301,7 @@ describe('Drops page', () => {
 
 describe('Drops page (tags and folder)', () => {
   it('shows the tags and the folder of a row', async () => {
-    vi.mocked(listDrops).mockResolvedValue([{ ...drop, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }])
+    vi.mocked(listDrops).mockResolvedValue(pageOf([{ ...drop, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }]))
     render(<Drops />, { wrapper: MemoryRouter })
 
     const row = (await screen.findByText('Documents')).closest('tr')!

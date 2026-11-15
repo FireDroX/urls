@@ -1,5 +1,6 @@
 import { redirectPath } from '#api/redirects'
 import type { LinkOrganization, LinkOrganizationPayload } from '#api/link-organization'
+import type { ListParams, Page } from '#api/list-params'
 import type { ResponseDto } from '#api/response-dto'
 import { apiClient } from '#lib/api-client'
 
@@ -62,8 +63,8 @@ export function linkUrl(id: string, origin = window.location.origin): string {
   return `${origin}${redirectPath(id)}`
 }
 
-export async function listLinks(): Promise<Link[]> {
-  const { data } = await apiClient.get<ResponseDto<Link[]>>(LINKS_PATH)
+export async function listLinks(params?: ListParams): Promise<Page<Link>> {
+  const { data } = await apiClient.get<ResponseDto<Page<Link>>>(LINKS_PATH, { params })
   return data.data
 }
 

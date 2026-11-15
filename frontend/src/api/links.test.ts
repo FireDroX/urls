@@ -28,10 +28,11 @@ beforeEach(() => {
 
 describe('links api', () => {
   it('lists the links and unwraps the response envelope', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(envelope([link]))
+    const result = { items: [link], total: 1, page: 1, pageSize: 50 }
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(result))
 
-    await expect(listLinks()).resolves.toEqual([link])
-    expect(apiClient.get).toHaveBeenCalledWith('/links')
+    await expect(listLinks({ q: 'a', page: 2 })).resolves.toEqual(result)
+    expect(apiClient.get).toHaveBeenCalledWith('/links', { params: { q: 'a', page: 2 } })
   })
 
   it('creates a link with the given payload', async () => {

@@ -192,3 +192,20 @@ export const TAG_COLOR_REGEX = /^#[0-9a-f]{6}$/;
 export const DEFAULT_TAG_COLOR = '#6b7280';
 
 export const FOLDER_NAME_MAX_LENGTH = 100;
+
+export const LIST_SEARCH_MAX_LENGTH = 100;
+export const LIST_PAGE_SIZE_DEFAULT = 50;
+export const LIST_PAGE_SIZE_MAX = 100;
+export const LIST_PAGE_MAX = 100_000;
+export const LIST_FOLDER_NONE = 'none';
+export const LIST_LIKE_ESCAPE = '!';
+export const LINK_LIST_SORTS = [
+  'created_desc',
+  'created_asc',
+  'updated_desc',
+  'slug_asc',
+  'slug_desc',
+] as const;
+export type LinkListSort = (typeof LINK_LIST_SORTS)[number];
+export const LINK_LIST_STATES = ['active', 'disabled', 'expired'] as const;
+export type LinkListState = (typeof LINK_LIST_STATES)[number];

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { fetchAllPages } from '#utils/fetch-all-pages'
 import { listShares, type Share } from '#api/shares'
 
 export type SharesState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; shares: Share[] }
@@ -17,7 +18,7 @@ export function useShares(): UseShares {
 
   useEffect(() => {
     let cancelled = false
-    listShares()
+    fetchAllPages(listShares)
       .then((shares) => {
         if (!cancelled) setState({ status: 'ready', shares })
       })
