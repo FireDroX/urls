@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { isDuplicateEntry } from '../../common/database-errors.js';
 import { TagNameAlreadyTakenException } from '../../common/exceptions/tags/tag-name-already-taken.exception.js';
 import { TagPublicIdTakenException } from '../../common/exceptions/tags/tag-public-id-taken.exception.js';
@@ -56,6 +56,10 @@ export class TypeormTagRepository implements TagRepository {
 
   findByPublicId(publicId: string): Promise<Tag | null> {
     return this.repository.findOneBy({ publicId });
+  }
+
+  findByPublicIds(publicIds: string[]): Promise<Tag[]> {
+    return this.repository.findBy({ publicId: In(publicIds) });
   }
 
   findByNameKey(nameKey: string): Promise<Tag | null> {

@@ -18,10 +18,16 @@ import { createLinkSchema } from '../dto/in/create-link.dto.js';
 import { linkStatsQuerySchema } from '../dto/in/link-stats-query.dto.js';
 import { updateLinkSchema } from '../dto/in/update-link.dto.js';
 import type { Link } from '../entities/link.entity.js';
+import {
+  EMPTY_LINK_ORGANIZATION,
+  type LinkWithOrganization,
+  type ResolvedOrganization,
+} from '../link-organization.js';
 import type {
   LinkRepository,
   NewLink,
 } from '../persistence/link.repository.js';
+import { LinkOrganizationService } from './link-organization.service.js';
 
 const REDIRECT = 'redirect';
 
@@ -38,10 +44,21 @@ export class LinksService {
     private readonly repository: LinkRepository,
     private readonly auditLog: AuditLogService,
     private readonly events: EventsService,
+    private readonly organization: LinkOrganizationService,
   ) {}
 
-  list(): Promise<Link[]> {
-    return this.repository.findAllByType(REDIRECT);
+  async list(): Promise<LinkWithOrganization[]> {
+    const links = await this.repository.findAllByType(REDIRECT);
+    const organizations = await this.organization.loadFor(links);
+    return links.map((link) => ({
+      link,
+      organization: organizations.get(link.id) ?? EMPTY_LINK_ORGANIZATION,
+    }));
+  }
+
+  async detail(publicId: string): Promise<LinkWithOrganization> {
+    const link = await this.get(publicId);
+    return { link, organization: await this.organization.loadOne(link) };
   }
 
   listDueForCheck(limit: number): Promise<Link[]> {
@@ -77,32 +94,42 @@ export class LinksService {
     return link.destination;
   }
 
-  async create(input: unknown, userId: string): Promise<Link> {
+  async create(input: unknown, userId: string): Promise<LinkWithOrganization> {
     const dto = parseDto(createLinkSchema, input);
+    const organization = await this.organization.resolve(dto);
     const fields = {
       type: REDIRECT,
       destination: dto.destination,
       expiresAt: dto.expiresAt ?? null,
     } as const;
     const link = dto.slug
-      ? await this.repository.insert({ ...fields, publicId: dto.slug })
-      : await this.insertWithGeneratedId(fields);
+      ? await this.repository.insert(
+          { ...fields, publicId: dto.slug },
+          organization,
+        )
+      : await this.insertWithGeneratedId(fields, organization);
     await this.auditLog.record({
       action: 'links.created',
       userId,
       targetId: link.publicId,
-      metadata: { destination: link.destination, expiresAt: link.expiresAt },
+      metadata: {
+        destination: link.destination,
+        expiresAt: link.expiresAt,
+        tagIds: dto.tagIds ?? [],
+        folderId: dto.folderId ?? null,
+      },
     });
-    return link;
+    return { link, organization: await this.organization.loadOne(link) };
   }
 
   async update(
     publicId: string,
     input: unknown,
     userId: string,
-  ): Promise<Link> {
+  ): Promise<LinkWithOrganization> {
     const dto = parseDto(updateLinkSchema, input);
     const link = await this.get(publicId);
+    const organization = await this.organization.resolve(dto);
     if (dto.slug !== undefined) link.publicId = dto.slug;
     const destinationChanged =
       dto.destination !== undefined && dto.destination !== link.destination;
@@ -110,15 +137,18 @@ export class LinksService {
     if (dto.expiresAt !== undefined) link.expiresAt = dto.expiresAt;
     if (dto.disabled !== undefined) link.disabled = dto.disabled;
     const saved = destinationChanged
-      ? await this.repository.saveWithCheckReset(link)
-      : await this.repository.save(link);
+      ? await this.repository.saveWithCheckReset(link, organization)
+      : await this.repository.save(link, organization);
     await this.auditLog.record({
       action: 'links.updated',
       userId,
       targetId: saved.publicId,
       metadata: { previousId: publicId, changes: dto },
     });
-    return saved;
+    return {
+      link: saved,
+      organization: await this.organization.loadOne(saved),
+    };
   }
 
   async remove(publicId: string, userId: string): Promise<void> {
@@ -133,13 +163,14 @@ export class LinksService {
 
   private async insertWithGeneratedId(
     fields: Omit<NewLink, 'publicId'>,
+    organization: ResolvedOrganization,
   ): Promise<Link> {
     for (let attempt = 1; ; attempt++) {
       try {
-        return await this.repository.insert({
-          ...fields,
-          publicId: generatePublicId(),
-        });
+        return await this.repository.insert(
+          { ...fields, publicId: generatePublicId() },
+          organization,
+        );
       } catch (error) {
         if (
           !(error instanceof SlugAlreadyTakenException) ||

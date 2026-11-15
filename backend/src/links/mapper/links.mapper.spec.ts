@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { Folder } from '../../folders/entities/folder.entity.js';
+import type { Tag } from '../../tags/entities/tag.entity.js';
 import type { Link } from '../entities/link.entity.js';
 import { LinksMapper } from './links.mapper.js';
 
@@ -22,7 +24,24 @@ describe('LinksMapper', () => {
       deletedAt: null,
     };
 
-    const { data } = LinksMapper.toResponse(link);
+    const { data } = LinksMapper.toResponse({
+      link,
+      organization: {
+        tags: [
+          {
+            id: 'tag-uuid',
+            publicId: 'tag1',
+            name: 'Work',
+            color: '#112233',
+          } as Tag,
+        ],
+        folder: {
+          id: 'folder-uuid',
+          publicId: 'fold1',
+          name: 'Docs',
+        } as Folder,
+      },
+    });
 
     expect(data).toEqual({
       id: 'abc123',
@@ -30,10 +49,14 @@ describe('LinksMapper', () => {
       destination: 'https://example.com/',
       expiresAt: '2999-01-01T00:00:00.000Z',
       disabled: false,
+      tags: [{ id: 'tag1', name: 'Work', color: '#112233' }],
+      folder: { id: 'fold1', name: 'Docs' },
       createdAt: '2026-11-01T00:00:00.000Z',
       updatedAt: '2026-11-02T00:00:00.000Z',
     });
     expect(JSON.stringify(data)).not.toContain(link.id);
+    expect(JSON.stringify(data)).not.toContain('tag-uuid');
+    expect(JSON.stringify(data)).not.toContain('folder-uuid');
   });
 
   it('maps a check with the public id and an ISO date', () => {

@@ -11,6 +11,7 @@ export interface TagRepository {
   listWithLinkCounts(): Promise<TagWithLinkCount[]>;
   countLinks(tagId: string): Promise<number>;
   findByPublicId(publicId: string): Promise<Tag | null>;
+  findByPublicIds(publicIds: string[]): Promise<Tag[]>;
   findByNameKey(nameKey: string): Promise<Tag | null>;
   insert(tag: NewTag): Promise<Tag>;
   save(tag: Tag): Promise<Tag>;

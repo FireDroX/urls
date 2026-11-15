@@ -1,5 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import type { Response } from 'express';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
 import { describe, expect, it, vi } from 'vitest';
 import { LinkExpiredException } from '../../common/exceptions/links/link-expired.exception.js';
 import { LinkNotFoundException } from '../../common/exceptions/links/link-not-found.exception.js';
@@ -23,6 +25,14 @@ function respondTo(exception: Error): { status: number; body: unknown } {
 }
 
 describe('LinksExceptionFilter', () => {
+  it('answers 404 for an unknown tag or folder', () => {
+    expect(respondTo(new TagNotFoundException())).toEqual({
+      status: 404,
+      body: { error: 'Tag not found' },
+    });
+    expect(respondTo(new FolderNotFoundException()).status).toBe(404);
+  });
+
   it('answers 404 with a generic message for a missing link', () => {
     expect(respondTo(new LinkNotFoundException())).toEqual({
       status: 404,

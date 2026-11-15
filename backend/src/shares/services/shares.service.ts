@@ -15,6 +15,12 @@ import {
   type LinkFilesSummary,
 } from '../../files/services/files.service.js';
 import type { Link } from '../../links/entities/link.entity.js';
+import {
+  EMPTY_LINK_ORGANIZATION,
+  type LinkOrganization,
+  type ResolvedOrganization,
+} from '../../links/link-organization.js';
+import { LinkOrganizationService } from '../../links/services/link-organization.service.js';
 import { createShareSchema } from '../dto/in/create-share.dto.js';
 import { updateShareSchema } from '../dto/in/update-share.dto.js';
 import type {
@@ -24,6 +30,7 @@ import type {
 
 export interface ShareSummary extends LinkFilesSummary {
   share: Link;
+  organization: LinkOrganization;
 }
 
 export interface ShareWithFiles extends ShareSummary {
@@ -34,9 +41,14 @@ export interface ShareDetail extends ShareWithFiles {
   viewCount: number;
 }
 
-export function withFiles(share: Link, files: StoredFile[]): ShareWithFiles {
+export function withFiles(
+  share: Link,
+  files: StoredFile[],
+  organization: LinkOrganization = EMPTY_LINK_ORGANIZATION,
+): ShareWithFiles {
   return {
     share,
+    organization,
     files,
     fileCount: files.length,
     totalSize: files.reduce((total, file) => total + file.size, 0),
@@ -51,6 +63,7 @@ export class SharesService {
     private readonly files: FilesService,
     private readonly events: EventsService,
     private readonly auditLog: AuditLogService,
+    private readonly organization: LinkOrganizationService,
   ) {}
 
   async list(): Promise<ShareSummary[]> {
@@ -58,8 +71,10 @@ export class SharesService {
     const summaries = await this.files.summarizeLinks(
       shares.map((share) => share.id),
     );
+    const organizations = await this.organization.loadFor(shares);
     return shares.map((share) => ({
       share,
+      organization: organizations.get(share.id) ?? EMPTY_LINK_ORGANIZATION,
       fileCount: summaries.get(share.id)?.fileCount ?? 0,
       totalSize: summaries.get(share.id)?.totalSize ?? 0,
     }));
@@ -71,20 +86,29 @@ export class SharesService {
 
   async create(input: unknown, userId: string): Promise<ShareDetail> {
     const dto = parseDto(createShareSchema, input);
+    const organization = await this.organization.resolve(dto);
     const fields = {
       expiresAt: dto.expiresAt ?? null,
       maxDownloads: dto.maxDownloads ?? null,
     };
     const share = dto.slug
-      ? await this.repository.insert({ ...fields, publicId: dto.slug })
-      : await this.insertWithGeneratedId(fields);
+      ? await this.repository.insert(
+          { ...fields, publicId: dto.slug },
+          organization,
+        )
+      : await this.insertWithGeneratedId(fields, organization);
     await this.auditLog.record({
       action: 'shares.created',
       userId,
       targetId: share.publicId,
-      metadata: fields,
+      metadata: {
+        ...fields,
+        tagIds: dto.tagIds ?? [],
+        folderId: dto.folderId ?? null,
+      },
     });
-    return { ...withFiles(share, []), viewCount: 0 };
+    const created = await this.organization.loadOne(share);
+    return { ...withFiles(share, [], created), viewCount: 0 };
   }
 
   async update(
@@ -94,11 +118,12 @@ export class SharesService {
   ): Promise<ShareDetail> {
     const dto = parseDto(updateShareSchema, input);
     const share = await this.find(publicId);
+    const organization = await this.organization.resolve(dto);
     if (dto.slug !== undefined) share.publicId = dto.slug;
     if (dto.expiresAt !== undefined) share.expiresAt = dto.expiresAt;
     if (dto.maxDownloads !== undefined) share.maxDownloads = dto.maxDownloads;
     if (dto.disabled !== undefined) share.disabled = dto.disabled;
-    const saved = await this.repository.save(share);
+    const saved = await this.repository.save(share, organization);
     await this.auditLog.record({
       action: 'shares.updated',
       userId,
@@ -119,11 +144,12 @@ export class SharesService {
   }
 
   private async detail(share: Link): Promise<ShareDetail> {
-    const [files, viewCount] = await Promise.all([
+    const [files, viewCount, organization] = await Promise.all([
       this.files.listForLink(share.id),
       this.events.countViews(share.id),
+      this.organization.loadOne(share),
     ]);
-    return { ...withFiles(share, files), viewCount };
+    return { ...withFiles(share, files, organization), viewCount };
   }
 
   async find(publicId: string): Promise<Link> {
@@ -139,13 +165,14 @@ export class SharesService {
 
   private async insertWithGeneratedId(
     fields: Omit<NewShare, 'publicId'>,
+    organization: ResolvedOrganization,
   ): Promise<Link> {
     for (let attempt = 1; ; attempt++) {
       try {
-        return await this.repository.insert({
-          ...fields,
-          publicId: generatePublicId(),
-        });
+        return await this.repository.insert(
+          { ...fields, publicId: generatePublicId() },
+          organization,
+        );
       } catch (error) {
         if (
           !(error instanceof SlugAlreadyTakenException) ||

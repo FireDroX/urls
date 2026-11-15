@@ -13,5 +13,6 @@ import { FoldersController } from './folders.controller.js';
     { provide: 'FoldersRepository', useClass: TypeormFolderRepository },
     FoldersService,
   ],
+  exports: [FoldersService],
 })
 export class FoldersModule {}

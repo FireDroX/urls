@@ -75,6 +75,7 @@ export const RESERVED_LINK_SLUGS: readonly string[] = [
   'static',
   'u',
 ];
+export const LINK_TAGS_MAX = 20;
 export const LINK_CREATE_THROTTLE_TTL_MS = 60_000;
 export const LINK_CREATE_THROTTLE_LIMIT = 20;
 export const LINK_REDIRECT_THROTTLE_TTL_MS = 60_000;

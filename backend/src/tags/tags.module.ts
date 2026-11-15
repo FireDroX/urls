@@ -13,5 +13,6 @@ import { TagsController } from './tags.controller.js';
     { provide: 'TagsRepository', useClass: TypeormTagRepository },
     TagsService,
   ],
+  exports: [TagsService],
 })
 export class TagsModule {}

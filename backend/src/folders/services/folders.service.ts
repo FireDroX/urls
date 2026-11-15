@@ -31,6 +31,10 @@ export class FoldersService {
     return this.repository.listWithLinkCounts();
   }
 
+  findByPublicId(publicId: string): Promise<Folder> {
+    return this.find(publicId);
+  }
+
   async create(input: unknown, userId: string): Promise<FolderWithLinkCount> {
     const { name } = parseDto(createFolderSchema, input);
     const nameKey = toNameKey(name);

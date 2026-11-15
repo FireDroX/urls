@@ -1,5 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import type { Response } from 'express';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
 import { describe, expect, it, vi } from 'vitest';
 import { DropExpiredException } from '../../common/exceptions/drops/drop-expired.exception.js';
 import { FileNotReadyException } from '../../common/exceptions/files/file-not-ready.exception.js';
@@ -28,6 +30,14 @@ function respondTo(exception: Error): { status: number; body: unknown } {
 }
 
 describe('DropsExceptionFilter', () => {
+  it('answers 404 for an unknown tag or folder', () => {
+    expect(respondTo(new TagNotFoundException())).toEqual({
+      status: 404,
+      body: { error: 'Tag not found' },
+    });
+    expect(respondTo(new FolderNotFoundException()).status).toBe(404);
+  });
+
   it('answers 404 for a missing drop', () => {
     expect(respondTo(new DropNotFoundException())).toEqual({
       status: 404,

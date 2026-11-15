@@ -11,6 +11,8 @@ const STATUS_BY_EXCEPTION: Record<string, number> = {
   ValidationException: HttpStatus.BAD_REQUEST,
   LinkNotFoundException: HttpStatus.NOT_FOUND,
   LinkExpiredException: HttpStatus.GONE,
+  TagNotFoundException: HttpStatus.NOT_FOUND,
+  FolderNotFoundException: HttpStatus.NOT_FOUND,
   SlugAlreadyTakenException: HttpStatus.CONFLICT,
 };
 

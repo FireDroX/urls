@@ -1,5 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import type { Response } from 'express';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
 import { describe, expect, it, vi } from 'vitest';
 import { InvalidTurnstileTokenException } from '../../common/exceptions/auth/invalid-turnstile-token.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
@@ -26,6 +28,14 @@ function respondTo(exception: Error): { status: number; body: unknown } {
 }
 
 describe('SharesExceptionFilter', () => {
+  it('answers 404 for an unknown tag or folder', () => {
+    expect(respondTo(new TagNotFoundException())).toEqual({
+      status: 404,
+      body: { error: 'Tag not found' },
+    });
+    expect(respondTo(new FolderNotFoundException()).status).toBe(404);
+  });
+
   it('answers 404 for a missing share', () => {
     expect(respondTo(new ShareNotFoundException())).toEqual({
       status: 404,

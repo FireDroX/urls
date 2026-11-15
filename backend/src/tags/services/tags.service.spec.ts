@@ -34,6 +34,7 @@ describe('TagsService', () => {
     listWithLinkCounts: ReturnType<typeof vi.fn>;
     countLinks: ReturnType<typeof vi.fn>;
     findByPublicId: ReturnType<typeof vi.fn>;
+    findByPublicIds: ReturnType<typeof vi.fn>;
     findByNameKey: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -47,6 +48,7 @@ describe('TagsService', () => {
       listWithLinkCounts: vi.fn().mockResolvedValue([]),
       countLinks: vi.fn().mockResolvedValue(3),
       findByPublicId: vi.fn().mockResolvedValue(null),
+      findByPublicIds: vi.fn().mockResolvedValue([]),
       findByNameKey: vi.fn().mockResolvedValue(null),
       insert: vi.fn((tag: NewTag) => Promise.resolve(buildTag(tag))),
       save: vi.fn((tag: Tag) => Promise.resolve(tag)),
@@ -65,6 +67,43 @@ describe('TagsService', () => {
       repository.listWithLinkCounts.mockResolvedValue(entries);
 
       await expect(service.list()).resolves.toBe(entries);
+    });
+  });
+
+  describe('findAllByPublicIds', () => {
+    it('returns no tag without querying for an empty list', async () => {
+      await expect(service.findAllByPublicIds([])).resolves.toEqual([]);
+      expect(repository.findByPublicIds).not.toHaveBeenCalled();
+    });
+
+    it('returns the tags in one query', async () => {
+      const tags = [
+        buildTag({ publicId: 'a1' }),
+        buildTag({ id: 'u2', publicId: 'b2' }),
+      ];
+      repository.findByPublicIds.mockResolvedValue(tags);
+
+      await expect(service.findAllByPublicIds(['a1', 'b2'])).resolves.toBe(
+        tags,
+      );
+      expect(repository.findByPublicIds).toHaveBeenCalledTimes(1);
+    });
+
+    it('answers 404 when one tag is unknown', async () => {
+      repository.findByPublicIds.mockResolvedValue([
+        buildTag({ publicId: 'a1' }),
+      ]);
+
+      await expect(
+        service.findAllByPublicIds(['a1', 'b2']),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+    });
+
+    it('answers 404 for a malformed id before any query', async () => {
+      await expect(
+        service.findAllByPublicIds(['bad id!']),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.findByPublicIds).not.toHaveBeenCalled();
     });
   });
 

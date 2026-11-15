@@ -17,6 +17,10 @@ import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type { FileDeletionService } from '../../files/services/file-deletion.service.js';
 import type { FilesService } from '../../files/services/files.service.js';
 import type { Link } from '../../links/entities/link.entity.js';
+import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
+import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
+import { EMPTY_LINK_ORGANIZATION } from '../../links/link-organization.js';
+import type { LinkOrganizationService } from '../../links/services/link-organization.service.js';
 import { DropsMapper } from '../mapper/drops.mapper.js';
 import type {
   DropRepository,
@@ -65,6 +69,11 @@ describe('DropsService', () => {
   };
   let events: { countViews: ReturnType<typeof vi.fn> };
   let fileDeletion: { erase: ReturnType<typeof vi.fn> };
+  let organization: {
+    resolve: ReturnType<typeof vi.fn>;
+    loadFor: ReturnType<typeof vi.fn>;
+    loadOne: ReturnType<typeof vi.fn>;
+  };
   let audit: { record: ReturnType<typeof vi.fn> };
   let service: DropsService;
 
@@ -89,6 +98,11 @@ describe('DropsService', () => {
     };
     events = { countViews: vi.fn().mockResolvedValue(0) };
     fileDeletion = { erase: vi.fn().mockResolvedValue(undefined) };
+    organization = {
+      resolve: vi.fn().mockResolvedValue({}),
+      loadFor: vi.fn().mockResolvedValue(new Map()),
+      loadOne: vi.fn().mockResolvedValue(EMPTY_LINK_ORGANIZATION),
+    };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     service = new DropsService(
       repository as unknown as DropRepository,
@@ -96,6 +110,7 @@ describe('DropsService', () => {
       audit as unknown as AuditLogService,
       events as unknown as EventsService,
       fileDeletion as unknown as FileDeletionService,
+      organization as unknown as LinkOrganizationService,
     );
   });
 
@@ -113,8 +128,20 @@ describe('DropsService', () => {
       expect(files.summarizeCountedLinks).toHaveBeenCalledTimes(1);
       expect(files.summarizeCountedLinks).toHaveBeenCalledWith(['a', 'b']);
       expect(summaries).toEqual([
-        { drop: first, fileCount: 5, totalSize: 10, state: 'full' },
-        { drop: second, fileCount: 0, totalSize: 0, state: 'disabled' },
+        {
+          drop: first,
+          organization: EMPTY_LINK_ORGANIZATION,
+          fileCount: 5,
+          totalSize: 10,
+          state: 'full',
+        },
+        {
+          drop: second,
+          organization: EMPTY_LINK_ORGANIZATION,
+          fileCount: 0,
+          totalSize: 0,
+          state: 'disabled',
+        },
       ]);
     });
   });
@@ -129,6 +156,7 @@ describe('DropsService', () => {
 
       await expect(service.get('drop1234')).resolves.toEqual({
         drop,
+        organization: EMPTY_LINK_ORGANIZATION,
         fileCount: 1,
         totalSize: 1000,
         state: 'full',
@@ -360,6 +388,129 @@ describe('DropsService', () => {
     });
   });
 
+  describe('tags and folder', () => {
+    it('creates with tags and a folder resolved before the insert and audits public ids', async () => {
+      organization.resolve.mockResolvedValue({
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+
+      await service.create(
+        { ...LIMITS, tagIds: ['tagpub'], folderId: 'folderpub' },
+        USER_ID,
+      );
+
+      expect(repository.insert).toHaveBeenCalledWith(expect.anything(), {
+        tagIds: ['tag-uuid'],
+        folderId: 'folder-uuid',
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            tagIds: ['tagpub'],
+            folderId: 'folderpub',
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('audits empty tags and no folder when none is given', async () => {
+      await service.create({ ...LIMITS }, USER_ID);
+
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            tagIds: [],
+            folderId: null,
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('does not insert when a tag is unknown', async () => {
+      organization.resolve.mockRejectedValue(new TagNotFoundException());
+
+      await expect(
+        service.create(
+          { ...LIMITS, tagIds: ['tagpub'], folderId: 'folderpub' },
+          USER_ID,
+        ),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.insert).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    });
+
+    it('does not insert when the folder is unknown', async () => {
+      organization.resolve.mockRejectedValue(new FolderNotFoundException());
+
+      await expect(
+        service.create(
+          { ...LIMITS, tagIds: ['tagpub'], folderId: 'folderpub' },
+          USER_ID,
+        ),
+      ).rejects.toBeInstanceOf(FolderNotFoundException);
+      expect(repository.insert).not.toHaveBeenCalled();
+    });
+
+    it('replaces the tags and leaves the folder on update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+      organization.resolve.mockResolvedValue({
+        tagIds: ['t1', 't2'],
+        folderId: null,
+      });
+
+      await service.update(
+        'drop1234',
+        { tagIds: ['a', 'b'], folderId: null },
+        USER_ID,
+      );
+
+      expect(repository.save).toHaveBeenCalledWith(expect.anything(), {
+        tagIds: ['t1', 't2'],
+        folderId: null,
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            changes: { tagIds: ['a', 'b'], folderId: null },
+          }) as unknown,
+        }),
+      );
+    });
+
+    it('leaves tags and folder unchanged when absent from the update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+
+      await service.update('drop1234', { disabled: true }, USER_ID);
+
+      expect(repository.save).toHaveBeenCalledWith(expect.anything(), {});
+    });
+
+    it('does not save when the update names an unknown tag', async () => {
+      repository.findByPublicId.mockResolvedValue(buildDrop());
+      organization.resolve.mockRejectedValue(new TagNotFoundException());
+
+      await expect(
+        service.update('drop1234', { tagIds: ['nope'] }, USER_ID),
+      ).rejects.toBeInstanceOf(TagNotFoundException);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('loads the organization of the whole list in one call', async () => {
+      const rows = [
+        buildDrop({ id: 'a', publicId: 'first' }),
+        buildDrop({ id: 'b', publicId: 'second' }),
+      ];
+      repository.findAll.mockResolvedValue(rows);
+
+      await service.list();
+
+      expect(organization.loadFor).toHaveBeenCalledTimes(1);
+      expect(organization.loadFor).toHaveBeenCalledWith(rows);
+      expect(organization.loadOne).not.toHaveBeenCalled();
+    });
+  });
+
   describe('create', () => {
     it('uses the chosen slug', async () => {
       const summary = await service.create(
@@ -367,12 +518,15 @@ describe('DropsService', () => {
         USER_ID,
       );
 
-      expect(repository.insert).toHaveBeenCalledWith({
-        publicId: 'my-drop',
-        title: 'Photos',
-        expiresAt: null,
-        ...LIMITS,
-      });
+      expect(repository.insert).toHaveBeenCalledWith(
+        {
+          publicId: 'my-drop',
+          title: 'Photos',
+          expiresAt: null,
+          ...LIMITS,
+        },
+        {},
+      );
       expect(summary).toMatchObject({
         fileCount: 0,
         totalSize: 0,
@@ -386,6 +540,8 @@ describe('DropsService', () => {
           title: 'Photos',
           expiresAt: null,
           ...LIMITS,
+          tagIds: [],
+          folderId: null,
         },
       });
     });
@@ -505,6 +661,7 @@ describe('DropsService', () => {
 
       expect(repository.save).toHaveBeenCalledWith(
         expect.objectContaining(expected),
+        {},
       );
       expect(audit.record).toHaveBeenCalledWith({
         action: 'drops.updated',
@@ -600,6 +757,7 @@ describe('DropsService', () => {
     it('exposes the public id and nothing internal', () => {
       const response = DropsMapper.toResponse({
         drop: buildDrop({ title: 'Photos' }),
+        organization: EMPTY_LINK_ORGANIZATION,
         fileCount: 2,
         totalSize: 30,
         state: 'open',
@@ -612,6 +770,8 @@ describe('DropsService', () => {
         maxFiles: 5,
         expiresAt: null,
         disabled: false,
+        tags: [],
+        folder: null,
         fileCount: 2,
         totalSize: 30,
         state: 'open',
