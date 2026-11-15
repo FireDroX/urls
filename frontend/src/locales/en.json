@@ -26,6 +26,7 @@
     "shares": "Shares",
     "drops": "Drops",
     "files": "Files",
+    "organization": "Organization",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
     "account": "My account",
@@ -489,6 +490,89 @@
       "closed": "The drop is closed.",
       "noRoom": "This file is too large or there is not enough room left in the drop.",
       "storageUnavailable": "Storage is unreachable, try again in a moment."
+    }
+  },
+  "organization": {
+    "title": "Organization",
+    "subtitle": "Tags and folders help you sort your links.",
+    "columns": {
+      "links": "Links"
+    },
+    "tags": {
+      "title": "Tags",
+      "new": "New tag",
+      "emptyTitle": "No tags yet",
+      "emptyBody": "Create a tag to spot and group your links.",
+      "loadFailedTitle": "Could not load tags",
+      "actions": "Actions for tag {{name}}",
+      "created": "Tag created.",
+      "updated": "Tag updated.",
+      "deleted": "Tag deleted.",
+      "columns": {
+        "name": "Tag"
+      },
+      "form": {
+        "name": "Name",
+        "color": "Colour",
+        "createTitle": "New tag",
+        "createDescription": "A unique name and a colour to spot it.",
+        "editTitle": "Edit tag",
+        "editDescription": "Rename or recolour this tag."
+      },
+      "delete": {
+        "title": "Delete this tag?",
+        "description_zero": "The tag \"{{name}}\" is not used by any link.",
+        "description_one": "The tag \"{{name}}\" will be removed from its link; the link stays.",
+        "description_other": "The tag \"{{name}}\" will be removed from its {{count}} links; the links stay."
+      },
+      "validation": {
+        "nameRequired": "The name is required",
+        "nameTooLong": "{{max}} characters maximum",
+        "nameCharacters": "Control characters are not allowed",
+        "color": "Colour in #rrggbb format"
+      },
+      "errors": {
+        "invalid": "Invalid tag name or colour.",
+        "notFound": "This tag no longer exists.",
+        "nameTaken": "A tag already has this name."
+      }
+    },
+    "folders": {
+      "title": "Folders",
+      "new": "New folder",
+      "emptyTitle": "No folders yet",
+      "emptyBody": "Create a folder to file your links.",
+      "loadFailedTitle": "Could not load folders",
+      "actions": "Actions for folder {{name}}",
+      "created": "Folder created.",
+      "updated": "Folder updated.",
+      "deleted": "Folder deleted.",
+      "columns": {
+        "name": "Folder"
+      },
+      "form": {
+        "name": "Name",
+        "createTitle": "New folder",
+        "createDescription": "A unique name for this folder.",
+        "editTitle": "Rename folder",
+        "editDescription": "Change the name of this folder."
+      },
+      "delete": {
+        "title": "Delete this folder?",
+        "description_zero": "The folder \"{{name}}\" contains no link.",
+        "description_one": "The link in the folder \"{{name}}\" stays; it simply leaves the folder.",
+        "description_other": "The {{count}} links in the folder \"{{name}}\" stay; they simply leave the folder."
+      },
+      "validation": {
+        "nameRequired": "The name is required",
+        "nameTooLong": "{{max}} characters maximum",
+        "nameCharacters": "Control characters are not allowed"
+      },
+      "errors": {
+        "invalid": "Invalid folder name.",
+        "notFound": "This folder no longer exists.",
+        "nameTaken": "A folder already has this name."
+      }
     }
   },
   "notFound": {

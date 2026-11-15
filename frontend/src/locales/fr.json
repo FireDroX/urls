@@ -26,6 +26,7 @@
     "shares": "Partages",
     "drops": "Dépôts",
     "files": "Fichiers",
+    "organization": "Organisation",
     "settings": "Réglages",
     "toggleTheme": "Changer de thème",
     "account": "Mon compte",
@@ -489,6 +490,89 @@
       "closed": "Le dépôt est fermé.",
       "noRoom": "Ce fichier est trop gros ou il ne reste pas assez de place dans le dépôt.",
       "storageUnavailable": "Le stockage est injoignable, réessayez dans un instant."
+    }
+  },
+  "organization": {
+    "title": "Organisation",
+    "subtitle": "Les tags et les dossiers servent à classer vos liens.",
+    "columns": {
+      "links": "Liens"
+    },
+    "tags": {
+      "title": "Tags",
+      "new": "Nouveau tag",
+      "emptyTitle": "Aucun tag pour l'instant",
+      "emptyBody": "Créez un tag pour repérer et regrouper vos liens.",
+      "loadFailedTitle": "Impossible de charger les tags",
+      "actions": "Actions pour le tag {{name}}",
+      "created": "Tag créé.",
+      "updated": "Tag mis à jour.",
+      "deleted": "Tag supprimé.",
+      "columns": {
+        "name": "Tag"
+      },
+      "form": {
+        "name": "Nom",
+        "color": "Couleur",
+        "createTitle": "Nouveau tag",
+        "createDescription": "Un nom unique et une couleur pour le repérer.",
+        "editTitle": "Modifier le tag",
+        "editDescription": "Renommez ou recolorez ce tag."
+      },
+      "delete": {
+        "title": "Supprimer ce tag ?",
+        "description_zero": "Le tag « {{name}} » n'est utilisé par aucun lien.",
+        "description_one": "Le tag « {{name}} » sera retiré de son lien ; le lien reste.",
+        "description_other": "Le tag « {{name}} » sera retiré de ses {{count}} liens ; les liens restent."
+      },
+      "validation": {
+        "nameRequired": "Le nom est obligatoire",
+        "nameTooLong": "{{max}} caractères maximum",
+        "nameCharacters": "Caractères de contrôle interdits",
+        "color": "Couleur au format #rrggbb"
+      },
+      "errors": {
+        "invalid": "Nom ou couleur de tag invalide.",
+        "notFound": "Ce tag n'existe plus.",
+        "nameTaken": "Un tag porte déjà ce nom."
+      }
+    },
+    "folders": {
+      "title": "Dossiers",
+      "new": "Nouveau dossier",
+      "emptyTitle": "Aucun dossier pour l'instant",
+      "emptyBody": "Créez un dossier pour ranger vos liens.",
+      "loadFailedTitle": "Impossible de charger les dossiers",
+      "actions": "Actions pour le dossier {{name}}",
+      "created": "Dossier créé.",
+      "updated": "Dossier mis à jour.",
+      "deleted": "Dossier supprimé.",
+      "columns": {
+        "name": "Dossier"
+      },
+      "form": {
+        "name": "Nom",
+        "createTitle": "Nouveau dossier",
+        "createDescription": "Un nom unique pour ce dossier.",
+        "editTitle": "Renommer le dossier",
+        "editDescription": "Changez le nom de ce dossier."
+      },
+      "delete": {
+        "title": "Supprimer ce dossier ?",
+        "description_zero": "Le dossier « {{name}} » ne contient aucun lien.",
+        "description_one": "Le lien du dossier « {{name}} » reste, il sort simplement du dossier.",
+        "description_other": "Les {{count}} liens du dossier « {{name}} » restent, ils sortent simplement du dossier."
+      },
+      "validation": {
+        "nameRequired": "Le nom est obligatoire",
+        "nameTooLong": "{{max}} caractères maximum",
+        "nameCharacters": "Caractères de contrôle interdits"
+      },
+      "errors": {
+        "invalid": "Nom de dossier invalide.",
+        "notFound": "Ce dossier n'existe plus.",
+        "nameTaken": "Un dossier porte déjà ce nom."
+      }
     }
   },
   "notFound": {
