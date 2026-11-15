@@ -17,6 +17,7 @@ import { ShareDownload } from '#pages/ShareDownload'
 import { Files } from '#pages/Files'
 import { DropDetail } from '#pages/DropDetail'
 import { Drops } from '#pages/Drops'
+import { Organization } from '#pages/Organization'
 import { Shares } from '#pages/Shares'
 
 const RedirectDetail = lazy(() =>
@@ -53,6 +54,7 @@ export function App() {
           <Route path="/drops" element={<Drops />} />
           <Route path="/drops/:id" element={<DropDetail />} />
           <Route path="/files" element={<Files />} />
+          <Route path="/organization" element={<Organization />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/account" element={<Navigate to="/settings" replace />} />
         </Route>
