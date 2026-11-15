@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { insertByName } from '#utils/insert-by-name'
 import { listTags, type Tag } from '#api/tags'
 
 export type TagsState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; tags: Tag[] }
@@ -38,7 +39,7 @@ export function useTags(): UseTags {
     setAttempt((value) => value + 1)
   }, [])
 
-  const add = useCallback((tag: Tag) => update((tags) => [tag, ...tags]), [update])
+  const add = useCallback((tag: Tag) => update((tags) => insertByName(tags, tag)), [update])
 
   const replace = useCallback(
     (previousId: string, tag: Tag) => update((tags) => tags.map((item) => (item.id === previousId ? tag : item))),

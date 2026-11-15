@@ -521,6 +521,7 @@
       },
       "delete": {
         "title": "Supprimer ce tag ?",
+        "description_zero": "Le tag « {{name}} » n'est utilisé par aucun lien.",
         "description_one": "Le tag « {{name}} » sera retiré de son lien ; le lien reste.",
         "description_other": "Le tag « {{name}} » sera retiré de ses {{count}} liens ; les liens restent."
       },
@@ -558,6 +559,7 @@
       },
       "delete": {
         "title": "Supprimer ce dossier ?",
+        "description_zero": "Le dossier « {{name}} » ne contient aucun lien.",
         "description_one": "Le lien du dossier « {{name}} » reste, il sort simplement du dossier.",
         "description_other": "Les {{count}} liens du dossier « {{name}} » restent, ils sortent simplement du dossier."
       },

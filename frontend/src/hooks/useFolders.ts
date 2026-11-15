@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { insertByName } from '#utils/insert-by-name'
 import { listFolders, type Folder } from '#api/folders'
 
 export type FoldersState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; folders: Folder[] }
@@ -38,7 +39,7 @@ export function useFolders(): UseFolders {
     setAttempt((value) => value + 1)
   }, [])
 
-  const add = useCallback((folder: Folder) => update((folders) => [folder, ...folders]), [update])
+  const add = useCallback((folder: Folder) => update((folders) => insertByName(folders, folder)), [update])
 
   const replace = useCallback(
     (previousId: string, folder: Folder) => update((folders) => folders.map((item) => (item.id === previousId ? folder : item))),

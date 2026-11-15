@@ -521,6 +521,7 @@
       },
       "delete": {
         "title": "Delete this tag?",
+        "description_zero": "The tag \"{{name}}\" is not used by any link.",
         "description_one": "The tag \"{{name}}\" will be removed from its link; the link stays.",
         "description_other": "The tag \"{{name}}\" will be removed from its {{count}} links; the links stay."
       },
@@ -558,6 +559,7 @@
       },
       "delete": {
         "title": "Delete this folder?",
+        "description_zero": "The folder \"{{name}}\" contains no link.",
         "description_one": "The link in the folder \"{{name}}\" stays; it simply leaves the folder.",
         "description_other": "The {{count}} links in the folder \"{{name}}\" stay; they simply leave the folder."
       },
