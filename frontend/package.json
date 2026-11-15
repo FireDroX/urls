@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "url.addrien.fr dashboard and public pages: React + TypeScript + Vite.",
   "author": "FireDroX <contact@addrien.fr>",
   "type": "module",

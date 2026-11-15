@@ -41,6 +41,20 @@ describe('LinkChecksService', () => {
     expect(outcome).toEqual({ link, check });
   });
 
+  it('checkLink probes the destination and records the result', async () => {
+    const { service, linksService, probe, repository, result, check } = build();
+
+    expect(await service.checkLink(link)).toBe(check);
+
+    expect(linksService.get).not.toHaveBeenCalled();
+    expect(probe.check).toHaveBeenCalledWith('https://example.com/');
+    expect(repository.record).toHaveBeenCalledWith(
+      'uuid-1',
+      result,
+      expect.any(Date),
+    );
+  });
+
   it('does not probe an unknown, deleted or malformed redirect', async () => {
     const { service, linksService, probe, repository } = build();
     linksService.get.mockRejectedValue(new LinkNotFoundException());

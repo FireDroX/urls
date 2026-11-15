@@ -99,6 +99,9 @@ export const LINK_CHECK_REDIRECT_STATUSES: readonly number[] = [
   301, 302, 303, 307, 308,
 ];
 export const LINK_CHECK_GET_FALLBACK_STATUSES: readonly number[] = [405, 501];
+export const LINK_CHECK_CRON = '0 4 * * *';
+export const LINK_CHECK_BATCH_SIZE = 50;
+export const LINK_CHECK_DELAY_MS = 1_000;
 export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
 export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000;

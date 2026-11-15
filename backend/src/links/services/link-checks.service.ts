@@ -22,9 +22,12 @@ export class LinkChecksService {
 
   async check(publicId: string): Promise<LinkCheckReport> {
     const link = await this.linksService.get(publicId);
+    return { link, check: await this.checkLink(link) };
+  }
+
+  async checkLink(link: Link): Promise<LinkCheck> {
     if (!link.destination) throw new LinkNotFoundException();
     const result = await this.probe.check(link.destination);
-    const check = await this.repository.record(link.id, result, new Date());
-    return { link, check };
+    return this.repository.record(link.id, result, new Date());
   }
 }

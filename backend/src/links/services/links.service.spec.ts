@@ -70,6 +70,7 @@ describe('LinksService', () => {
     findByPublicId: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
+    saveWithCheckReset: ReturnType<typeof vi.fn>;
     softDelete: ReturnType<typeof vi.fn>;
   };
   let audit: { record: ReturnType<typeof vi.fn> };
@@ -85,6 +86,7 @@ describe('LinksService', () => {
       findByPublicId: vi.fn().mockResolvedValue(null),
       insert: vi.fn((link: NewLink) => Promise.resolve(buildLink(link))),
       save: vi.fn((link: Link) => Promise.resolve(link)),
+      saveWithCheckReset: vi.fn((link: Link) => Promise.resolve(link)),
       softDelete: vi.fn().mockResolvedValue(undefined),
     };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
@@ -301,6 +303,27 @@ describe('LinksService', () => {
           metadata: { previousId: 'abc123' },
         },
       ]);
+    });
+
+    it('drops the previous check when the destination changes', async () => {
+      await service.update(
+        'abc123',
+        { destination: 'https://other.example/' },
+        USER_ID,
+      );
+
+      expect(repository.saveWithCheckReset).toHaveBeenCalledTimes(1);
+      expect(repository.save).not.toHaveBeenCalled();
+    });
+
+    it('keeps the check when the destination is unchanged or untouched', async () => {
+      const { destination } = buildLink();
+
+      await service.update('abc123', { destination }, USER_ID);
+      await service.update('abc123', { disabled: true }, USER_ID);
+
+      expect(repository.save).toHaveBeenCalledTimes(2);
+      expect(repository.saveWithCheckReset).not.toHaveBeenCalled();
     });
 
     it('removes the expiration with null', async () => {

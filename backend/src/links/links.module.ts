@@ -9,6 +9,7 @@ import { TypeormLinkCheckRepository } from './persistence/typeorm.link-check.rep
 import { TypeormLinkRepository } from './persistence/typeorm.link.repository.js';
 import { RedirectsController } from './redirects.controller.js';
 import { DestinationProbe } from './services/destination-probe.service.js';
+import { LinkCheckSweepService } from './services/link-check-sweep.service.js';
 import { LinkChecksService } from './services/link-checks.service.js';
 import { LinksService } from './services/links.service.js';
 import { PinnedHttpTransport } from './services/pinned-http.transport.js';
@@ -27,6 +28,7 @@ import { PinnedHttpTransport } from './services/pinned-http.transport.js';
     DestinationProbe,
     LinksService,
     LinkChecksService,
+    LinkCheckSweepService,
   ],
 })
 export class LinksModule {}
