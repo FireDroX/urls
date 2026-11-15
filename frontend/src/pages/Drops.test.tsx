@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { listFolders } from '#api/folders'
 import { createDrop, deleteDrop, listDrops, updateDrop, type Drop } from '#api/drops'
+import { listTags } from '#api/tags'
 import { dropFormDefaults } from '#schemas/drop.schema'
 import { Drops } from './Drops'
 
@@ -14,6 +16,9 @@ vi.mock('#api/drops', async (importOriginal) => ({
   updateDrop: vi.fn(),
   deleteDrop: vi.fn(),
 }))
+
+vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
+vi.mock('#api/folders', () => ({ listFolders: vi.fn() }))
 
 const GIB = 1024 ** 3
 
@@ -29,6 +34,8 @@ const drop: Drop = {
   state: 'open',
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 function apiError(status: number, headers: Record<string, string> = {}): AxiosError {
@@ -60,6 +67,8 @@ async function openCreateForm(user: ReturnType<typeof userEvent.setup>) {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.mocked(listTags).mockResolvedValue([])
+  vi.mocked(listFolders).mockResolvedValue([])
   vi.mocked(listDrops).mockResolvedValue([drop])
 })
 
@@ -283,5 +292,16 @@ describe('Drops page', () => {
     await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Supprimer' }))
 
     expect(await screen.findByText("Ce dépôt n'existe plus.")).toBeInTheDocument()
+  })
+})
+
+describe('Drops page (tags and folder)', () => {
+  it('shows the tags and the folder of a row', async () => {
+    vi.mocked(listDrops).mockResolvedValue([{ ...drop, ...{ tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } } }])
+    render(<Drops />, { wrapper: MemoryRouter })
+
+    const row = (await screen.findByText('Documents')).closest('tr')!
+    expect(within(row).getByText('Docs')).toBeInTheDocument()
+    expect(within(row).getByText('Projects')).toBeInTheDocument()
   })
 })

@@ -8,6 +8,7 @@ import {
   FILE_MAX_SIZE_BYTES,
   SHARE_MAX_DOWNLOADS_LIMIT,
   shareFormDefaults,
+  type ShareFormValues,
   toCreateSharePayload,
   toUpdateSharePayload,
 } from './share.schema'
@@ -24,9 +25,11 @@ const share: Share = {
   totalSize: 0,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
-const emptyValues = { slug: '', expiresAt: '', maxDownloads: '', disabled: false }
+const emptyValues: ShareFormValues = { slug: '', expiresAt: '', maxDownloads: '', disabled: false, tagIds: [], folderId: null }
 
 function parseForm(values: Partial<typeof emptyValues>) {
   return createShareFormSchema(t).safeParse({ ...emptyValues, ...values })
@@ -123,5 +126,17 @@ describe('createUploadFileSchema', () => {
 
   it('refuses a name longer than the backend limit', () => {
     expect(schema.safeParse({ name: 'a'.repeat(256), size: 1 }).success).toBe(false)
+  })
+})
+
+describe('toUpdateSharePayload (organization)', () => {
+  const tagged: Share = { ...share, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: null }
+
+  it('sends neither tagIds nor folderId when untouched', () => {
+    expect(toUpdateSharePayload(tagged, shareFormDefaults(tagged))).toEqual({})
+  })
+
+  it('sends only tagIds when only the tags changed', () => {
+    expect(toUpdateSharePayload(tagged, { ...shareFormDefaults(tagged), tagIds: [] })).toEqual({ tagIds: [] })
   })
 })

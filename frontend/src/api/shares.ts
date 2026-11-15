@@ -1,3 +1,4 @@
+import type { LinkOrganization, LinkOrganizationPayload } from '#api/link-organization'
 import type { ResponseDto } from '#api/response-dto'
 import { apiClient } from '#lib/api-client'
 
@@ -13,7 +14,7 @@ export interface ShareFile {
   completedAt: string | null
 }
 
-export interface Share {
+export interface Share extends LinkOrganization {
   id: string
   expiresAt: string | null
   maxDownloads: number | null
@@ -30,7 +31,7 @@ export interface ShareDetail extends Share {
   files: ShareFile[]
 }
 
-export interface CreateSharePayload {
+export interface CreateSharePayload extends LinkOrganizationPayload {
   slug?: string
   expiresAt?: string | null
   maxDownloads?: number | null

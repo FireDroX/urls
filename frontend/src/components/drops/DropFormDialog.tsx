@@ -17,7 +17,10 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#components/ui/field'
 import { Input } from '#components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#components/ui/select'
+import { LinkOrganizationFields } from '#components/links/LinkOrganizationFields'
+import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
 import { extractErrorMessage } from '#lib/api-errors'
+import { linkOrganizationErrorMessage } from '#lib/link-organization-errors'
 import { dropErrorMessages } from '#lib/drop-errors'
 import {
   createDropFormSchema,
@@ -46,6 +49,7 @@ async function saveDrop(drop: Drop | undefined, values: DropFormValues): Promise
 function DropForm({ drop, onSaved }: { drop?: Drop; onSaved: (drop: Drop) => void }) {
   const { t } = useTranslation()
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const organization = useLinkOrganizationOptions()
   const schema = useMemo(() => createDropFormSchema(t, drop), [t, drop])
   const defaultValues = useMemo(() => dropFormDefaults(drop), [drop])
   const {
@@ -60,7 +64,9 @@ function DropForm({ drop, onSaved }: { drop?: Drop; onSaved: (drop: Drop) => voi
     try {
       onSaved(await saveDrop(drop, values))
     } catch (error) {
-      setSubmitError(extractErrorMessage(error, undefined, dropErrorMessages(t)))
+      const organizationMessage = linkOrganizationErrorMessage(error, t)
+      if (organizationMessage) organization.reload()
+      setSubmitError(organizationMessage ?? extractErrorMessage(error, undefined, dropErrorMessages(t)))
     }
   }
 
@@ -197,6 +203,7 @@ function DropForm({ drop, onSaved }: { drop?: Drop; onSaved: (drop: Drop) => voi
             </Field>
           )}
         />
+        <LinkOrganizationFields control={control} organization={organization} link={drop} idPrefix="drop" />
         <FormError message={submitError} />
         <DialogFooter>
           <DialogClose asChild>

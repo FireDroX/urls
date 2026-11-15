@@ -14,6 +14,8 @@ const link: Link = {
   disabled: false,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 function envelope<T>(data: T) {

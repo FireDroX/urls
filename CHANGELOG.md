@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.6 — 2026-11-15
+
+- Les formulaires des redirections, des partages et des dépôts permettent désormais de choisir leurs tags (20 au plus) et leur dossier ; les listes et les fiches affichent les tags en pastilles de couleur et le dossier.
+- Si un tag ou un dossier choisi a été supprimé entre-temps, un message clair l'indique et les listes de choix sont relues.
+
 ## 0.2.5 — 2026-11-15
 
 - Les redirections, les partages et les dépôts se rangent désormais dans des tags (20 au plus) et dans un dossier, à la création comme en modification : une modification remplace la liste de tags, et le dossier se retire en le mettant à vide. Un tag ou un dossier inconnu est refusé sans rien modifier. Les listes et les fiches affichent les tags et le dossier de chaque lien.

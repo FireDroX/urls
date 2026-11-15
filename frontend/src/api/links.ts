@@ -1,8 +1,9 @@
 import { redirectPath } from '#api/redirects'
+import type { LinkOrganization, LinkOrganizationPayload } from '#api/link-organization'
 import type { ResponseDto } from '#api/response-dto'
 import { apiClient } from '#lib/api-client'
 
-export interface Link {
+export interface Link extends LinkOrganization {
   id: string
   type: 'redirect'
   destination: string | null
@@ -38,13 +39,13 @@ export interface LinkStats {
   countries: CountryClicks[]
 }
 
-export interface CreateLinkPayload {
+export interface CreateLinkPayload extends LinkOrganizationPayload {
   destination: string
   slug?: string
   expiresAt?: string | null
 }
 
-export interface UpdateLinkPayload {
+export interface UpdateLinkPayload extends LinkOrganizationPayload {
   destination?: string
   slug?: string
   expiresAt?: string | null

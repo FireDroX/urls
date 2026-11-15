@@ -6,6 +6,7 @@ import { redirectPath } from '#api/redirects'
 import type { Link, LinkStats } from '#api/links'
 import { ClicksChart } from '#components/links/ClicksChart'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
+import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { TopClicksList, type TopClicksEntry } from '#components/links/TopClicksList'
 import { Button } from '#components/ui/button'
@@ -69,6 +70,7 @@ function LinkHeader({ link }: { link: Link }) {
         </Button>
         <LinkStateBadge link={link} />
       </div>
+      <LinkOrganizationSummary tags={link.tags} folder={link.folder} />
       <p className="text-sm text-muted-foreground">
         {t('linkStats.destination')}{' '}
         <a

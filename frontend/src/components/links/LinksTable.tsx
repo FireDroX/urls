@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router'
 import { redirectPath } from '#api/redirects'
 import type { Link } from '#api/links'
+import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -53,6 +54,7 @@ function LinkRow({ link, formatDate, actions }: LinkRowProps) {
             <Copy />
           </Button>
         </div>
+        <LinkOrganizationSummary tags={link.tags} folder={link.folder} className="mt-1" />
       </TableCell>
       <TableCell className="max-w-xs">
         <span className="block truncate" title={link.destination ?? undefined}>

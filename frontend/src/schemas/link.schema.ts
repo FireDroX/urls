@@ -1,6 +1,12 @@
 import type { TFunction } from 'i18next'
 import { z } from 'zod'
 import type { CreateLinkPayload, Link, UpdateLinkPayload } from '#api/links'
+import {
+  linkOrganizationDefaults,
+  linkOrganizationFields,
+  toCreateOrganizationPayload,
+  toUpdateOrganizationPayload,
+} from '#schemas/link-organization.schema'
 import { fromDateTimeLocal, isFutureDateTimeLocal, toDateTimeLocal } from '#utils/datetime-local'
 
 export const LINK_DESTINATION_MAX_LENGTH = 2048
@@ -74,6 +80,7 @@ export function createLinkFormSchema(t: TFunction, link?: Link) {
     slug: slugField(t, link === undefined),
     expiresAt: expiresAtField(t, toDateTimeLocal(link?.expiresAt ?? null)),
     disabled: z.boolean(),
+    ...linkOrganizationFields(t),
   })
 }
 
@@ -85,11 +92,12 @@ export function linkFormDefaults(link?: Link): LinkFormValues {
     slug: link?.id ?? '',
     expiresAt: toDateTimeLocal(link?.expiresAt ?? null),
     disabled: link?.disabled ?? false,
+    ...linkOrganizationDefaults(link),
   }
 }
 
 export function toCreateLinkPayload(values: LinkFormValues): CreateLinkPayload {
-  const payload: CreateLinkPayload = { destination: values.destination }
+  const payload: CreateLinkPayload = { destination: values.destination, ...toCreateOrganizationPayload(values) }
   if (values.slug !== '') payload.slug = values.slug
   if (values.expiresAt !== '') payload.expiresAt = fromDateTimeLocal(values.expiresAt)
   return payload
@@ -97,7 +105,7 @@ export function toCreateLinkPayload(values: LinkFormValues): CreateLinkPayload {
 
 export function toUpdateLinkPayload(link: Link, values: LinkFormValues): UpdateLinkPayload {
   const initial = linkFormDefaults(link)
-  const payload: UpdateLinkPayload = {}
+  const payload: UpdateLinkPayload = toUpdateOrganizationPayload(link, values)
   if (values.destination !== initial.destination) payload.destination = values.destination
   if (values.slug !== initial.slug) payload.slug = values.slug
   if (values.expiresAt !== initial.expiresAt) payload.expiresAt = fromDateTimeLocal(values.expiresAt)

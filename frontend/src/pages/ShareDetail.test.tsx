@@ -60,6 +60,8 @@ function shareWith(...files: ShareFile[]): ShareDetailData {
     totalSize: 2048,
     createdAt: '2026-11-01T10:00:00.000Z',
     updatedAt: '2026-11-01T10:00:00.000Z',
+    tags: [],
+    folder: null,
     viewCount: 7,
     files,
   }

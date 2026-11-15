@@ -23,10 +23,12 @@ const link: Link = {
   disabled: false,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 function values(overrides: Partial<LinkFormValues> = {}): LinkFormValues {
-  return { destination: 'https://example.com/', slug: '', expiresAt: '', disabled: false, ...overrides }
+  return { destination: 'https://example.com/', slug: '', expiresAt: '', disabled: false, tagIds: [], folderId: null, ...overrides }
 }
 
 function localIn(ms: number): string {
@@ -139,6 +141,20 @@ describe('toUpdateLinkPayload', () => {
 
     expect(toUpdateLinkPayload(expiring, { ...linkFormDefaults(expiring), expiresAt: '' })).toEqual({
       expiresAt: null,
+    })
+  })
+})
+
+describe('toUpdateLinkPayload (organization)', () => {
+  const tagged: Link = { ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: null }
+
+  it('sends neither tagIds nor folderId when untouched', () => {
+    expect(toUpdateLinkPayload(tagged, linkFormDefaults(tagged))).toEqual({})
+  })
+
+  it('sends only tagIds when only the tags changed', () => {
+    expect(toUpdateLinkPayload(tagged, { ...linkFormDefaults(tagged), tagIds: ['tagA', 'tagB'] })).toEqual({
+      tagIds: ['tagA', 'tagB'],
     })
   })
 })

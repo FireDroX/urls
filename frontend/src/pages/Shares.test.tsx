@@ -4,7 +4,9 @@ import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { listFolders } from '#api/folders'
 import { createShare, deleteShare, listShares, updateShare, type Share, type ShareDetail } from '#api/shares'
+import { listTags } from '#api/tags'
 import { UploadsProvider } from '#components/UploadsProvider'
 import { Shares } from './Shares'
 
@@ -16,6 +18,9 @@ vi.mock('#api/shares', async (importOriginal) => ({
   deleteShare: vi.fn(),
 }))
 
+vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
+vi.mock('#api/folders', () => ({ listFolders: vi.fn() }))
+
 const share: Share = {
   id: 'photos',
   expiresAt: null,
@@ -26,6 +31,8 @@ const share: Share = {
   totalSize: 2048,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 const detail: ShareDetail = { ...share, viewCount: 0, files: [] }
@@ -61,6 +68,8 @@ async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
 beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(listShares).mockResolvedValue([share])
+  vi.mocked(listTags).mockResolvedValue([])
+  vi.mocked(listFolders).mockResolvedValue([])
 })
 
 describe('Shares page', () => {
@@ -203,5 +212,16 @@ describe('Shares page', () => {
     await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Supprimer' }))
 
     expect(await screen.findByText("Ce partage n'existe plus.")).toBeInTheDocument()
+  })
+})
+
+describe('Shares page (tags and folder)', () => {
+  it('shows the tags and the folder of a row', async () => {
+    vi.mocked(listShares).mockResolvedValue([{ ...share, ...{ tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } } }])
+    render(<Shares />, { wrapper: Wrapper })
+
+    const row = (await screen.findByText('/d/photos')).closest('tr')!
+    expect(within(row).getByText('Docs')).toBeInTheDocument()
+    expect(within(row).getByText('Projects')).toBeInTheDocument()
   })
 })

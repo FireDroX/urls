@@ -3,6 +3,7 @@ import { Copy, Ellipsis, FolderOpen, Pencil, Power, PowerOff, Trash } from 'luci
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router'
 import { shareDetailPath, sharePath, type Share } from '#api/shares'
+import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -53,6 +54,7 @@ function ShareRow({ share, formatDate, actions }: ShareRowProps) {
             <Copy />
           </Button>
         </div>
+        <LinkOrganizationSummary tags={share.tags} folder={share.folder} className="mt-1" />
       </TableCell>
       <TableCell className="whitespace-nowrap">
         {t('shares.fileSummary', { count: share.fileCount, size: formatSize(share.totalSize) })}

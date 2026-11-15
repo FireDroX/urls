@@ -19,6 +19,7 @@ import { createFileDownloadUrl } from '#api/files'
 import { shareDetailPath } from '#api/shares'
 import { DropFilesTable } from '#components/drops/DropFilesTable'
 import { DropFormDialog } from '#components/drops/DropFormDialog'
+import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { DropStateBadge } from '#components/drops/DropStateBadge'
 import { ShareDropFilesDialog } from '#components/drops/ShareDropFilesDialog'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
@@ -104,6 +105,7 @@ function DropDetailHeader({ drop, onShare, onEdit, onToggle, onDelete }: DropHea
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="font-heading text-2xl font-bold">{drop.title ?? t('drops.untitled')}</h1>
           <DropStateBadge state={drop.state} />
+          <LinkOrganizationSummary tags={drop.tags} folder={drop.folder} className="basis-full" />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" disabled={!drop.files.some((file) => file.status === 'ready')} onClick={onShare}>

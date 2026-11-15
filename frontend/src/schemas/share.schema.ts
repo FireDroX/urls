@@ -2,6 +2,12 @@ import type { TFunction } from 'i18next'
 import { z } from 'zod'
 import type { CreateSharePayload, Share, UpdateSharePayload } from '#api/shares'
 import { expiresAtField, slugField } from '#schemas/link.schema'
+import {
+  linkOrganizationDefaults,
+  linkOrganizationFields,
+  toCreateOrganizationPayload,
+  toUpdateOrganizationPayload,
+} from '#schemas/link-organization.schema'
 import { fromDateTimeLocal, toDateTimeLocal } from '#utils/datetime-local'
 
 export const SHARE_MAX_DOWNLOADS_LIMIT = 1_000_000
@@ -27,6 +33,7 @@ export function createShareFormSchema(t: TFunction, share?: Share) {
     expiresAt: expiresAtField(t, toDateTimeLocal(share?.expiresAt ?? null)),
     maxDownloads: maxDownloadsField(t),
     disabled: z.boolean(),
+    ...linkOrganizationFields(t),
   })
 }
 
@@ -38,6 +45,7 @@ export function shareFormDefaults(share?: Share): ShareFormValues {
     expiresAt: toDateTimeLocal(share?.expiresAt ?? null),
     maxDownloads: String(share?.maxDownloads ?? ''),
     disabled: share?.disabled ?? false,
+    ...linkOrganizationDefaults(share),
   }
 }
 
@@ -46,7 +54,7 @@ function toMaxDownloads(value: string): number | null {
 }
 
 export function toCreateSharePayload(values: ShareFormValues): CreateSharePayload {
-  const payload: CreateSharePayload = {}
+  const payload: CreateSharePayload = toCreateOrganizationPayload(values)
   if (values.slug !== '') payload.slug = values.slug
   if (values.expiresAt !== '') payload.expiresAt = fromDateTimeLocal(values.expiresAt)
   if (values.maxDownloads !== '') payload.maxDownloads = toMaxDownloads(values.maxDownloads)
@@ -55,7 +63,7 @@ export function toCreateSharePayload(values: ShareFormValues): CreateSharePayloa
 
 export function toUpdateSharePayload(share: Share, values: ShareFormValues): UpdateSharePayload {
   const initial = shareFormDefaults(share)
-  const payload: UpdateSharePayload = {}
+  const payload: UpdateSharePayload = toUpdateOrganizationPayload(share, values)
   if (values.slug !== initial.slug) payload.slug = values.slug
   if (values.expiresAt !== initial.expiresAt) payload.expiresAt = fromDateTimeLocal(values.expiresAt)
   if (values.maxDownloads !== initial.maxDownloads) payload.maxDownloads = toMaxDownloads(values.maxDownloads)
