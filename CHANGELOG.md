@@ -2,7 +2,7 @@
 
 ## 0.2.8 — 2026-11-17
 
-- Les données de suivi des visites (clics, vues, téléchargements et envois : IP chiffrée, navigateur, provenance, pays) sont supprimées automatiquement après 90 jours, chaque nuit.
+- Les données de suivi des visites (clics, vues, téléchargements et envois : empreinte de l'IP, navigateur, provenance, pays) sont supprimées automatiquement après 90 jours, chaque nuit.
 - Les statistiques d'une redirection proposent au plus 90 jours (la période d'un an disparaît) et le nombre de vues d'un partage ou d'un dépôt compte les 90 derniers jours. Le nombre de téléchargements d'un partage reste un total.
 
 ## 0.2.7 — 2026-11-17
