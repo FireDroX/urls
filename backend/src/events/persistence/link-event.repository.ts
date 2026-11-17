@@ -28,7 +28,8 @@ export interface ClickStatsQuery {
 
 export interface LinkEventRepository {
   insert(event: NewLinkEvent): Promise<void>;
-  countByType(linkId: string, type: EventType): Promise<number>;
+  countByType(linkId: string, type: EventType, since: Date): Promise<number>;
+  deleteOlderThan(cutoff: Date, limit: number): Promise<number>;
   countClicksByDay(query: ClickStatsQuery): Promise<DailyClickCount[]>;
   topRefererHosts(
     query: ClickStatsQuery,

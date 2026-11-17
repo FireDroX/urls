@@ -11,6 +11,7 @@ import {
   UNKNOWN_COUNTRY_CODES,
 } from '../../common/variables.global.js';
 import { refererHost } from '../../common/referer-host.js';
+import { eventsRetentionCutoff } from '../events-retention.js';
 import type { Visitor } from '../../common/visitor.js';
 import type { EventType } from '../entities/link-event.entity.js';
 import type {
@@ -97,8 +98,12 @@ export class EventsService {
     return this.record(linkId, 'download', visitor);
   }
 
-  countViews(linkId: string): Promise<number> {
-    return this.repository.countByType(linkId, 'view');
+  countViews(linkId: string, now = new Date()): Promise<number> {
+    return this.repository.countByType(
+      linkId,
+      'view',
+      eventsRetentionCutoff(now),
+    );
   }
 
   private async record(

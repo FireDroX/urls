@@ -1,4 +1,4 @@
-import type { Repository } from 'typeorm';
+import { MoreThanOrEqual, type Repository } from 'typeorm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LinkEvent } from '../entities/link-event.entity.js';
 import { TypeormLinkEventRepository } from './typeorm.link-event.repository.js';
@@ -34,6 +34,8 @@ describe('TypeormLinkEventRepository', () => {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
     createQueryBuilder: ReturnType<typeof vi.fn>;
+    query: ReturnType<typeof vi.fn>;
+    countBy: ReturnType<typeof vi.fn>;
   };
   let repository: TypeormLinkEventRepository;
 
@@ -47,6 +49,8 @@ describe('TypeormLinkEventRepository', () => {
       create: vi.fn((event: unknown) => event),
       save: vi.fn().mockResolvedValue(undefined),
       createQueryBuilder: vi.fn(),
+      query: vi.fn().mockResolvedValue({ affectedRows: 4 }),
+      countBy: vi.fn().mockResolvedValue(2),
     };
     repository = new TypeormLinkEventRepository(
       ormRepository as unknown as Repository<LinkEvent>,
@@ -116,5 +120,57 @@ describe('TypeormLinkEventRepository', () => {
     await repository.insert(event);
 
     expect(ormRepository.save).toHaveBeenCalledWith(event);
+  });
+
+  describe('deleteOlderThan', () => {
+    const cutoff = new Date('2026-08-19T00:00:00.000Z');
+
+    it('deletes a bounded batch before the cutoff and returns the count', async () => {
+      await expect(repository.deleteOlderThan(cutoff, 1000)).resolves.toBe(4);
+
+      const [sql, params] = ormRepository.query.mock.calls[0] as [
+        string,
+        unknown[],
+      ];
+      expect(sql).toContain('WHERE created_at < ?');
+      expect(sql).toContain('LIMIT ?');
+      expect(params).toEqual([cutoff, 1000]);
+    });
+
+    it('returns 0 when the driver gives no count', async () => {
+      ormRepository.query.mockResolvedValue(undefined);
+
+      await expect(repository.deleteOlderThan(cutoff, 10)).resolves.toBe(0);
+    });
+
+    it.each([
+      ['an invalid date', new Date(NaN), 10],
+      ['a null cutoff', null as unknown as Date, 10],
+      ['a zero limit', cutoff, 0],
+      ['a negative limit', cutoff, -1],
+      ['a fractional limit', cutoff, 1.5],
+    ])(
+      'rejects %s without touching the database',
+      async (_name, date, limit) => {
+        await expect(repository.deleteOlderThan(date, limit)).rejects.toThrow(
+          RangeError,
+        );
+        expect(ormRepository.query).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  it('counts events from the given date', async () => {
+    const since = new Date('2026-08-19T00:00:00.000Z');
+
+    await expect(
+      repository.countByType('link-uuid', 'view', since),
+    ).resolves.toBe(2);
+
+    expect(ormRepository.countBy).toHaveBeenCalledWith({
+      linkId: 'link-uuid',
+      type: 'view',
+      createdAt: MoreThanOrEqual(since),
+    });
   });
 });

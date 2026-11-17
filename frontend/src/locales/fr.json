@@ -285,7 +285,7 @@
     "backToList": "Retour aux dépôts",
     "open": "Ouvrir le dépôt {{slug}}",
     "detail": {
-      "views": "Vues",
+      "views": "Vues sur 90 jours",
       "files": "Fichiers reçus",
       "size": "Taille reçue"
     },
@@ -362,7 +362,7 @@
       "description": "Le lien /d/{{slug}} cessera de fonctionner et ses fichiers ne seront plus accessibles. Son slug restera réservé."
     },
     "detail": {
-      "views": "Vues",
+      "views": "Vues sur 90 jours",
       "downloads": "Téléchargements",
       "totalSize": "Taille totale"
     },

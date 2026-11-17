@@ -6,12 +6,11 @@ describe('parseStatsDays', () => {
     ['7', 7],
     ['30', 30],
     ['90', 90],
-    ['365', 365],
   ])('keeps the offered period %s', (value, expected) => {
     expect(parseStatsDays(value)).toBe(expected)
   })
 
-  it.each([null, '', '0', '-7', '12', '366', '7.5', 'abc'])('falls back to the default for %j', (value) => {
+  it.each([null, '', '0', '-7', '12', '365', '366', '7.5', 'abc'])('falls back to the default for %j', (value) => {
     expect(parseStatsDays(value)).toBe(LINK_STATS_DEFAULT_DAYS)
   })
 })

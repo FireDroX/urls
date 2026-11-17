@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, type SelectQueryBuilder } from 'typeorm';
+import { MoreThanOrEqual, Repository, type SelectQueryBuilder } from 'typeorm';
 import { type EventType, LinkEvent } from '../entities/link-event.entity.js';
 import type {
   ClickCountByValue,
@@ -18,6 +18,11 @@ interface CountRow {
   clicks: string;
 }
 
+function affectedRows(result: unknown): number {
+  const count = (result as { affectedRows?: unknown } | null)?.affectedRows;
+  return typeof count === 'number' && Number.isFinite(count) ? count : 0;
+}
+
 @Injectable()
 export class TypeormLinkEventRepository implements LinkEventRepository {
   constructor(
@@ -29,8 +34,28 @@ export class TypeormLinkEventRepository implements LinkEventRepository {
     await this.repository.save(this.repository.create(event));
   }
 
-  countByType(linkId: string, type: EventType): Promise<number> {
-    return this.repository.countBy({ linkId, type });
+  countByType(linkId: string, type: EventType, since: Date): Promise<number> {
+    return this.repository.countBy({
+      linkId,
+      type,
+      createdAt: MoreThanOrEqual(since),
+    });
+  }
+
+  async deleteOlderThan(cutoff: Date, limit: number): Promise<number> {
+    if (
+      !(cutoff instanceof Date) ||
+      !Number.isFinite(cutoff.getTime()) ||
+      !Number.isInteger(limit) ||
+      limit <= 0
+    ) {
+      throw new RangeError('Invalid events purge bounds');
+    }
+    const result: unknown = await this.repository.query(
+      'DELETE FROM events WHERE created_at < ? ORDER BY created_at LIMIT ?',
+      [cutoff, limit],
+    );
+    return affectedRows(result);
   }
 
   async countClicksByDay(query: ClickStatsQuery): Promise<DailyClickCount[]> {

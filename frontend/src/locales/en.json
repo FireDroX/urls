@@ -285,7 +285,7 @@
     "backToList": "Back to drops",
     "open": "Open drop {{slug}}",
     "detail": {
-      "views": "Views",
+      "views": "Views (last 90 days)",
       "files": "Files received",
       "size": "Size received"
     },
@@ -362,7 +362,7 @@
       "description": "The link /d/{{slug}} will stop working and its files will no longer be available. Its slug stays reserved."
     },
     "detail": {
-      "views": "Views",
+      "views": "Views (last 90 days)",
       "downloads": "Downloads",
       "totalSize": "Total size"
     },
