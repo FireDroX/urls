@@ -17,8 +17,11 @@ import {
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#components/ui/field'
 import { Input } from '#components/ui/input'
 import { Switch } from '#components/ui/switch'
+import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
 import { useUploads } from '#hooks/useUploads'
+import { LinkOrganizationFields } from '#components/links/LinkOrganizationFields'
 import { extractErrorMessage } from '#lib/api-errors'
+import { linkOrganizationErrorMessage } from '#lib/link-organization-errors'
 import { shareErrorMessages } from '#lib/share-errors'
 import {
   createShareFormSchema,
@@ -55,6 +58,7 @@ function ShareForm<Saved extends Share>({ share, onSaved }: ShareFormProps<Saved
   const { t } = useTranslation()
   const { hasActiveUploads } = useUploads(share?.id ?? '')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const organization = useLinkOrganizationOptions()
   const schema = useMemo(() => createShareFormSchema(t, share), [t, share])
   const {
     control,
@@ -68,7 +72,9 @@ function ShareForm<Saved extends Share>({ share, onSaved }: ShareFormProps<Saved
     try {
       onSaved(await saveShare(share, values))
     } catch (error) {
-      setSubmitError(extractErrorMessage(error, undefined, shareErrorMessages(t)))
+      const organizationMessage = linkOrganizationErrorMessage(error, t)
+      if (organizationMessage) organization.reload()
+      setSubmitError(organizationMessage ?? extractErrorMessage(error, undefined, shareErrorMessages(t)))
     }
   }
 
@@ -149,6 +155,7 @@ function ShareForm<Saved extends Share>({ share, onSaved }: ShareFormProps<Saved
             </Field>
           )}
         />
+        <LinkOrganizationFields control={control} organization={organization} link={share} idPrefix="share" />
         {share && (
           <Controller
             control={control}

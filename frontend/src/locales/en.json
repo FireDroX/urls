@@ -590,5 +590,25 @@
   },
   "units": {
     "bytes": ["B", "KiB", "MiB", "GiB", "TiB"]
+  },
+  "linkOrganization": {
+    "tags": "Tags",
+    "tagsPlaceholder": "No tag",
+    "tagsHelp": "Up to {{max}} tags.",
+    "tagsMax": "{{max}} tags at most: remove one to add another.",
+    "noTags": "No tag created yet",
+    "folder": "Folder",
+    "noFolder": "None",
+    "loadFailed": "Tags and folders could not be loaded.",
+    "retry": "Try again",
+    "tagsLabel": "Tags",
+    "folderLabel": "Folder",
+    "validation": {
+      "tooManyTags": "{{max}} tags at most."
+    },
+    "errors": {
+      "tagNotFound": "One of the chosen tags no longer exists: the list has been reloaded.",
+      "folderNotFound": "The chosen folder no longer exists: the list has been reloaded."
+    }
   }
 }

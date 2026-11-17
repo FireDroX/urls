@@ -17,7 +17,10 @@ import {
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '#components/ui/field'
 import { Input } from '#components/ui/input'
 import { Switch } from '#components/ui/switch'
+import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
+import { LinkOrganizationFields } from '#components/links/LinkOrganizationFields'
 import { extractErrorMessage } from '#lib/api-errors'
+import { linkOrganizationErrorMessage } from '#lib/link-organization-errors'
 import { linkErrorMessages } from '#lib/link-errors'
 import {
   createLinkFormSchema,
@@ -45,6 +48,7 @@ async function saveLink(link: Link | undefined, values: LinkFormValues): Promise
 function LinkForm({ link, onSaved }: { link?: Link; onSaved: (link: Link) => void }) {
   const { t } = useTranslation()
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const organization = useLinkOrganizationOptions()
   const schema = useMemo(() => createLinkFormSchema(t, link), [t, link])
   const {
     control,
@@ -58,7 +62,9 @@ function LinkForm({ link, onSaved }: { link?: Link; onSaved: (link: Link) => voi
     try {
       onSaved(await saveLink(link, values))
     } catch (error) {
-      setSubmitError(extractErrorMessage(error, undefined, linkErrorMessages(t)))
+      const organizationMessage = linkOrganizationErrorMessage(error, t)
+      if (organizationMessage) organization.reload()
+      setSubmitError(organizationMessage ?? extractErrorMessage(error, undefined, linkErrorMessages(t)))
     }
   }
 
@@ -125,6 +131,7 @@ function LinkForm({ link, onSaved }: { link?: Link; onSaved: (link: Link) => voi
             </Field>
           )}
         />
+        <LinkOrganizationFields control={control} organization={organization} link={link} idPrefix="link" />
         {link && (
           <Controller
             control={control}

@@ -26,6 +26,8 @@ const drop: Drop = {
   state: 'open',
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 const validValues = { ...dropFormDefaults(undefined, new Date('2026-11-10T10:00:00')), expiresAt: '' }
@@ -123,5 +125,17 @@ describe('payloads', () => {
     const values = { ...dropFormDefaults(drop), title: '', expiresAt: '' }
 
     expect(toUpdateDropPayload(drop, values)).toEqual({ title: null, expiresAt: null })
+  })
+})
+
+describe('toUpdateDropPayload (organization)', () => {
+  const tagged: Drop = { ...drop, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: null }
+
+  it('sends neither tagIds nor folderId when untouched', () => {
+    expect(toUpdateDropPayload(tagged, dropFormDefaults(tagged))).toEqual({})
+  })
+
+  it('sends only tagIds when only the tags changed', () => {
+    expect(toUpdateDropPayload(tagged, { ...dropFormDefaults(tagged), tagIds: ['tagB'] })).toEqual({ tagIds: ['tagB'] })
   })
 })

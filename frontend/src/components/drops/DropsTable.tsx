@@ -3,6 +3,7 @@ import { Copy, Ellipsis, Pencil, Power, PowerOff, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router'
 import { dropDetailPath, dropUrl, type Drop } from '#api/drops'
+import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { DropStateBadge } from '#components/drops/DropStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -34,14 +35,15 @@ function DropRow({ drop, formatDate, actions }: DropRowProps) {
 
   return (
     <TableRow>
-      <TableCell className="max-w-56 truncate">
+      <TableCell className="max-w-56">
         <RouterLink
           to={dropDetailPath(drop.id)}
-          className="font-medium underline-offset-4 hover:underline"
+          className="block truncate font-medium underline-offset-4 hover:underline"
           title={t('drops.open', { slug: drop.id })}
         >
           {drop.title ?? t('drops.untitled')}
         </RouterLink>
+        <LinkOrganizationSummary tags={drop.tags} folder={drop.folder} className="mt-1" />
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">

@@ -14,6 +14,7 @@ import {
   type ShareFile,
 } from '#api/shares'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
+import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { ConfirmDeleteDialog } from '#components/shares/ConfirmDeleteDialog'
 import { FileDropZone } from '#components/shares/FileDropZone'
@@ -158,6 +159,7 @@ function ShareHeader({
           <Copy />
         </Button>
         <LinkStateBadge link={share} />
+        <LinkOrganizationSummary tags={share.tags} folder={share.folder} className="basis-full" />
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={onEdit}>

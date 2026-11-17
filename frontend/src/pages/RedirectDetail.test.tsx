@@ -20,6 +20,8 @@ const link: Link = {
   disabled: false,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 function buildStats(overrides: Partial<LinkStats> = {}): LinkStats {
@@ -142,5 +144,17 @@ describe('RedirectDetail page', () => {
 
     expect(await screen.findByRole('heading', { name: 'Aucun clic sur cette période' })).toBeInTheDocument()
     expect(getLinkStats).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows the tags and the folder under the title', async () => {
+    vi.mocked(getLink).mockResolvedValue({
+      ...link,
+      tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }],
+      folder: { id: 'f1', name: 'Projects' },
+    })
+    renderPage()
+
+    expect(await screen.findByText('Docs')).toBeInTheDocument()
+    expect(screen.getByText('Projects')).toBeInTheDocument()
   })
 })

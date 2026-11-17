@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { listFolders } from '#api/folders'
 import { createLink, deleteLink, listLinks, updateLink, type Link } from '#api/links'
+import { listTags } from '#api/tags'
 import { Redirects } from './Redirects'
 
 vi.mock('#api/links', async (importOriginal) => ({
@@ -14,6 +16,9 @@ vi.mock('#api/links', async (importOriginal) => ({
   deleteLink: vi.fn(),
 }))
 
+vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
+vi.mock('#api/folders', () => ({ listFolders: vi.fn() }))
+
 const link: Link = {
   id: 'docs',
   type: 'redirect',
@@ -22,6 +27,8 @@ const link: Link = {
   disabled: false,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
+  tags: [],
+  folder: null,
 }
 
 function apiError(status: number): AxiosError {
@@ -42,6 +49,11 @@ async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
 beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(listLinks).mockResolvedValue([link])
+  vi.mocked(listTags).mockResolvedValue([
+    { id: 'tagA', name: 'Docs', color: '#112233', linkCount: 0, createdAt: '', updatedAt: '' },
+    { id: 'tagB', name: 'Work', color: '#fde047', linkCount: 0, createdAt: '', updatedAt: '' },
+  ])
+  vi.mocked(listFolders).mockResolvedValue([{ id: 'f1', name: 'Projects', linkCount: 0, createdAt: '', updatedAt: '' }])
 })
 
 describe('Redirects page', () => {
@@ -179,5 +191,71 @@ describe('Redirects page', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Statistiques' }))
 
     expect(await screen.findByText('stats-page')).toBeInTheDocument()
+  })
+})
+
+describe('Redirects page (tags and folder)', () => {
+  it('shows the tags and the folder of a row', async () => {
+    vi.mocked(listLinks).mockResolvedValue([
+      { ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } },
+    ])
+    render(<Redirects />, { wrapper: MemoryRouter })
+
+    const row = (await screen.findByText('/r/docs')).closest('tr')!
+    expect(within(row).getByText('Docs')).toBeInTheDocument()
+    expect(within(row).getByText('Projects')).toBeInTheDocument()
+  })
+
+  it('creates a redirect with the chosen tag and folder', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createLink).mockResolvedValue({ ...link, id: 'new-one' })
+    render(<Redirects />, { wrapper: MemoryRouter })
+
+    await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
+    await user.type(screen.getByLabelText('Destination'), 'https://example.org/')
+    await waitFor(() => expect(screen.getByLabelText('Tags')).toBeEnabled())
+    await user.click(screen.getByLabelText('Tags'))
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: 'Docs' }))
+    await user.keyboard('{Escape}')
+    await user.click(screen.getByLabelText('Dossier'))
+    await user.click(await screen.findByRole('option', { name: 'Projects' }))
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    expect(createLink).toHaveBeenCalledWith({ destination: 'https://example.org/', tagIds: ['tagA'], folderId: 'f1' })
+  })
+
+  it('does not send tags or folder when editing something else', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listLinks).mockResolvedValue([
+      { ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } },
+    ])
+    vi.mocked(updateLink).mockResolvedValue(link)
+    render(<Redirects />, { wrapper: MemoryRouter })
+
+    await openRowMenu(user)
+    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
+    await waitFor(() => expect(listTags).toHaveBeenCalled())
+    const slug = screen.getByLabelText('Slug')
+    await user.clear(slug)
+    await user.type(slug, 'guides')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(updateLink).toHaveBeenCalledWith('docs', { slug: 'guides' })
+  })
+
+  it('translates a tag that disappeared and reloads the choices', async () => {
+    const user = userEvent.setup()
+    const missing = apiError(404)
+    missing.response!.data = { error: 'Tag not found' }
+    vi.mocked(createLink).mockRejectedValue(missing)
+    render(<Redirects />, { wrapper: MemoryRouter })
+
+    await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
+    await user.type(screen.getByLabelText('Destination'), 'https://example.org/')
+    await waitFor(() => expect(listTags).toHaveBeenCalledTimes(1))
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("n'existe plus")
+    await waitFor(() => expect(listTags).toHaveBeenCalledTimes(2))
   })
 })

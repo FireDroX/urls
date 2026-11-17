@@ -590,5 +590,25 @@
   },
   "units": {
     "bytes": ["o", "Kio", "Mio", "Gio", "Tio"]
+  },
+  "linkOrganization": {
+    "tags": "Tags",
+    "tagsPlaceholder": "Aucun tag",
+    "tagsHelp": "{{max}} tags au plus.",
+    "tagsMax": "{{max}} tags au plus : retirez-en un pour en ajouter un autre.",
+    "noTags": "Aucun tag créé pour l'instant",
+    "folder": "Dossier",
+    "noFolder": "Aucun",
+    "loadFailed": "Impossible de charger les tags et les dossiers.",
+    "retry": "Réessayer",
+    "tagsLabel": "Tags",
+    "folderLabel": "Dossier",
+    "validation": {
+      "tooManyTags": "{{max}} tags au plus."
+    },
+    "errors": {
+      "tagNotFound": "Un des tags choisis n'existe plus : la liste a été relue.",
+      "folderNotFound": "Le dossier choisi n'existe plus : la liste a été relue."
+    }
   }
 }

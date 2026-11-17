@@ -21,7 +21,7 @@ export function retryAfterSeconds(error: unknown): number | null {
   return Number.isFinite(value) && value > 0 ? Math.ceil(value) : null
 }
 
-function summarize(error: unknown): ErrorSummary | null {
+export function summarizeError(error: unknown): ErrorSummary | null {
   if (error instanceof UploadRequestError) {
     return {
       status: error.status ?? undefined,
@@ -47,7 +47,7 @@ export function extractErrorMessage(
   fallback = i18n.t('errors.generic'),
   messagesByStatus: MessagesByStatus = {},
 ): string {
-  const summary = summarize(error)
+  const summary = summarizeError(error)
   if (!summary) {
     return fallback
   }
