@@ -103,7 +103,7 @@ describe('DropDetail page', () => {
 
     expect(await screen.findByRole('heading', { name: 'Documents' })).toBeInTheDocument()
     expect(screen.getByText(`${window.location.origin}/u/docs`)).toBeInTheDocument()
-    expect(screen.getByText('Vues').nextSibling).toHaveTextContent('7')
+    expect(screen.getByText('Vues sur 90 jours').nextSibling).toHaveTextContent('7')
     expect(screen.getByText('Fichiers reçus', { selector: 'dt' }).nextSibling).toHaveTextContent('1 / 5')
     const row = screen.getByText('photo.png').closest('tr')!
     expect(within(row).getByText('Alice')).toBeInTheDocument()

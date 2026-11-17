@@ -161,9 +161,12 @@ export const COUNTRY_HEADER = 'cf-ipcountry';
 export const COUNTRY_CODE_REGEX = /^[A-Z]{2}$/;
 export const UNKNOWN_COUNTRY_CODES: readonly string[] = ['XX', 'T1'];
 
+export const EVENTS_RETENTION_DAYS = 90;
+export const EVENTS_PURGE_CRON = '30 3 * * *';
+export const EVENTS_PURGE_BATCH_SIZE = 1000;
 export const LINK_STATS_DEFAULT_DAYS = 30;
 export const LINK_STATS_MIN_DAYS = 1;
-export const LINK_STATS_MAX_DAYS = 365;
+export const LINK_STATS_MAX_DAYS = EVENTS_RETENTION_DAYS;
 export const LINK_STATS_TOP_LIMIT = 10;
 export const LINK_STATS_TIME_ZONE = 'UTC';
 export const UNSIGNED_INTEGER_REGEX = /^\d+$/;

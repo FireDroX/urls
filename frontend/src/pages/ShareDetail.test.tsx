@@ -115,7 +115,7 @@ describe('ShareDetail page', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: '/d/photos' })).toBeInTheDocument()
-    expect(screen.getByText('Vues').nextSibling).toHaveTextContent('7')
+    expect(screen.getByText('Vues sur 90 jours').nextSibling).toHaveTextContent('7')
     expect(screen.getByText('Téléchargements').nextSibling).toHaveTextContent('3 / 10')
     expect(screen.getByText('Taille totale').nextSibling).toHaveTextContent('2 Kio')
   })

@@ -203,8 +203,14 @@ describe('EventsService', () => {
   it('counts the views of a link', async () => {
     repository.countByType.mockResolvedValue(7);
 
-    await expect(service.countViews(LINK_ID)).resolves.toBe(7);
-    expect(repository.countByType).toHaveBeenCalledWith(LINK_ID, 'view');
+    await expect(
+      service.countViews(LINK_ID, new Date('2026-11-17T12:00:00.000Z')),
+    ).resolves.toBe(7);
+    expect(repository.countByType).toHaveBeenCalledWith(
+      LINK_ID,
+      'view',
+      new Date('2026-08-19T12:00:00.000Z'),
+    );
   });
 
   describe('clickStats', () => {

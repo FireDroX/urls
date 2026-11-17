@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.8 — 2026-11-17
+
+- Les données de suivi des visites (clics, vues, téléchargements et envois : empreinte de l'IP, navigateur, provenance, pays) sont supprimées automatiquement après 90 jours, chaque nuit.
+- Les statistiques d'une redirection proposent au plus 90 jours (la période d'un an disparaît) et le nombre de vues d'un partage ou d'un dépôt compte les 90 derniers jours. Le nombre de téléchargements d'un partage reste un total.
+
 ## 0.2.7 — 2026-11-17
 
 - Côté API, les listes des redirections, des partages et des dépôts se recherchent (slug, destination, titre), se filtrent par tag, par dossier (ou sans dossier) et par état, se trient et se paginent ; un tag ou un dossier inconnu donne une liste vide.

@@ -14,6 +14,7 @@ export type EventType = (typeof EVENT_TYPES)[number];
 
 @Entity('events')
 @Index('IDX_events_link_id_created_at', ['linkId', 'createdAt'])
+@Index('IDX_events_created_at', ['createdAt'])
 export class LinkEvent {
   @PrimaryGeneratedColumn('uuid')
   id: string;

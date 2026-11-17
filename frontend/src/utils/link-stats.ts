@@ -1,4 +1,4 @@
-export const LINK_STATS_DAY_OPTIONS = [7, 30, 90, 365] as const
+export const LINK_STATS_DAY_OPTIONS = [7, 30, 90] as const
 export const LINK_STATS_DEFAULT_DAYS = 30
 
 export function parseStatsDays(value: string | null): number {
