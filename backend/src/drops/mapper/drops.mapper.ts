@@ -1,4 +1,6 @@
+import type { PageResponseDto } from '../../common/dto/page-response.dto.js';
 import { ResponseDto } from '../../common/dto/response.dto.js';
+import type { ListPage } from '../../common/list-query.js';
 import { LinkOrganizationMapper } from '../../links/mapper/link-organization.mapper.js';
 import type { StoredFile } from '../../files/entities/stored-file.entity.js';
 import type {
@@ -12,11 +14,12 @@ import type { DropDetail, DropSummary } from '../services/drops.service.js';
 
 export class DropsMapper {
   static toListResponse(
-    summaries: DropSummary[],
-  ): ResponseDto<DropResponseDto[]> {
-    return new ResponseDto(
-      summaries.map((summary) => DropsMapper.toDto(summary)),
-    );
+    page: ListPage<DropSummary>,
+  ): ResponseDto<PageResponseDto<DropResponseDto>> {
+    return new ResponseDto({
+      ...page,
+      items: page.items.map((item) => DropsMapper.toDto(item)),
+    });
   }
 
   static toResponse(summary: DropSummary): ResponseDto<DropResponseDto> {

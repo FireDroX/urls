@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { Link } from '../../links/entities/link.entity.js';
 import type { ResolvedOrganization } from '../../links/link-organization.js';
 import { saveWithOrganization } from '../../links/persistence/link-organization.writer.js';
+import type { ListDropsQuery } from '../dto/in/list-drops-query.dto.js';
+import {
+  dropStateClause,
+  findLinkPage,
+} from '../../links/persistence/link-list.query.js';
 import type { DropRepository, NewDrop } from './drop.repository.js';
 
 const DROP = 'drop';
@@ -15,11 +20,16 @@ export class TypeormDropRepository implements DropRepository {
     private readonly repository: Repository<Link>,
   ) {}
 
-  findAll(): Promise<Link[]> {
-    return this.repository.find({
-      where: { type: DROP },
-      order: { createdAt: 'DESC' },
-    });
+  findPage(
+    query: ListDropsQuery,
+    now: Date,
+  ): Promise<{ items: Link[]; total: number }> {
+    return findLinkPage(
+      this.repository.createQueryBuilder('link'),
+      DROP,
+      query,
+      query.state ? dropStateClause(query.state, now) : null,
+    );
   }
 
   findByPublicId(publicId: string): Promise<Link | null> {

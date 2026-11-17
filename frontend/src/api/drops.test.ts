@@ -31,10 +31,11 @@ describe('drops api', () => {
   })
 
   it('lists the drops and unwraps the envelope', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(envelope([{ id: 'docs' }]))
+    const result = { items: [{ id: 'docs' }], total: 1, page: 1, pageSize: 50 }
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(result))
 
-    await expect(listDrops()).resolves.toEqual([{ id: 'docs' }])
-    expect(apiClient.get).toHaveBeenCalledWith('/drops')
+    await expect(listDrops({ state: 'full' })).resolves.toEqual(result)
+    expect(apiClient.get).toHaveBeenCalledWith('/drops', { params: { state: 'full' } })
   })
 
   it('creates a drop', async () => {

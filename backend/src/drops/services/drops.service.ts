@@ -4,6 +4,7 @@ import { dropState } from '../../common/drop-state.js';
 import { FileNotFoundException } from '../../common/exceptions/files/file-not-found.exception.js';
 import { DropNotFoundException } from '../../common/exceptions/drops/drop-not-found.exception.js';
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
+import type { ListPage } from '../../common/list-query.js';
 import { parseDto } from '../../common/parse-dto.js';
 import {
   generatePublicId,
@@ -26,6 +27,7 @@ import {
   type LinkOrganization,
   type ResolvedOrganization,
 } from '../../links/link-organization.js';
+import { listDropsQuerySchema } from '../dto/in/list-drops-query.dto.js';
 import { LinkOrganizationService } from '../../links/services/link-organization.service.js';
 import type {
   MovedToShare,
@@ -63,12 +65,13 @@ function summarize(
   drop: Link,
   usage: LinkFilesSummary,
   organization: LinkOrganization,
+  now: Date = new Date(),
 ): DropSummary {
   return {
     drop,
     organization,
     ...usage,
-    state: dropState(drop, usage, new Date()),
+    state: dropState(drop, usage, now),
   };
 }
 
@@ -84,19 +87,27 @@ export class DropsService {
     private readonly organization: LinkOrganizationService,
   ) {}
 
-  async list(): Promise<DropSummary[]> {
-    const drops = await this.repository.findAll();
+  async list(query: unknown): Promise<ListPage<DropSummary>> {
+    const parsed = parseDto(listDropsQuerySchema, query);
+    const now = new Date();
+    const { items: drops, total } = await this.repository.findPage(parsed, now);
     const usages = await this.files.summarizeCountedLinks(
       drops.map((drop) => drop.id),
     );
     const organizations = await this.organization.loadFor(drops);
-    return drops.map((drop) =>
-      summarize(
-        drop,
-        usages.get(drop.id) ?? NO_FILES,
-        organizations.get(drop.id) ?? EMPTY_LINK_ORGANIZATION,
+    return {
+      items: drops.map((drop) =>
+        summarize(
+          drop,
+          usages.get(drop.id) ?? NO_FILES,
+          organizations.get(drop.id) ?? EMPTY_LINK_ORGANIZATION,
+          now,
+        ),
       ),
-    );
+      total,
+      page: parsed.page,
+      pageSize: parsed.pageSize,
+    };
   }
 
   async get(publicId: string): Promise<DropDetail> {

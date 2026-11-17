@@ -1,4 +1,5 @@
 import type { LinkOrganization, LinkOrganizationPayload } from '#api/link-organization'
+import type { ListParams, Page } from '#api/list-params'
 import type { ResponseDto } from '#api/response-dto'
 import { apiClient } from '#lib/api-client'
 
@@ -96,8 +97,8 @@ export function shareDetailPath(id: string): string {
   return `/shares/${encodeURIComponent(id)}`
 }
 
-export async function listShares(): Promise<Share[]> {
-  const { data } = await apiClient.get<ResponseDto<Share[]>>(SHARES_PATH)
+export async function listShares(params?: ListParams): Promise<Page<Share>> {
+  const { data } = await apiClient.get<ResponseDto<Page<Share>>>(SHARES_PATH, { params })
   return data.data
 }
 

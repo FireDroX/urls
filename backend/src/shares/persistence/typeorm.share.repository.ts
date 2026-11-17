@@ -4,6 +4,11 @@ import { Repository } from 'typeorm';
 import { Link } from '../../links/entities/link.entity.js';
 import type { ResolvedOrganization } from '../../links/link-organization.js';
 import { saveWithOrganization } from '../../links/persistence/link-organization.writer.js';
+import type { ListSharesQuery } from '../dto/in/list-shares-query.dto.js';
+import {
+  findLinkPage,
+  shareStateClause,
+} from '../../links/persistence/link-list.query.js';
 import type { NewShare, ShareRepository } from './share.repository.js';
 
 const SHARE = 'share';
@@ -15,11 +20,16 @@ export class TypeormShareRepository implements ShareRepository {
     private readonly repository: Repository<Link>,
   ) {}
 
-  findAll(): Promise<Link[]> {
-    return this.repository.find({
-      where: { type: SHARE },
-      order: { createdAt: 'DESC' },
-    });
+  findPage(
+    query: ListSharesQuery,
+    now: Date,
+  ): Promise<{ items: Link[]; total: number }> {
+    return findLinkPage(
+      this.repository.createQueryBuilder('link'),
+      SHARE,
+      query,
+      query.state ? shareStateClause(query.state, now) : null,
+    );
   }
 
   findByPublicId(publicId: string): Promise<Link | null> {

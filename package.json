@@ -1,6 +1,6 @@
 {
   "name": "urls",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "url.addrien.fr: personal URL shortener, file sharing and file drop, behind a single admin dashboard.",
   "private": true,
   "author": "FireDroX <contact@addrien.fr>",
