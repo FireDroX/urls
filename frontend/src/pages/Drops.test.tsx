@@ -297,7 +297,7 @@ describe('Drops page', () => {
 
 describe('Drops page (tags and folder)', () => {
   it('shows the tags and the folder of a row', async () => {
-    vi.mocked(listDrops).mockResolvedValue([{ ...drop, ...{ tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } } }])
+    vi.mocked(listDrops).mockResolvedValue([{ ...drop, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }])
     render(<Drops />, { wrapper: MemoryRouter })
 
     const row = (await screen.findByText('Documents')).closest('tr')!

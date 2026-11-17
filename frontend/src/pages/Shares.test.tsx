@@ -217,7 +217,7 @@ describe('Shares page', () => {
 
 describe('Shares page (tags and folder)', () => {
   it('shows the tags and the folder of a row', async () => {
-    vi.mocked(listShares).mockResolvedValue([{ ...share, ...{ tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } } }])
+    vi.mocked(listShares).mockResolvedValue([{ ...share, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }])
     render(<Shares />, { wrapper: Wrapper })
 
     const row = (await screen.findByText('/d/photos')).closest('tr')!

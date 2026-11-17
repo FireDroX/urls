@@ -589,13 +589,7 @@
     "tooManyRequestsNoDelay": "Trop de requêtes, réessayez dans un instant."
   },
   "units": {
-    "bytes": [
-      "o",
-      "Kio",
-      "Mio",
-      "Gio",
-      "Tio"
-    ]
+    "bytes": ["o", "Kio", "Mio", "Gio", "Tio"]
   },
   "linkOrganization": {
     "tags": "Tags",

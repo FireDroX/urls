@@ -589,13 +589,7 @@
     "tooManyRequestsNoDelay": "Too many requests, try again in a moment."
   },
   "units": {
-    "bytes": [
-      "B",
-      "KiB",
-      "MiB",
-      "GiB",
-      "TiB"
-    ]
+    "bytes": ["B", "KiB", "MiB", "GiB", "TiB"]
   },
   "linkOrganization": {
     "tags": "Tags",
