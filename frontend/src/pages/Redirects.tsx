@@ -111,14 +111,8 @@ export function Redirects() {
   }
 
   function handleSaved(saved: Link) {
-    if (dialog.link) {
-      replace(dialog.link.id, saved)
-      refresh()
-      toast.success(t('links.updated'))
-    } else {
-      refresh()
-      toast.success(t('links.created'))
-    }
+    refresh()
+    toast.success(t('links.created'))
     closeDialog()
   }
 
@@ -142,7 +136,7 @@ export function Redirects() {
   const actions: LinkActions = {
     onCopy: (link) => void copyLink(link.id),
     onStats: (link) => void navigate(linkDetailPath(link.id)),
-    onEdit: (link) => setDialog({ kind: 'form', link, open: true }),
+    onEdit: (link) => void navigate(linkDetailPath(link.id)),
     onToggle: (link) => void toggleLink(link),
     onDelete: (link) => setDialog({ kind: 'delete', link, open: true }),
   }
@@ -178,7 +172,6 @@ export function Redirects() {
       />
       <LinkFormDialog
         open={dialog.open && dialog.kind === 'form'}
-        link={dialog.link}
         onOpenChange={handleOpenChange}
         onSaved={handleSaved}
       />

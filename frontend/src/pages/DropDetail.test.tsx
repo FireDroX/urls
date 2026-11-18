@@ -4,9 +4,11 @@ import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { toast } from 'sonner'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { deleteDropFile, getDrop, type DropDetail as DropDetailData, type DropFile } from '#api/drops'
+import { deleteDrop, deleteDropFile, getDrop, updateDrop, type DropDetail as DropDetailData, type DropFile } from '#api/drops'
 import { createFileDownloadUrl } from '#api/files'
+import { listFolders } from '#api/folders'
 import type { FileStatus } from '#api/shares'
+import { listTags } from '#api/tags'
 import { FILE_STATUS_POLL_MS } from '#hooks/useShareDetail'
 import { startDownload } from '#utils/start-download'
 import { DropDetail } from './DropDetail'
@@ -15,12 +17,16 @@ vi.mock('#api/drops', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#api/drops')>()),
   getDrop: vi.fn(),
   deleteDropFile: vi.fn(),
+  updateDrop: vi.fn(),
+  deleteDrop: vi.fn(),
 }))
 vi.mock('#api/files', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#api/files')>()),
   createFileDownloadUrl: vi.fn(),
 }))
 vi.mock('#utils/start-download', () => ({ startDownload: vi.fn() }))
+vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
+vi.mock('#api/folders', () => ({ listFolders: vi.fn() }))
 vi.mock('sonner', async (importOriginal) => ({
   ...(await importOriginal<typeof import('sonner')>()),
   toast: { success: vi.fn(), error: vi.fn() },
@@ -91,6 +97,8 @@ beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(getDrop).mockResolvedValue(dropWith(dropFile('ready')))
   vi.mocked(deleteDropFile).mockResolvedValue()
+  vi.mocked(listTags).mockResolvedValue([])
+  vi.mocked(listFolders).mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -236,5 +244,55 @@ describe('DropDetail page', () => {
 
     expect(await screen.findByText("Ce fichier n'existe plus.")).toBeInTheDocument()
     await waitFor(() => expect(getDrop).toHaveBeenCalledTimes(2))
+  })
+
+  it('edits the settings and sends only the changed fields', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDrop).mockResolvedValue({ ...dropWith(dropFile('ready')), maxFiles: 8 })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier' }))
+    const maxFiles = screen.getByLabelText('Nombre de fichiers maximum')
+    await user.clear(maxFiles)
+    await user.type(maxFiles, '8')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(updateDrop).toHaveBeenCalledWith('docs', { maxFiles: 8 }))
+    expect(await screen.findByText('1 / 8')).toBeInTheDocument()
+  })
+
+  it('translates a drop that no longer exists when editing', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDrop).mockRejectedValue(apiError(404))
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier' }))
+    await user.type(screen.getByLabelText('Titre (facultatif)'), ' 2')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByText("Ce dépôt n'existe plus.")).toBeInTheDocument()
+  })
+
+  it('disables the drop', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDrop).mockResolvedValue({ ...dropWith(dropFile('ready')), disabled: true, state: 'disabled' })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Désactiver' }))
+
+    expect(updateDrop).toHaveBeenCalledWith('docs', { disabled: true })
+    expect(await screen.findByRole('button', { name: 'Réactiver' })).toBeInTheDocument()
+  })
+
+  it('deletes the drop after confirmation and goes back to the list', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteDrop).mockResolvedValue()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Supprimer' }))
+    await user.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Supprimer' }))
+
+    expect(await screen.findByText('liste des dépôts')).toBeInTheDocument()
+    expect(deleteDrop).toHaveBeenCalledWith('docs')
   })
 })

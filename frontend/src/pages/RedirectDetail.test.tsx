@@ -1,15 +1,27 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { getLink, getLinkStats, type Link, type LinkStats } from '#api/links'
+import { listFolders } from '#api/folders'
+import { deleteLink, getLink, getLinkStats, updateLink, type Link, type LinkStats } from '#api/links'
+import { listTags } from '#api/tags'
 import { RedirectDetail } from './RedirectDetail'
 
 vi.mock('#api/links', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#api/links')>()),
   getLink: vi.fn(),
   getLinkStats: vi.fn(),
+  updateLink: vi.fn(),
+  deleteLink: vi.fn(),
+}))
+
+vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
+vi.mock('#api/folders', () => ({ listFolders: vi.fn() }))
+vi.mock('sonner', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('sonner')>()),
+  toast: { success: vi.fn(), error: vi.fn() },
 }))
 
 const link: Link = {
@@ -53,6 +65,7 @@ function renderPage(path = '/redirects/docs') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
+        <Route path="/redirects" element={<p>liste des redirections</p>} />
         <Route path="/redirects/:id" element={<RedirectDetail />} />
       </Routes>
     </MemoryRouter>,
@@ -63,6 +76,8 @@ beforeEach(() => {
   vi.resetAllMocks()
   vi.mocked(getLink).mockResolvedValue(link)
   vi.mocked(getLinkStats).mockResolvedValue(buildStats())
+  vi.mocked(listTags).mockResolvedValue([])
+  vi.mocked(listFolders).mockResolvedValue([])
 })
 
 describe('RedirectDetail page', () => {
@@ -156,5 +171,93 @@ describe('RedirectDetail page', () => {
 
     expect(await screen.findByText('Docs')).toBeInTheDocument()
     expect(screen.getByText('Projects')).toBeInTheDocument()
+  })
+
+  it('edits the destination and sends only that field', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateLink).mockResolvedValue({ ...link, destination: 'https://example.org/new' })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier' }))
+    const destination = screen.getByLabelText('Destination')
+    await user.clear(destination)
+    await user.type(destination, 'https://example.org/new')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    await waitFor(() => expect(updateLink).toHaveBeenCalledWith('docs', { destination: 'https://example.org/new' }))
+    expect(await screen.findByRole('link', { name: 'https://example.org/new' })).toBeInTheDocument()
+  })
+
+  it('shows the settings of the redirect', async () => {
+    renderPage()
+
+    const settings = (await screen.findByRole('heading', { name: 'Réglages' })).closest('section')!
+    expect(within(settings).getByText('docs')).toBeInTheDocument()
+    expect(within(settings).getByText('Jamais')).toBeInTheDocument()
+  })
+
+  it('follows a new slug and keeps the period', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateLink).mockResolvedValue({ ...link, id: 'guides' })
+    renderPage('/redirects/docs?days=7')
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier' }))
+    const slug = screen.getByLabelText('Slug')
+    await user.clear(slug)
+    await user.type(slug, 'guides')
+    vi.mocked(getLink).mockResolvedValue({ ...link, id: 'guides' })
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByRole('heading', { name: '/r/guides' })).toBeInTheDocument()
+    expect(getLinkStats).toHaveBeenLastCalledWith('guides', 7, expect.any(AbortSignal))
+  })
+
+  it('translates a taken slug when editing', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateLink).mockRejectedValue(apiError(409))
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Modifier' }))
+    const slug = screen.getByLabelText('Slug')
+    await user.clear(slug)
+    await user.type(slug, 'guides')
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ce slug est déjà pris.')
+  })
+
+  it('disables the redirect', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateLink).mockResolvedValue({ ...link, disabled: true })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Désactiver' }))
+
+    expect(updateLink).toHaveBeenCalledWith('docs', { disabled: true })
+    expect(await screen.findByRole('button', { name: 'Réactiver' })).toBeInTheDocument()
+  })
+
+  it('translates a redirect that no longer exists when toggling it', async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateLink).mockRejectedValue(apiError(404))
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Désactiver' }))
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+  })
+
+  it('deletes the redirect after confirmation and goes back to the list', async () => {
+    const user = userEvent.setup()
+    vi.mocked(deleteLink).mockResolvedValue()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Supprimer' }))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(deleteLink).not.toHaveBeenCalled()
+    await user.click(within(dialog).getByRole('button', { name: 'Supprimer' }))
+
+    expect(await screen.findByText('liste des redirections')).toBeInTheDocument()
+    expect(deleteLink).toHaveBeenCalledWith('docs')
   })
 })

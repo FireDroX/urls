@@ -1,9 +1,12 @@
-import { useMemo } from 'react'
-import { ArrowLeft, ChartColumn, Copy, SearchX } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ArrowLeft, ChartColumn, Copy, Pencil, Power, PowerOff, SearchX, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink, useParams, useSearchParams } from 'react-router'
+import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
+import { toast } from 'sonner'
 import { redirectPath } from '#api/redirects'
-import type { Link, LinkStats } from '#api/links'
+import { updateLink, type Link, type LinkStats } from '#api/links'
+import { DeleteLinkDialog } from '#components/links/DeleteLinkDialog'
+import { LinkFormDialog } from '#components/links/LinkFormDialog'
 import { ClicksChart } from '#components/links/ClicksChart'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
 import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
@@ -15,7 +18,9 @@ import { Skeleton } from '#components/ui/skeleton'
 import { useCopyLink } from '#hooks/useCopyLink'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
 import { useLink, useLinkStats, type LoadState } from '#hooks/useLinkDetail'
-import { LINK_STATS_DAY_OPTIONS, parseStatsDays } from '#utils/link-stats'
+import { extractErrorMessage } from '#lib/api-errors'
+import { linkErrorMessages } from '#lib/link-errors'
+import { LINK_STATS_DAY_OPTIONS, linkDetailPath, parseStatsDays } from '#utils/link-stats'
 
 const DAYS_PARAM = 'days'
 
@@ -52,12 +57,22 @@ function NotFoundPlaceholder() {
   )
 }
 
-function LinkHeader({ link }: { link: Link }) {
+function LinkHeader({
+  link,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  link: Link
+  onEdit: () => void
+  onToggle: () => void
+  onDelete: () => void
+}) {
   const { t } = useTranslation()
   const copyLink = useCopyLink()
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="font-mono text-2xl font-bold text-primary">{redirectPath(link.id)}</h1>
         <Button
@@ -69,20 +84,57 @@ function LinkHeader({ link }: { link: Link }) {
           <Copy />
         </Button>
         <LinkStateBadge link={link} />
+        <LinkOrganizationSummary tags={link.tags} folder={link.folder} className="basis-full" />
       </div>
-      <LinkOrganizationSummary tags={link.tags} folder={link.folder} />
-      <p className="text-sm text-muted-foreground">
-        {t('linkStats.destination')}{' '}
-        <a
-          href={link.destination ?? undefined}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="break-all text-foreground underline-offset-4 hover:underline"
-        >
-          {link.destination}
-        </a>
-      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" onClick={onEdit}>
+          <Pencil />
+          {t('links.edit')}
+        </Button>
+        <Button variant="outline" onClick={onToggle}>
+          {link.disabled ? <Power /> : <PowerOff />}
+          {link.disabled ? t('links.enable') : t('links.disable')}
+        </Button>
+        <Button variant="outline" onClick={onDelete}>
+          <Trash />
+          {t('links.delete.action')}
+        </Button>
+      </div>
     </div>
+  )
+}
+
+function SettingsSection({ link }: { link: Link }) {
+  const { t, i18n } = useTranslation()
+  const expiresAt = link.expiresAt
+    ? new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+        new Date(link.expiresAt),
+      )
+    : t('links.noExpiry')
+
+  return (
+    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" aria-labelledby="link-settings-title">
+      <h2 id="link-settings-title" className="font-heading text-xl font-semibold">
+        {t('links.detail.settings')}
+      </h2>
+      <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[auto_1fr]">
+        <dt className="text-muted-foreground">{t('links.columns.destination')}</dt>
+        <dd>
+          <a
+            href={link.destination ?? undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-foreground underline-offset-4 hover:underline"
+          >
+            {link.destination}
+          </a>
+        </dd>
+        <dt className="text-muted-foreground">{t('links.form.slug')}</dt>
+        <dd className="font-mono">{link.id}</dd>
+        <dt className="text-muted-foreground">{t('links.columns.expiresAt')}</dt>
+        <dd>{expiresAt}</dd>
+      </dl>
+    </section>
   )
 }
 
@@ -179,12 +231,78 @@ function StatsBody({ state, onRetry }: { state: LoadState<LinkStats>; onRetry: (
   return <LoadFailed onRetry={onRetry} />
 }
 
+function LinkDetailContent({
+  link,
+  days,
+  onDaysChange,
+  onChanged,
+}: {
+  link: Link
+  days: number
+  onDaysChange: (days: number) => void
+  onChanged: (link: Link) => void
+}) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null)
+
+  function handleSaved(saved: Link) {
+    setDialog(null)
+    onChanged(saved)
+    toast.success(t('links.updated'))
+    if (saved.id !== link.id) {
+      void navigate({ pathname: linkDetailPath(saved.id), search: location.search }, { replace: true })
+    }
+  }
+
+  function handleDeleted() {
+    toast.success(t('links.deleted'))
+    void navigate('/redirects', { replace: true })
+  }
+
+  async function toggleLink() {
+    try {
+      const saved = await updateLink(link.id, { disabled: !link.disabled })
+      onChanged(saved)
+      toast.success(saved.disabled ? t('links.disabledToast') : t('links.enabledToast'))
+    } catch (error) {
+      toast.error(extractErrorMessage(error, undefined, linkErrorMessages(t)))
+    }
+  }
+
+  return (
+    <>
+      <LinkHeader
+        link={link}
+        onEdit={() => setDialog('edit')}
+        onToggle={() => void toggleLink()}
+        onDelete={() => setDialog('delete')}
+      />
+      <SettingsSection link={link} />
+      <StatsSection id={link.id} days={days} onDaysChange={onDaysChange} />
+      <LinkFormDialog
+        open={dialog === 'edit'}
+        link={link}
+        onOpenChange={(open) => !open && setDialog(null)}
+        onSaved={handleSaved}
+      />
+      <DeleteLinkDialog
+        open={dialog === 'delete'}
+        link={link}
+        onOpenChange={(open) => !open && setDialog(null)}
+        onDeleted={handleDeleted}
+      />
+    </>
+  )
+}
+
 export function RedirectDetail() {
   const { t } = useTranslation()
   const { id = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const days = parseStatsDays(searchParams.get(DAYS_PARAM))
-  const { state, reload } = useLink(id)
+  const { state, reload, replace } = useLink(id)
   useDocumentTitle(redirectPath(id))
 
   function changeDays(value: number) {
@@ -204,10 +322,7 @@ export function RedirectDetail() {
       {state.status === 'notFound' && <NotFoundPlaceholder />}
       {state.status === 'error' && <LoadFailed onRetry={reload} />}
       {state.status === 'ready' && (
-        <>
-          <LinkHeader link={state.value} />
-          <StatsSection id={state.value.id} days={days} onDaysChange={changeDays} />
-        </>
+        <LinkDetailContent link={state.value} days={days} onDaysChange={changeDays} onChanged={replace} />
       )}
     </>
   )

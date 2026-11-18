@@ -112,16 +112,9 @@ export function Shares() {
   }
 
   function handleSaved(saved: Share) {
-    if (dialog.share) {
-      replace(dialog.share.id, saved)
-      refresh()
-      toast.success(t('shares.updated'))
-      closeDialog()
-    } else {
-      refresh()
-      toast.success(t('shares.created'))
-      void navigate(shareDetailPath(saved.id))
-    }
+    refresh()
+    toast.success(t('shares.created'))
+    void navigate(shareDetailPath(saved.id))
   }
 
   async function confirmDelete(share: Share) {
@@ -146,7 +139,7 @@ export function Shares() {
   const actions: ShareActions = {
     onCopy: (share) => void copyLink(share.id),
     onOpen: (share) => void navigate(shareDetailPath(share.id)),
-    onEdit: (share) => setDialog({ kind: 'form', share, open: true }),
+    onEdit: (share) => void navigate(shareDetailPath(share.id)),
     onToggle: (share) => void toggleShare(share),
     onDelete: (share) => setDialog({ kind: 'delete', share, open: true }),
   }
@@ -182,7 +175,6 @@ export function Shares() {
       />
       <ShareFormDialog
         open={dialog.open && dialog.kind === 'form'}
-        share={dialog.share}
         onOpenChange={handleOpenChange}
         onSaved={handleSaved}
       />
