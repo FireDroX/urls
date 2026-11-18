@@ -266,6 +266,9 @@ describe('Drops page', () => {
   it('disables a drop', async () => {
     const user = userEvent.setup()
     vi.mocked(updateDrop).mockResolvedValue({ ...drop, disabled: true, state: 'disabled' })
+    vi.mocked(listDrops)
+      .mockResolvedValueOnce(pageOf([drop]))
+      .mockResolvedValue(pageOf([{ ...drop, disabled: true, state: 'disabled' }]))
     renderDrops()
 
     await openRowMenu(user)

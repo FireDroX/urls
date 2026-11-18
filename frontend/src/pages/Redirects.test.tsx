@@ -142,6 +142,7 @@ describe('Redirects page', () => {
   it('disables a redirect from the row menu', async () => {
     const user = userEvent.setup()
     vi.mocked(updateLink).mockResolvedValue({ ...link, disabled: true })
+    vi.mocked(listLinks).mockResolvedValueOnce(pageOf([link])).mockResolvedValue(pageOf([{ ...link, disabled: true }]))
     render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)

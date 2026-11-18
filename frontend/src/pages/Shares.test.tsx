@@ -184,6 +184,7 @@ describe('Shares page', () => {
   it('disables a share', async () => {
     const user = userEvent.setup()
     vi.mocked(updateShare).mockResolvedValue({ ...detail, disabled: true })
+    vi.mocked(listShares).mockResolvedValueOnce(pageOf([share])).mockResolvedValue(pageOf([{ ...share, disabled: true }]))
     render(<Shares />, { wrapper: Wrapper })
 
     await openRowMenu(user)
