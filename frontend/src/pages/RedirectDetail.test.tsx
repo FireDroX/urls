@@ -169,8 +169,8 @@ describe('RedirectDetail page', () => {
     })
     renderPage()
 
-    expect(await screen.findByText('Docs')).toBeInTheDocument()
-    expect(screen.getByText('Projects')).toBeInTheDocument()
+    expect(await screen.findAllByText('Docs')).toHaveLength(2)
+    expect(screen.getAllByText('Projects')).toHaveLength(2)
   })
 
   it('edits the destination and sends only that field', async () => {
@@ -194,6 +194,22 @@ describe('RedirectDetail page', () => {
     const settings = (await screen.findByRole('heading', { name: 'Réglages' })).closest('section')!
     expect(within(settings).getByText('docs')).toBeInTheDocument()
     expect(within(settings).getByText('Jamais')).toBeInTheDocument()
+    expect(within(settings).getByText('Aucun tag')).toBeInTheDocument()
+    expect(within(settings).getByText('Aucun')).toBeInTheDocument()
+  })
+
+  it('shows the tags and the folder in the settings', async () => {
+    vi.mocked(getLink).mockResolvedValue({
+      ...link,
+      tags: [{ id: 't1', name: 'Docs', color: '#ff0000' }],
+      folder: { id: 'f1', name: 'Work' },
+    })
+    renderPage()
+
+    const settings = (await screen.findByRole('heading', { name: 'Réglages' })).closest('section')!
+    expect(within(settings).getByText('Docs')).toBeInTheDocument()
+    expect(within(settings).getByText('Work')).toBeInTheDocument()
+    expect(within(settings).queryByText('Aucun tag')).not.toBeInTheDocument()
   })
 
   it('follows a new slug and keeps the period', async () => {
@@ -210,6 +226,8 @@ describe('RedirectDetail page', () => {
 
     expect(await screen.findByRole('heading', { name: '/r/guides' })).toBeInTheDocument()
     expect(getLinkStats).toHaveBeenLastCalledWith('guides', 7, expect.any(AbortSignal))
+    expect(vi.mocked(getLink).mock.calls.filter(([id]) => id === 'guides')).toHaveLength(1)
+    expect(vi.mocked(getLinkStats).mock.calls.filter(([id]) => id === 'guides')).toHaveLength(1)
   })
 
   it('translates a taken slug when editing', async () => {

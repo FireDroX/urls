@@ -10,6 +10,7 @@ import { LinkFormDialog } from '#components/links/LinkFormDialog'
 import { ClicksChart } from '#components/links/ClicksChart'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
 import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
+import { TagPill } from '#components/links/TagPill'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { TopClicksList, type TopClicksEntry } from '#components/links/TopClicksList'
 import { Button } from '#components/ui/button'
@@ -133,6 +134,22 @@ function SettingsSection({ link }: { link: Link }) {
         <dd className="font-mono">{link.id}</dd>
         <dt className="text-muted-foreground">{t('links.columns.expiresAt')}</dt>
         <dd>{expiresAt}</dd>
+        <dt className="text-muted-foreground">{t('linkOrganization.tags')}</dt>
+        <dd>
+          {link.tags.length > 0 ? (
+            <ul className="flex flex-wrap gap-1">
+              {link.tags.map((tag) => (
+                <li key={tag.id}>
+                  <TagPill tag={tag} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            t('linkOrganization.tagsPlaceholder')
+          )}
+        </dd>
+        <dt className="text-muted-foreground">{t('linkOrganization.folder')}</dt>
+        <dd>{link.folder?.name ?? t('linkOrganization.noFolder')}</dd>
       </dl>
     </section>
   )
@@ -249,11 +266,12 @@ function LinkDetailContent({
 
   function handleSaved(saved: Link) {
     setDialog(null)
-    onChanged(saved)
     toast.success(t('links.updated'))
     if (saved.id !== link.id) {
       void navigate({ pathname: linkDetailPath(saved.id), search: location.search }, { replace: true })
+      return
     }
+    onChanged(saved)
   }
 
   function handleDeleted() {
