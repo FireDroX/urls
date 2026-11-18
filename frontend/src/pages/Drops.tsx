@@ -110,7 +110,7 @@ export function Drops() {
     if (!open) closeDialog()
   }
 
-  function handleSaved(saved: Drop) {
+  function handleCreated() {
     refresh()
     toast.success(t('drops.created'))
     closeDialog()
@@ -173,7 +173,7 @@ export function Drops() {
       <DropFormDialog
         open={dialog.open && dialog.kind === 'form'}
         onOpenChange={handleOpenChange}
-        onSaved={handleSaved}
+        onSaved={handleCreated}
       />
       {dialog.drop && (
         <ConfirmDeleteDialog

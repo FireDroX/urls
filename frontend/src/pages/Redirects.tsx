@@ -110,7 +110,7 @@ export function Redirects() {
     if (!open) closeDialog()
   }
 
-  function handleSaved(saved: Link) {
+  function handleCreated() {
     refresh()
     toast.success(t('links.created'))
     closeDialog()
@@ -173,7 +173,7 @@ export function Redirects() {
       <LinkFormDialog
         open={dialog.open && dialog.kind === 'form'}
         onOpenChange={handleOpenChange}
-        onSaved={handleSaved}
+        onSaved={handleCreated}
       />
       <DeleteLinkDialog
         open={dialog.open && dialog.kind === 'delete'}
