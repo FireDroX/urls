@@ -10,7 +10,7 @@ export function failureState(error: unknown): LoadState<never> {
   return isAxiosError(error) && error.response?.status === NOT_FOUND ? { status: 'notFound' } : { status: 'error' }
 }
 
-function useLoader<T>(load: (signal: AbortSignal) => Promise<T>): { state: LoadState<T>; reload: () => void } {
+function useLoader<T>(load: (signal: AbortSignal) => Promise<T>) {
   const [state, setState] = useState<LoadState<T>>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
 
@@ -29,7 +29,9 @@ function useLoader<T>(load: (signal: AbortSignal) => Promise<T>): { state: LoadS
 
   const reload = useCallback(() => setAttempt((value) => value + 1), [])
 
-  return { state, reload }
+  const replace = useCallback((value: T) => setState({ status: 'ready', value }), [])
+
+  return { state, reload, replace }
 }
 
 export function useLink(id: string) {

@@ -152,32 +152,14 @@ describe('Shares page', () => {
     expect(await screen.findByText('Ce slug est déjà pris.')).toBeInTheDocument()
   })
 
-  it('sends only the changed fields when editing', async () => {
-    const user = userEvent.setup()
-    vi.mocked(updateShare).mockResolvedValue({ ...detail, maxDownloads: 20 })
-    vi.mocked(listShares).mockResolvedValueOnce(pageOf([share])).mockResolvedValue(pageOf([{ ...share, maxDownloads: 20 }]))
-    render(<Shares />, { wrapper: Wrapper })
-
-    await openRowMenu(user)
-    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    const limit = screen.getByLabelText('Téléchargements maximum (facultatif)')
-    await user.clear(limit)
-    await user.type(limit, '20')
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
-
-    await waitFor(() => expect(updateShare).toHaveBeenCalledWith('photos', { maxDownloads: 20 }))
-    expect(await screen.findByText('3 / 20')).toBeInTheDocument()
-  })
-
-  it('calls no API when nothing changed', async () => {
+  it('opens the detail page from the edit action', async () => {
     const user = userEvent.setup()
     render(<Shares />, { wrapper: Wrapper })
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(await screen.findByText('fiche du partage')).toBeInTheDocument()
     expect(updateShare).not.toHaveBeenCalled()
   })
 

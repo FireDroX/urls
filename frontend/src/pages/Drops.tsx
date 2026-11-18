@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Inbox, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { DROP_LIST_STATES } from '#api/list-params'
-import { deleteDrop, dropUrl, updateDrop, type Drop } from '#api/drops'
+import { deleteDrop, dropDetailPath, dropUrl, updateDrop, type Drop } from '#api/drops'
 import { DropFormDialog } from '#components/drops/DropFormDialog'
 import { DropsTable, type DropActions } from '#components/drops/DropsTable'
 import type { OrganizationSelection } from '#components/links/LinkOrganizationSummary'
@@ -99,6 +100,7 @@ export function Drops() {
   }, [beyondLastPage, lastPage, setPage])
   const [dialog, setDialog] = useState<DialogState>({ kind: 'form', open: false })
   const copyLink = useCopyLink(dropUrl)
+  const navigate = useNavigate()
 
   function closeDialog() {
     setDialog((current) => ({ ...current, open: false }))
@@ -108,15 +110,9 @@ export function Drops() {
     if (!open) closeDialog()
   }
 
-  function handleSaved(saved: Drop) {
-    if (dialog.drop) {
-      replace(dialog.drop.id, saved)
-      refresh()
-      toast.success(t('drops.updated'))
-    } else {
-      refresh()
-      toast.success(t('drops.created'))
-    }
+  function handleCreated() {
+    refresh()
+    toast.success(t('drops.created'))
     closeDialog()
   }
 
@@ -140,7 +136,7 @@ export function Drops() {
 
   const actions: DropActions = {
     onCopy: (drop) => void copyLink(drop.id),
-    onEdit: (drop) => setDialog({ kind: 'form', drop, open: true }),
+    onEdit: (drop) => void navigate(dropDetailPath(drop.id)),
     onToggle: (drop) => void toggleDrop(drop),
     onDelete: (drop) => setDialog({ kind: 'delete', drop, open: true }),
   }
@@ -176,9 +172,8 @@ export function Drops() {
       />
       <DropFormDialog
         open={dialog.open && dialog.kind === 'form'}
-        drop={dialog.drop}
         onOpenChange={handleOpenChange}
-        onSaved={handleSaved}
+        onSaved={handleCreated}
       />
       {dialog.drop && (
         <ConfirmDeleteDialog

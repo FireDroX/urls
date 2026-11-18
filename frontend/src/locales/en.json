@@ -75,6 +75,9 @@
     "deleted": "Redirect deleted.",
     "disabledToast": "Redirect disabled.",
     "enabledToast": "Redirect enabled.",
+    "detail": {
+      "settings": "Settings"
+    },
     "form": {
       "createTitle": "New redirect",
       "createDescription": "The short link will send visitors to this destination.",
@@ -137,8 +140,7 @@
     "emptyBody": "Clicks on the short link will show up here, by day, source and country.",
     "loadFailedTitle": "Could not load the statistics",
     "notFoundTitle": "Redirect not found",
-    "backToList": "Back to redirects",
-    "destination": "Destination:"
+    "backToList": "Back to redirects"
   },
   "settings": {
     "title": "Settings",

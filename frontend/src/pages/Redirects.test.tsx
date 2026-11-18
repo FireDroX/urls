@@ -46,6 +46,17 @@ function apiError(status: number): AxiosError {
   return new AxiosError('failed', undefined, undefined, undefined, response)
 }
 
+function renderRedirects() {
+  return render(
+    <MemoryRouter initialEntries={['/redirects']}>
+      <Routes>
+        <Route path="/redirects" element={<Redirects />} />
+        <Route path="/redirects/:id" element={<p>fiche de la redirection</p>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 async function openRowMenu(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole('button', { name: 'Actions pour docs' }))
 }
@@ -122,21 +133,15 @@ describe('Redirects page', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Ce slug est déjà pris.')
   })
 
-  it('edits only the changed fields and updates the row', async () => {
+  it('opens the detail page from the edit action', async () => {
     const user = userEvent.setup()
-    vi.mocked(updateLink).mockResolvedValue({ ...link, id: 'guides' })
-    vi.mocked(listLinks).mockResolvedValueOnce(pageOf([link])).mockResolvedValue(pageOf([{ ...link, id: 'guides' }]))
-    render(<Redirects />, { wrapper: MemoryRouter })
+    renderRedirects()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    const slug = screen.getByLabelText('Slug')
-    await user.clear(slug)
-    await user.type(slug, 'guides')
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    expect(updateLink).toHaveBeenCalledWith('docs', { slug: 'guides' })
-    expect(await screen.findByText('/r/guides')).toBeInTheDocument()
+    expect(await screen.findByText('fiche de la redirection')).toBeInTheDocument()
+    expect(updateLink).not.toHaveBeenCalled()
   })
 
   it('disables a redirect from the row menu', async () => {
@@ -231,25 +236,6 @@ describe('Redirects page (tags and folder)', () => {
     await user.click(screen.getByRole('button', { name: 'Créer' }))
 
     expect(createLink).toHaveBeenCalledWith({ destination: 'https://example.org/', tagIds: ['tagA'], folderId: 'f1' })
-  })
-
-  it('does not send tags or folder when editing something else', async () => {
-    const user = userEvent.setup()
-    vi.mocked(listLinks).mockResolvedValue(pageOf([
-      { ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } },
-    ]))
-    vi.mocked(updateLink).mockResolvedValue(link)
-    render(<Redirects />, { wrapper: MemoryRouter })
-
-    await openRowMenu(user)
-    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    await waitFor(() => expect(listTags).toHaveBeenCalled())
-    const slug = screen.getByLabelText('Slug')
-    await user.clear(slug)
-    await user.type(slug, 'guides')
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
-
-    expect(updateLink).toHaveBeenCalledWith('docs', { slug: 'guides' })
   })
 
   it('translates a tag that disappeared and reloads the choices', async () => {

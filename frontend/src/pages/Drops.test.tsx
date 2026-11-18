@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { listFolders } from '#api/folders'
 import { createDrop, deleteDrop, listDrops, updateDrop, type Drop } from '#api/drops'
@@ -55,8 +55,11 @@ function apiError(status: number, headers: Record<string, string> = {}): AxiosEr
 
 function renderDrops() {
   return render(
-    <MemoryRouter>
-      <Drops />
+    <MemoryRouter initialEntries={['/drops']}>
+      <Routes>
+        <Route path="/drops" element={<Drops />} />
+        <Route path="/drops/:id" element={<p>fiche du dépôt</p>} />
+      </Routes>
     </MemoryRouter>,
   )
 }
@@ -221,46 +224,15 @@ describe('Drops page', () => {
     expect(await screen.findByText('Trop de requêtes, réessayez dans 30 s.')).toBeInTheDocument()
   })
 
-  it('sends only the changed fields when editing', async () => {
-    const user = userEvent.setup()
-    vi.mocked(updateDrop).mockResolvedValue({ ...drop, maxFiles: 8 })
-    vi.mocked(listDrops).mockResolvedValueOnce(pageOf([drop])).mockResolvedValue(pageOf([{ ...drop, maxFiles: 8 }]))
-    renderDrops()
-
-    await openRowMenu(user)
-    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    const maxFiles = screen.getByLabelText('Nombre de fichiers maximum')
-    await user.clear(maxFiles)
-    await user.type(maxFiles, '8')
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
-
-    await waitFor(() => expect(updateDrop).toHaveBeenCalledWith('docs', { maxFiles: 8 }))
-    expect(await screen.findByText('2 / 8')).toBeInTheDocument()
-  })
-
-  it('calls no API when nothing changed', async () => {
+  it('opens the detail page from the edit action', async () => {
     const user = userEvent.setup()
     renderDrops()
 
     await openRowMenu(user)
     await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(await screen.findByText('fiche du dépôt')).toBeInTheDocument()
     expect(updateDrop).not.toHaveBeenCalled()
-  })
-
-  it('translates a drop that no longer exists when editing', async () => {
-    const user = userEvent.setup()
-    vi.mocked(updateDrop).mockRejectedValue(apiError(404))
-    renderDrops()
-
-    await openRowMenu(user)
-    await user.click(await screen.findByRole('menuitem', { name: 'Modifier' }))
-    await user.type(screen.getByLabelText('Titre (facultatif)'), ' 2')
-    await user.click(screen.getByRole('button', { name: 'Enregistrer' }))
-
-    expect(await screen.findByText("Ce dépôt n'existe plus.")).toBeInTheDocument()
   })
 
   it('disables a drop', async () => {

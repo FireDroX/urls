@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.11 — 2026-11-18
+
+- La fiche d'une redirection permet désormais de la modifier, de la désactiver ou de la supprimer, comme celles des partages et des dépôts.
+- « Modifier » dans les listes de redirections, de partages et de dépôts ouvre la fiche du lien.
+
 ## 0.2.10 — 2026-11-18
 
 - Les listes des redirections, des partages et des dépôts ont une barre de recherche et des filtres (tag, dossier, état, tri) et sont paginées ; la vue est conservée dans l'adresse de la page, donc au rechargement et quand on la partage.

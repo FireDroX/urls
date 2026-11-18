@@ -75,6 +75,9 @@
     "deleted": "Redirection supprimée.",
     "disabledToast": "Redirection désactivée.",
     "enabledToast": "Redirection réactivée.",
+    "detail": {
+      "settings": "Réglages"
+    },
     "form": {
       "createTitle": "Nouvelle redirection",
       "createDescription": "Le lien court renverra vers la destination indiquée.",
@@ -137,8 +140,7 @@
     "emptyBody": "Les clics sur le lien court apparaîtront ici, par jour, par source et par pays.",
     "loadFailedTitle": "Impossible de charger les statistiques",
     "notFoundTitle": "Redirection introuvable",
-    "backToList": "Retour aux redirections",
-    "destination": "Destination :"
+    "backToList": "Retour aux redirections"
   },
   "settings": {
     "title": "Réglages",
