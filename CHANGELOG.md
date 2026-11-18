@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.9 — 2026-11-18
+
+- Dépendances : l'alerte de sécurité sur picomatch (GHSA-fc5q-39xc-vjpf, sans correctif publié) est ignorée par l'audit : la bibliothèque ne sert qu'à charger les fichiers internes de l'API et ne reçoit jamais de donnée venant d'une requête.
+
 ## 0.2.8 — 2026-11-17
 
 - Les données de suivi des visites (clics, vues, téléchargements et envois : empreinte de l'IP, navigateur, provenance, pays) sont supprimées automatiquement après 90 jours, chaque nuit.

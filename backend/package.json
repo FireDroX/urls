@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "url.addrien.fr API: NestJS + TypeORM (MySQL) with S3 object storage.",
   "author": "FireDroX <contact@addrien.fr>",
   "private": true,
