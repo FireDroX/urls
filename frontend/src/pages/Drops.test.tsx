@@ -131,7 +131,9 @@ describe('Drops page', () => {
 
   it('proposes a 7 day expiry and posts the creation', async () => {
     const user = userEvent.setup()
-    vi.mocked(createDrop).mockResolvedValue({ ...drop, id: 'recus', title: 'Reçus' })
+    const created = { ...drop, id: 'recus', title: 'Reçus' }
+    vi.mocked(createDrop).mockResolvedValue(created)
+    vi.mocked(listDrops).mockResolvedValueOnce(pageOf([drop])).mockResolvedValue(pageOf([created, drop]))
     renderDrops()
 
     await openCreateForm(user)
@@ -222,6 +224,7 @@ describe('Drops page', () => {
   it('sends only the changed fields when editing', async () => {
     const user = userEvent.setup()
     vi.mocked(updateDrop).mockResolvedValue({ ...drop, maxFiles: 8 })
+    vi.mocked(listDrops).mockResolvedValueOnce(pageOf([drop])).mockResolvedValue(pageOf([{ ...drop, maxFiles: 8 }]))
     renderDrops()
 
     await openRowMenu(user)
@@ -263,6 +266,9 @@ describe('Drops page', () => {
   it('disables a drop', async () => {
     const user = userEvent.setup()
     vi.mocked(updateDrop).mockResolvedValue({ ...drop, disabled: true, state: 'disabled' })
+    vi.mocked(listDrops)
+      .mockResolvedValueOnce(pageOf([drop]))
+      .mockResolvedValue(pageOf([{ ...drop, disabled: true, state: 'disabled' }]))
     renderDrops()
 
     await openRowMenu(user)
@@ -275,6 +281,7 @@ describe('Drops page', () => {
   it('deletes a drop only after confirmation', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteDrop).mockResolvedValue()
+    vi.mocked(listDrops).mockResolvedValueOnce(pageOf([drop])).mockResolvedValue(pageOf([]))
     renderDrops()
 
     await openRowMenu(user)
@@ -307,5 +314,19 @@ describe('Drops page (tags and folder)', () => {
     const row = (await screen.findByText('Documents')).closest('tr')!
     expect(within(row).getByText('Docs')).toBeInTheDocument()
     expect(within(row).getByText('Projects')).toBeInTheDocument()
+  })
+})
+
+describe('Drops page (filters)', () => {
+  it('reads the drop states from the URL and shows the filtered empty state', async () => {
+    vi.mocked(listDrops).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 50 })
+    render(
+      <MemoryRouter initialEntries={['/drops?state=full&q=x']}>
+        <Drops />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Aucun résultat')).toBeInTheDocument()
+    expect(listDrops).toHaveBeenCalledWith({ q: 'x', state: 'full', page: 1, pageSize: 50 })
   })
 })

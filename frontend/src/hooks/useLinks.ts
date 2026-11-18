@@ -1,26 +1,30 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchAllPages } from '#utils/fetch-all-pages'
+import type { ListParams } from '#api/list-params'
 import { listLinks, type Link } from '#api/links'
 
-export type LinksState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; links: Link[] }
+export type LinksState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; links: Link[]; total: number; page: number; pageSize: number }
 
 export interface UseLinks {
   state: LinksState
   reload: () => void
-  add: (link: Link) => void
+  refresh: () => void
   replace: (previousId: string, link: Link) => void
-  remove: (id: string) => void
 }
 
-export function useLinks(): UseLinks {
+export function useLinks(params: ListParams): UseLinks {
   const [state, setState] = useState<LinksState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const key = JSON.stringify(params)
 
   useEffect(() => {
     let cancelled = false
-    fetchAllPages(listLinks)
-      .then((links) => {
-        if (!cancelled) setState({ status: 'ready', links })
+    listLinks(JSON.parse(key) as ListParams)
+      .then((result) => {
+        if (cancelled) return
+        setState({ status: 'ready', links: result.items, total: result.total, page: result.page, pageSize: result.pageSize })
       })
       .catch(() => {
         if (!cancelled) setState({ status: 'error' })
@@ -28,25 +32,22 @@ export function useLinks(): UseLinks {
     return () => {
       cancelled = true
     }
-  }, [attempt])
-
-  const update = useCallback((change: (links: Link[]) => Link[]) => {
-    setState((current) => (current.status === 'ready' ? { status: 'ready', links: change(current.links) } : current))
-  }, [])
+  }, [key, attempt])
 
   const reload = useCallback(() => {
     setState({ status: 'loading' })
     setAttempt((value) => value + 1)
   }, [])
 
-  const add = useCallback((link: Link) => update((links) => [link, ...links]), [update])
+  const refresh = useCallback(() => setAttempt((value) => value + 1), [])
 
-  const replace = useCallback(
-    (previousId: string, link: Link) => update((links) => links.map((item) => (item.id === previousId ? link : item))),
-    [update],
-  )
+  const replace = useCallback((previousId: string, link: Link) => {
+    setState((current) =>
+      current.status === 'ready'
+        ? { ...current, links: current.links.map((item) => (item.id === previousId ? link : item)) }
+        : current,
+    )
+  }, [])
 
-  const remove = useCallback((id: string) => update((links) => links.filter((item) => item.id !== id)), [update])
-
-  return { state, reload, add, replace, remove }
+  return { state, reload, refresh, replace }
 }

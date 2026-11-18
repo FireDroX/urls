@@ -82,7 +82,9 @@ describe('Redirects page', () => {
 
   it('creates a redirect and adds it to the list', async () => {
     const user = userEvent.setup()
-    vi.mocked(createLink).mockResolvedValue({ ...link, id: 'new-one', destination: 'https://example.org/' })
+    const created = { ...link, id: 'new-one', destination: 'https://example.org/' }
+    vi.mocked(createLink).mockResolvedValue(created)
+    vi.mocked(listLinks).mockResolvedValueOnce(pageOf([link])).mockResolvedValueOnce(pageOf([created, link]))
     render(<Redirects />, { wrapper: MemoryRouter })
 
     await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
@@ -123,6 +125,7 @@ describe('Redirects page', () => {
   it('edits only the changed fields and updates the row', async () => {
     const user = userEvent.setup()
     vi.mocked(updateLink).mockResolvedValue({ ...link, id: 'guides' })
+    vi.mocked(listLinks).mockResolvedValueOnce(pageOf([link])).mockResolvedValue(pageOf([{ ...link, id: 'guides' }]))
     render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)
@@ -139,6 +142,7 @@ describe('Redirects page', () => {
   it('disables a redirect from the row menu', async () => {
     const user = userEvent.setup()
     vi.mocked(updateLink).mockResolvedValue({ ...link, disabled: true })
+    vi.mocked(listLinks).mockResolvedValueOnce(pageOf([link])).mockResolvedValue(pageOf([{ ...link, disabled: true }]))
     render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)
@@ -151,6 +155,7 @@ describe('Redirects page', () => {
   it('deletes a redirect after confirmation', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteLink).mockResolvedValue()
+    vi.mocked(listLinks).mockResolvedValueOnce(pageOf([link])).mockResolvedValue(pageOf([]))
     render(<Redirects />, { wrapper: MemoryRouter })
 
     await openRowMenu(user)
@@ -256,10 +261,84 @@ describe('Redirects page (tags and folder)', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Nouvelle redirection' }))
     await user.type(screen.getByLabelText('Destination'), 'https://example.org/')
-    await waitFor(() => expect(listTags).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(listTags).toHaveBeenCalledTimes(2))
     await user.click(screen.getByRole('button', { name: 'Créer' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent("n'existe plus")
-    await waitFor(() => expect(listTags).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(listTags).toHaveBeenCalledTimes(3))
+  })
+})
+
+function renderAt(entry: string) {
+  return render(
+    <MemoryRouter initialEntries={[entry]}>
+      <Redirects />
+    </MemoryRouter>,
+  )
+}
+
+describe('Redirects page (filters and pagination)', () => {
+  it('asks the API for the filters found in the URL', async () => {
+    renderAt('/redirects?q=docs&tag=tagA&folder=none&state=expired&sort=slug_asc&page=2&bogus=1')
+
+    await waitFor(() => expect(listLinks).toHaveBeenCalled())
+
+    expect(listLinks).toHaveBeenCalledWith({
+      q: 'docs',
+      tag: 'tagA',
+      folder: 'none',
+      state: 'expired',
+      sort: 'slug_asc',
+      page: 2,
+      pageSize: 50,
+    })
+  })
+
+  it('shows the filtered empty state and clears the filters', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listLinks).mockResolvedValueOnce({ items: [], total: 0, page: 1, pageSize: 50 })
+    renderAt('/redirects?q=x')
+
+    expect(await screen.findByText('Aucun résultat')).toBeInTheDocument()
+    expect(screen.queryByText(/Aucune redirection pour/)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Effacer les filtres' }))
+
+    expect(await screen.findByText('/r/docs')).toBeInTheDocument()
+    expect(vi.mocked(listLinks).mock.calls.at(-1)?.[0]).toEqual({ page: 1, pageSize: 50 })
+    expect(screen.getByRole('searchbox')).toHaveValue('')
+  })
+
+  it('shows the plain empty state when there is no filter', async () => {
+    vi.mocked(listLinks).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 50 })
+    renderAt('/redirects')
+
+    expect(await screen.findByText(/Aucune redirection pour/)).toBeInTheDocument()
+    expect(screen.queryByText('Aucun résultat')).not.toBeInTheDocument()
+  })
+
+  it('filters by a tag clicked in the table', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listLinks).mockResolvedValue(
+      pageOf([{ ...link, tags: [{ id: 'tagA', name: 'Docs', color: '#112233' }], folder: { id: 'f1', name: 'Projects' } }]),
+    )
+    renderAt('/redirects')
+
+    await user.click(await screen.findByRole('button', { name: 'Filtrer par le tag Docs' }))
+    await waitFor(() => expect(vi.mocked(listLinks).mock.calls.at(-1)?.[0]).toMatchObject({ tag: 'tagA', page: 1 }))
+
+    await user.click(await screen.findByRole('button', { name: 'Filtrer par le dossier Projects' }))
+    await waitFor(() => expect(vi.mocked(listLinks).mock.calls.at(-1)?.[0]).toMatchObject({ tag: 'tagA', folder: 'f1' }))
+  })
+
+  it('shows the total and requests the next page', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listLinks).mockResolvedValue({ items: [link], total: 120, page: 1, pageSize: 50 })
+    renderAt('/redirects')
+
+    expect(await screen.findByText('120 résultats')).toBeInTheDocument()
+    expect(screen.getByText('Page 1 sur 3')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Page suivante' }))
+
+    await waitFor(() => expect(vi.mocked(listLinks).mock.calls.at(-1)?.[0]).toMatchObject({ page: 2 }))
   })
 })

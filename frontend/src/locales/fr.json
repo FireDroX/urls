@@ -589,7 +589,13 @@
     "tooManyRequestsNoDelay": "Trop de requêtes, réessayez dans un instant."
   },
   "units": {
-    "bytes": ["o", "Kio", "Mio", "Gio", "Tio"]
+    "bytes": [
+      "o",
+      "Kio",
+      "Mio",
+      "Gio",
+      "Tio"
+    ]
   },
   "linkOrganization": {
     "tags": "Tags",
@@ -609,6 +615,42 @@
     "errors": {
       "tagNotFound": "Un des tags choisis n'existe plus : la liste a été relue.",
       "folderNotFound": "Le dossier choisi n'existe plus : la liste a été relue."
+    }
+  },
+  "listFilters": {
+    "search": "Rechercher",
+    "placeholders": {
+      "links": "Rechercher un slug ou une destination",
+      "shares": "Rechercher un slug",
+      "drops": "Rechercher un slug ou un titre"
+    },
+    "tag": "Filtrer par tag",
+    "folder": "Filtrer par dossier",
+    "state": "Filtrer par état",
+    "sort": "Trier",
+    "allTags": "Tous les tags",
+    "allFolders": "Tous les dossiers",
+    "noFolder": "Sans dossier",
+    "allStates": "Tous les états",
+    "sorts": {
+      "created_desc": "Plus récents",
+      "created_asc": "Plus anciens",
+      "updated_desc": "Modifiés récemment",
+      "slug_asc": "Slug A → Z",
+      "slug_desc": "Slug Z → A"
+    },
+    "filterByTag": "Filtrer par le tag {{name}}",
+    "filterByFolder": "Filtrer par le dossier {{name}}",
+    "emptyTitle": "Aucun résultat",
+    "emptyBody": "Aucun élément ne correspond à ces filtres.",
+    "clear": "Effacer les filtres",
+    "pagination": {
+      "label": "Pagination",
+      "total_one": "{{count}} résultat",
+      "total_other": "{{count}} résultats",
+      "pageOf": "Page {{page}} sur {{pageCount}}",
+      "previous": "Page précédente",
+      "next": "Page suivante"
     }
   }
 }

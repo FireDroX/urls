@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router'
 import { redirectPath } from '#api/redirects'
 import type { Link } from '#api/links'
-import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
+import { LinkOrganizationSummary, type OrganizationSelection } from '#components/links/LinkOrganizationSummary'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -29,9 +29,10 @@ interface LinkRowProps {
   link: Link
   formatDate: (iso: string) => string
   actions: LinkActions
+  selection: OrganizationSelection
 }
 
-function LinkRow({ link, formatDate, actions }: LinkRowProps) {
+function LinkRow({ link, formatDate, actions, selection }: LinkRowProps) {
   const { t } = useTranslation()
 
   return (
@@ -54,7 +55,7 @@ function LinkRow({ link, formatDate, actions }: LinkRowProps) {
             <Copy />
           </Button>
         </div>
-        <LinkOrganizationSummary tags={link.tags} folder={link.folder} className="mt-1" />
+        <LinkOrganizationSummary tags={link.tags} folder={link.folder} className="mt-1" {...selection} />
       </TableCell>
       <TableCell className="max-w-xs">
         <span className="block truncate" title={link.destination ?? undefined}>
@@ -99,7 +100,13 @@ function LinkRow({ link, formatDate, actions }: LinkRowProps) {
   )
 }
 
-export function LinksTable({ links, actions }: { links: Link[]; actions: LinkActions }) {
+interface LinksTableProps {
+  links: Link[]
+  actions: LinkActions
+  selection?: OrganizationSelection
+}
+
+export function LinksTable({ links, actions, selection = {} }: LinksTableProps) {
   const { t, i18n } = useTranslation()
   const formatDate = useMemo(() => {
     const formatter = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
@@ -122,7 +129,7 @@ export function LinksTable({ links, actions }: { links: Link[]; actions: LinkAct
         </TableHeader>
         <TableBody>
           {links.map((link) => (
-            <LinkRow key={link.id} link={link} formatDate={formatDate} actions={actions} />
+            <LinkRow key={link.id} link={link} formatDate={formatDate} actions={actions} selection={selection} />
           ))}
         </TableBody>
       </Table>

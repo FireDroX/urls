@@ -3,7 +3,7 @@ import { Copy, Ellipsis, Pencil, Power, PowerOff, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router'
 import { dropDetailPath, dropUrl, type Drop } from '#api/drops'
-import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
+import { LinkOrganizationSummary, type OrganizationSelection } from '#components/links/LinkOrganizationSummary'
 import { DropStateBadge } from '#components/drops/DropStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -27,9 +27,10 @@ interface DropRowProps {
   drop: Drop
   formatDate: (iso: string) => string
   actions: DropActions
+  selection: OrganizationSelection
 }
 
-function DropRow({ drop, formatDate, actions }: DropRowProps) {
+function DropRow({ drop, formatDate, actions, selection }: DropRowProps) {
   const { t } = useTranslation()
   const formatSize = useFileSize()
 
@@ -43,7 +44,7 @@ function DropRow({ drop, formatDate, actions }: DropRowProps) {
         >
           {drop.title ?? t('drops.untitled')}
         </RouterLink>
-        <LinkOrganizationSummary tags={drop.tags} folder={drop.folder} className="mt-1" />
+        <LinkOrganizationSummary tags={drop.tags} folder={drop.folder} className="mt-1" {...selection} />
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
@@ -102,7 +103,13 @@ function DropRow({ drop, formatDate, actions }: DropRowProps) {
   )
 }
 
-export function DropsTable({ drops, actions }: { drops: Drop[]; actions: DropActions }) {
+interface DropsTableProps {
+  drops: Drop[]
+  actions: DropActions
+  selection?: OrganizationSelection
+}
+
+export function DropsTable({ drops, actions, selection = {} }: DropsTableProps) {
   const { t, i18n } = useTranslation()
   const formatDate = useMemo(() => {
     const formatter = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
@@ -127,7 +134,7 @@ export function DropsTable({ drops, actions }: { drops: Drop[]; actions: DropAct
         </TableHeader>
         <TableBody>
           {drops.map((drop) => (
-            <DropRow key={drop.id} drop={drop} formatDate={formatDate} actions={actions} />
+            <DropRow key={drop.id} drop={drop} formatDate={formatDate} actions={actions} selection={selection} />
           ))}
         </TableBody>
       </Table>

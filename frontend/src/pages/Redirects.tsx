@@ -1,21 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
+import { LINK_LIST_STATES } from '#api/list-params'
 import { updateLink, type Link } from '#api/links'
 import { DeleteLinkDialog } from '#components/links/DeleteLinkDialog'
 import { LinkFormDialog } from '#components/links/LinkFormDialog'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
+import type { OrganizationSelection } from '#components/links/LinkOrganizationSummary'
 import { LinksTable, type LinkActions } from '#components/links/LinksTable'
+import { FilteredEmpty } from '#components/lists/FilteredEmpty'
+import { ListFilterBar } from '#components/lists/ListFilterBar'
+import { ListPagination } from '#components/lists/ListPagination'
 import { Button } from '#components/ui/button'
 import { Skeleton } from '#components/ui/skeleton'
 import { useCopyLink } from '#hooks/useCopyLink'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
+import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
+import { useListView } from '#hooks/useListView'
 import { useLinks, type LinksState } from '#hooks/useLinks'
 import { extractErrorMessage } from '#lib/api-errors'
 import { linkErrorMessages } from '#lib/link-errors'
 import { linkDetailPath } from '#utils/link-stats'
+import { listViewToParams } from '#utils/list-view'
 
 const SKELETON_ROWS = 3
 
@@ -25,7 +33,17 @@ interface DialogState {
   open: boolean
 }
 
-function LinksContent({ state, actions, onRetry }: { state: LinksState; actions: LinkActions; onRetry: () => void }) {
+interface LinksContentProps {
+  state: LinksState
+  actions: LinkActions
+  isFiltered: boolean
+  selection: OrganizationSelection
+  onRetry: () => void
+  onClear: () => void
+  onPageChange: (page: number) => void
+}
+
+function LinksContent({ state, actions, isFiltered, selection, onRetry, onClear, onPageChange }: LinksContentProps) {
   const { t } = useTranslation()
 
   if (state.status === 'loading') {
@@ -50,16 +68,36 @@ function LinksContent({ state, actions, onRetry }: { state: LinksState; actions:
       />
     )
   }
-  if (state.links.length === 0) {
+  if (state.total === 0 && isFiltered) return <FilteredEmpty onClear={onClear} />
+  if (state.total === 0) {
     return <LinksPlaceholder title={t('links.emptyTitle')} body={t('links.emptyBody')} />
   }
-  return <LinksTable links={state.links} actions={actions} />
+  return (
+    <>
+      <LinksTable links={state.links} actions={actions} selection={selection} />
+      <ListPagination page={state.page} pageSize={state.pageSize} total={state.total} onPageChange={onPageChange} />
+    </>
+  )
 }
 
 export function Redirects() {
   const { t } = useTranslation()
   useDocumentTitle(t('links.title'))
-  const { state, reload, add, replace, remove } = useLinks()
+  const { view, setFilters, setPage, clearFilters, isFiltered } = useListView(LINK_LIST_STATES)
+  const params = useMemo(() => listViewToParams(view), [view])
+  const { state, reload, refresh, replace } = useLinks(params)
+  const { options } = useLinkOrganizationOptions()
+  const selection: OrganizationSelection = {
+    onTagSelect: (tag) => setFilters({ tag: tag.id }),
+    onFolderSelect: (folder) => setFilters({ folder: folder.id }),
+  }
+  const states = LINK_LIST_STATES.map((value) => ({ value, label: t(`links.state.${value}`) }))
+  const lastPage = state.status === 'ready' ? Math.max(1, Math.ceil(state.total / state.pageSize)) : null
+  const beyondLastPage = state.status === 'ready' && state.links.length === 0 && state.total > 0
+
+  useEffect(() => {
+    if (beyondLastPage && lastPage !== null) setPage(lastPage)
+  }, [beyondLastPage, lastPage, setPage])
   const [dialog, setDialog] = useState<DialogState>({ kind: 'form', open: false })
   const copyLink = useCopyLink()
   const navigate = useNavigate()
@@ -75,16 +113,17 @@ export function Redirects() {
   function handleSaved(saved: Link) {
     if (dialog.link) {
       replace(dialog.link.id, saved)
+      refresh()
       toast.success(t('links.updated'))
     } else {
-      add(saved)
+      refresh()
       toast.success(t('links.created'))
     }
     closeDialog()
   }
 
-  function handleDeleted(deleted: Link) {
-    remove(deleted.id)
+  function handleDeleted() {
+    refresh()
     toast.success(t('links.deleted'))
     closeDialog()
   }
@@ -93,6 +132,7 @@ export function Redirects() {
     try {
       const saved = await updateLink(link.id, { disabled: !link.disabled })
       replace(link.id, saved)
+      refresh()
       toast.success(saved.disabled ? t('links.disabledToast') : t('links.enabledToast'))
     } catch (error) {
       toast.error(extractErrorMessage(error, undefined, linkErrorMessages(t)))
@@ -119,7 +159,23 @@ export function Redirects() {
           {t('links.new')}
         </Button>
       </div>
-      <LinksContent state={state} actions={actions} onRetry={reload} />
+      <ListFilterBar
+        view={view}
+        states={states}
+        tags={options.tags}
+        folders={options.folders}
+        searchPlaceholder={t('listFilters.placeholders.links')}
+        onChange={setFilters}
+      />
+      <LinksContent
+        state={state}
+        actions={actions}
+        isFiltered={isFiltered}
+        selection={selection}
+        onRetry={reload}
+        onClear={clearFilters}
+        onPageChange={setPage}
+      />
       <LinkFormDialog
         open={dialog.open && dialog.kind === 'form'}
         link={dialog.link}

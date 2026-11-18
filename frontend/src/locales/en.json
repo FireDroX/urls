@@ -589,7 +589,13 @@
     "tooManyRequestsNoDelay": "Too many requests, try again in a moment."
   },
   "units": {
-    "bytes": ["B", "KiB", "MiB", "GiB", "TiB"]
+    "bytes": [
+      "B",
+      "KiB",
+      "MiB",
+      "GiB",
+      "TiB"
+    ]
   },
   "linkOrganization": {
     "tags": "Tags",
@@ -609,6 +615,42 @@
     "errors": {
       "tagNotFound": "One of the chosen tags no longer exists: the list has been reloaded.",
       "folderNotFound": "The chosen folder no longer exists: the list has been reloaded."
+    }
+  },
+  "listFilters": {
+    "search": "Search",
+    "placeholders": {
+      "links": "Search a slug or a destination",
+      "shares": "Search a slug",
+      "drops": "Search a slug or a title"
+    },
+    "tag": "Filter by tag",
+    "folder": "Filter by folder",
+    "state": "Filter by state",
+    "sort": "Sort",
+    "allTags": "All tags",
+    "allFolders": "All folders",
+    "noFolder": "No folder",
+    "allStates": "All states",
+    "sorts": {
+      "created_desc": "Newest",
+      "created_asc": "Oldest",
+      "updated_desc": "Recently modified",
+      "slug_asc": "Slug A → Z",
+      "slug_desc": "Slug Z → A"
+    },
+    "filterByTag": "Filter by tag {{name}}",
+    "filterByFolder": "Filter by folder {{name}}",
+    "emptyTitle": "No results",
+    "emptyBody": "No item matches these filters.",
+    "clear": "Clear filters",
+    "pagination": {
+      "label": "Pagination",
+      "total_one": "{{count}} result",
+      "total_other": "{{count}} results",
+      "pageOf": "Page {{page}} of {{pageCount}}",
+      "previous": "Previous page",
+      "next": "Next page"
     }
   }
 }

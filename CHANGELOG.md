@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.10 — 2026-11-18
+
+- Les listes des redirections, des partages et des dépôts ont une barre de recherche et des filtres (tag, dossier, état, tri) et sont paginées ; la vue est conservée dans l'adresse de la page, donc au rechargement et quand on la partage.
+- Cliquer un tag ou un dossier dans une liste filtre la liste dessus ; quand aucun élément ne correspond, un bouton efface les filtres.
+
 ## 0.2.9 — 2026-11-18
 
 - Dépendances : l'alerte de sécurité sur picomatch (GHSA-fc5q-39xc-vjpf, sans correctif publié) est ignorée par l'audit : la bibliothèque ne sert qu'à charger les fichiers internes de l'API et ne reçoit jamais de donnée venant d'une requête.
