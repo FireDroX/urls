@@ -18,3 +18,9 @@ auditConfig:
     # `@import "shadcn/tailwind.css"` in frontend/src/index.css. Never bundled
     # in the app nor shipped in the images, and never fed untrusted input.
     - GHSA-gcqx-w48m-w2h4
+    # picomatch ReDoS on single-branch repeated extglobs (high, no patched
+    # version, <= 4.0.7): only reached through typeorm > tinyglobby, which
+    # globs the entity and migration paths hard-coded in backend/src/config.
+    # No glob pattern ever comes from a request. Drop this once picomatch
+    # ships a fix.
+    - GHSA-fc5q-39xc-vjpf
