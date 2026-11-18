@@ -1,19 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Inbox, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { DROP_LIST_STATES } from '#api/list-params'
 import { deleteDrop, dropUrl, updateDrop, type Drop } from '#api/drops'
 import { DropFormDialog } from '#components/drops/DropFormDialog'
 import { DropsTable, type DropActions } from '#components/drops/DropsTable'
+import type { OrganizationSelection } from '#components/links/LinkOrganizationSummary'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
+import { FilteredEmpty } from '#components/lists/FilteredEmpty'
+import { ListFilterBar } from '#components/lists/ListFilterBar'
+import { ListPagination } from '#components/lists/ListPagination'
 import { ConfirmDeleteDialog } from '#components/shares/ConfirmDeleteDialog'
 import { Button } from '#components/ui/button'
 import { Skeleton } from '#components/ui/skeleton'
 import { useCopyLink } from '#hooks/useCopyLink'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
+import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
+import { useListView } from '#hooks/useListView'
 import { useDrops, type DropsState } from '#hooks/useDrops'
 import { extractErrorMessage } from '#lib/api-errors'
 import { dropErrorMessages } from '#lib/drop-errors'
+import { listViewToParams } from '#utils/list-view'
 
 const SKELETON_ROWS = 3
 
@@ -23,7 +31,17 @@ interface DialogState {
   open: boolean
 }
 
-function DropsContent({ state, actions, onRetry }: { state: DropsState; actions: DropActions; onRetry: () => void }) {
+interface DropsContentProps {
+  state: DropsState
+  actions: DropActions
+  isFiltered: boolean
+  selection: OrganizationSelection
+  onRetry: () => void
+  onClear: () => void
+  onPageChange: (page: number) => void
+}
+
+function DropsContent({ state, actions, isFiltered, selection, onRetry, onClear, onPageChange }: DropsContentProps) {
   const { t } = useTranslation()
 
   if (state.status === 'loading') {
@@ -49,16 +67,36 @@ function DropsContent({ state, actions, onRetry }: { state: DropsState; actions:
       />
     )
   }
-  if (state.drops.length === 0) {
+  if (state.total === 0 && isFiltered) return <FilteredEmpty onClear={onClear} />
+  if (state.total === 0) {
     return <LinksPlaceholder icon={Inbox} title={t('drops.emptyTitle')} body={t('drops.emptyBody')} />
   }
-  return <DropsTable drops={state.drops} actions={actions} />
+  return (
+    <>
+      <DropsTable drops={state.drops} actions={actions} selection={selection} />
+      <ListPagination page={state.page} pageSize={state.pageSize} total={state.total} onPageChange={onPageChange} />
+    </>
+  )
 }
 
 export function Drops() {
   const { t } = useTranslation()
   useDocumentTitle(t('drops.title'))
-  const { state, reload, add, replace, remove } = useDrops()
+  const { view, setFilters, setPage, clearFilters, isFiltered } = useListView(DROP_LIST_STATES)
+  const params = useMemo(() => listViewToParams(view), [view])
+  const { state, reload, refresh, replace } = useDrops(params)
+  const { options } = useLinkOrganizationOptions()
+  const selection: OrganizationSelection = {
+    onTagSelect: (tag) => setFilters({ tag: tag.id }),
+    onFolderSelect: (folder) => setFilters({ folder: folder.id }),
+  }
+  const states = DROP_LIST_STATES.map((value) => ({ value, label: t(`drops.state.${value}`) }))
+  const lastPage = state.status === 'ready' ? Math.max(1, Math.ceil(state.total / state.pageSize)) : null
+  const beyondLastPage = state.status === 'ready' && state.drops.length === 0 && state.total > 0
+
+  useEffect(() => {
+    if (beyondLastPage && lastPage !== null) setPage(lastPage)
+  }, [beyondLastPage, lastPage, setPage])
   const [dialog, setDialog] = useState<DialogState>({ kind: 'form', open: false })
   const copyLink = useCopyLink(dropUrl)
 
@@ -73,9 +111,10 @@ export function Drops() {
   function handleSaved(saved: Drop) {
     if (dialog.drop) {
       replace(dialog.drop.id, saved)
+      refresh()
       toast.success(t('drops.updated'))
     } else {
-      add(saved)
+      refresh()
       toast.success(t('drops.created'))
     }
     closeDialog()
@@ -83,7 +122,7 @@ export function Drops() {
 
   async function confirmDelete(drop: Drop) {
     await deleteDrop(drop.id)
-    remove(drop.id)
+    refresh()
     toast.success(t('drops.deleted'))
     closeDialog()
   }
@@ -92,6 +131,7 @@ export function Drops() {
     try {
       const saved = await updateDrop(drop.id, { disabled: !drop.disabled })
       replace(drop.id, saved)
+      refresh()
       toast.success(saved.disabled ? t('drops.disabledToast') : t('drops.enabledToast'))
     } catch (error) {
       toast.error(extractErrorMessage(error, undefined, dropErrorMessages(t)))
@@ -117,7 +157,23 @@ export function Drops() {
           {t('drops.new')}
         </Button>
       </div>
-      <DropsContent state={state} actions={actions} onRetry={reload} />
+      <ListFilterBar
+        view={view}
+        states={states}
+        tags={options.tags}
+        folders={options.folders}
+        searchPlaceholder={t('listFilters.placeholders.drops')}
+        onChange={setFilters}
+      />
+      <DropsContent
+        state={state}
+        actions={actions}
+        isFiltered={isFiltered}
+        selection={selection}
+        onRetry={reload}
+        onClear={clearFilters}
+        onPageChange={setPage}
+      />
       <DropFormDialog
         open={dialog.open && dialog.kind === 'form'}
         drop={dialog.drop}

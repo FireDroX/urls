@@ -3,7 +3,7 @@ import { Copy, Ellipsis, FolderOpen, Pencil, Power, PowerOff, Trash } from 'luci
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink } from 'react-router'
 import { shareDetailPath, sharePath, type Share } from '#api/shares'
-import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
+import { LinkOrganizationSummary, type OrganizationSelection } from '#components/links/LinkOrganizationSummary'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -28,9 +28,10 @@ interface ShareRowProps {
   share: Share
   formatDate: (iso: string) => string
   actions: ShareActions
+  selection: OrganizationSelection
 }
 
-function ShareRow({ share, formatDate, actions }: ShareRowProps) {
+function ShareRow({ share, formatDate, actions, selection }: ShareRowProps) {
   const { t } = useTranslation()
   const formatSize = useFileSize()
 
@@ -54,7 +55,7 @@ function ShareRow({ share, formatDate, actions }: ShareRowProps) {
             <Copy />
           </Button>
         </div>
-        <LinkOrganizationSummary tags={share.tags} folder={share.folder} className="mt-1" />
+        <LinkOrganizationSummary tags={share.tags} folder={share.folder} className="mt-1" {...selection} />
       </TableCell>
       <TableCell className="whitespace-nowrap">
         {t('shares.fileSummary', { count: share.fileCount, size: formatSize(share.totalSize) })}
@@ -102,7 +103,13 @@ function ShareRow({ share, formatDate, actions }: ShareRowProps) {
   )
 }
 
-export function SharesTable({ shares, actions }: { shares: Share[]; actions: ShareActions }) {
+interface SharesTableProps {
+  shares: Share[]
+  actions: ShareActions
+  selection?: OrganizationSelection
+}
+
+export function SharesTable({ shares, actions, selection = {} }: SharesTableProps) {
   const { t, i18n } = useTranslation()
   const formatDate = useMemo(() => {
     const formatter = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
@@ -126,7 +133,7 @@ export function SharesTable({ shares, actions }: { shares: Share[]; actions: Sha
         </TableHeader>
         <TableBody>
           {shares.map((share) => (
-            <ShareRow key={share.id} share={share} formatDate={formatDate} actions={actions} />
+            <ShareRow key={share.id} share={share} formatDate={formatDate} actions={actions} selection={selection} />
           ))}
         </TableBody>
       </Table>

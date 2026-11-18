@@ -155,6 +155,7 @@ describe('Shares page', () => {
   it('sends only the changed fields when editing', async () => {
     const user = userEvent.setup()
     vi.mocked(updateShare).mockResolvedValue({ ...detail, maxDownloads: 20 })
+    vi.mocked(listShares).mockResolvedValueOnce(pageOf([share])).mockResolvedValue(pageOf([{ ...share, maxDownloads: 20 }]))
     render(<Shares />, { wrapper: Wrapper })
 
     await openRowMenu(user)
@@ -195,6 +196,7 @@ describe('Shares page', () => {
   it('deletes a share only after confirmation', async () => {
     const user = userEvent.setup()
     vi.mocked(deleteShare).mockResolvedValue()
+    vi.mocked(listShares).mockResolvedValueOnce(pageOf([share])).mockResolvedValue(pageOf([]))
     render(<Shares />, { wrapper: Wrapper })
 
     await openRowMenu(user)
@@ -227,5 +229,22 @@ describe('Shares page (tags and folder)', () => {
     const row = (await screen.findByText('/d/photos')).closest('tr')!
     expect(within(row).getByText('Docs')).toBeInTheDocument()
     expect(within(row).getByText('Projects')).toBeInTheDocument()
+  })
+})
+
+describe('Shares page (filters)', () => {
+  it('shows the filtered empty state when a filter finds nothing', async () => {
+    vi.mocked(listShares).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 50 })
+    render(
+      <MemoryRouter initialEntries={['/shares?q=x']}>
+        <UploadsProvider>
+          <Shares />
+        </UploadsProvider>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Aucun résultat')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Effacer les filtres' })).toBeInTheDocument()
+    expect(listShares).toHaveBeenCalledWith({ q: 'x', page: 1, pageSize: 50 })
   })
 })

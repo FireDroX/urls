@@ -1,26 +1,30 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchAllPages } from '#utils/fetch-all-pages'
+import type { ListParams } from '#api/list-params'
 import { listDrops, type Drop } from '#api/drops'
 
-export type DropsState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; drops: Drop[] }
+export type DropsState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; drops: Drop[]; total: number; page: number; pageSize: number }
 
 export interface UseDrops {
   state: DropsState
   reload: () => void
-  add: (drop: Drop) => void
+  refresh: () => void
   replace: (previousId: string, drop: Drop) => void
-  remove: (id: string) => void
 }
 
-export function useDrops(): UseDrops {
+export function useDrops(params: ListParams): UseDrops {
   const [state, setState] = useState<DropsState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const key = JSON.stringify(params)
 
   useEffect(() => {
     let cancelled = false
-    fetchAllPages(listDrops)
-      .then((drops) => {
-        if (!cancelled) setState({ status: 'ready', drops })
+    listDrops(JSON.parse(key) as ListParams)
+      .then((result) => {
+        if (cancelled) return
+        setState({ status: 'ready', drops: result.items, total: result.total, page: result.page, pageSize: result.pageSize })
       })
       .catch(() => {
         if (!cancelled) setState({ status: 'error' })
@@ -28,25 +32,22 @@ export function useDrops(): UseDrops {
     return () => {
       cancelled = true
     }
-  }, [attempt])
-
-  const update = useCallback((change: (drops: Drop[]) => Drop[]) => {
-    setState((current) => (current.status === 'ready' ? { status: 'ready', drops: change(current.drops) } : current))
-  }, [])
+  }, [key, attempt])
 
   const reload = useCallback(() => {
     setState({ status: 'loading' })
     setAttempt((value) => value + 1)
   }, [])
 
-  const add = useCallback((drop: Drop) => update((drops) => [drop, ...drops]), [update])
+  const refresh = useCallback(() => setAttempt((value) => value + 1), [])
 
-  const replace = useCallback(
-    (previousId: string, drop: Drop) => update((drops) => drops.map((item) => (item.id === previousId ? drop : item))),
-    [update],
-  )
+  const replace = useCallback((previousId: string, drop: Drop) => {
+    setState((current) =>
+      current.status === 'ready'
+        ? { ...current, drops: current.drops.map((item) => (item.id === previousId ? drop : item)) }
+        : current,
+    )
+  }, [])
 
-  const remove = useCallback((id: string) => update((drops) => drops.filter((item) => item.id !== id)), [update])
-
-  return { state, reload, add, replace, remove }
+  return { state, reload, refresh, replace }
 }

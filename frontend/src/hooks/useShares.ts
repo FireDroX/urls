@@ -1,26 +1,30 @@
 import { useCallback, useEffect, useState } from 'react'
-import { fetchAllPages } from '#utils/fetch-all-pages'
+import type { ListParams } from '#api/list-params'
 import { listShares, type Share } from '#api/shares'
 
-export type SharesState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; shares: Share[] }
+export type SharesState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; shares: Share[]; total: number; page: number; pageSize: number }
 
 export interface UseShares {
   state: SharesState
   reload: () => void
-  add: (share: Share) => void
+  refresh: () => void
   replace: (previousId: string, share: Share) => void
-  remove: (id: string) => void
 }
 
-export function useShares(): UseShares {
+export function useShares(params: ListParams): UseShares {
   const [state, setState] = useState<SharesState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const key = JSON.stringify(params)
 
   useEffect(() => {
     let cancelled = false
-    fetchAllPages(listShares)
-      .then((shares) => {
-        if (!cancelled) setState({ status: 'ready', shares })
+    listShares(JSON.parse(key) as ListParams)
+      .then((result) => {
+        if (cancelled) return
+        setState({ status: 'ready', shares: result.items, total: result.total, page: result.page, pageSize: result.pageSize })
       })
       .catch(() => {
         if (!cancelled) setState({ status: 'error' })
@@ -28,26 +32,22 @@ export function useShares(): UseShares {
     return () => {
       cancelled = true
     }
-  }, [attempt])
-
-  const update = useCallback((change: (shares: Share[]) => Share[]) => {
-    setState((current) => (current.status === 'ready' ? { status: 'ready', shares: change(current.shares) } : current))
-  }, [])
+  }, [key, attempt])
 
   const reload = useCallback(() => {
     setState({ status: 'loading' })
     setAttempt((value) => value + 1)
   }, [])
 
-  const add = useCallback((share: Share) => update((shares) => [share, ...shares]), [update])
+  const refresh = useCallback(() => setAttempt((value) => value + 1), [])
 
-  const replace = useCallback(
-    (previousId: string, share: Share) =>
-      update((shares) => shares.map((item) => (item.id === previousId ? share : item))),
-    [update],
-  )
+  const replace = useCallback((previousId: string, share: Share) => {
+    setState((current) =>
+      current.status === 'ready'
+        ? { ...current, shares: current.shares.map((item) => (item.id === previousId ? share : item)) }
+        : current,
+    )
+  }, [])
 
-  const remove = useCallback((id: string) => update((shares) => shares.filter((item) => item.id !== id)), [update])
-
-  return { state, reload, add, replace, remove }
+  return { state, reload, refresh, replace }
 }
