@@ -5,7 +5,7 @@
 - L'interface reprend la charte de la maquette : badges d'état colorés, contrôles plus grands et thème clair conservé.
 - Un menu « Nouveau » dans la barre latérale ouvre directement la création d'une redirection, d'un partage ou d'un dépôt, et une entrée « Liens cassés » liste les redirections à corriger.
 - Les dossiers et les tags apparaissent dans la barre latérale.
-- Les actions (recherche, création) passent en tête de « Tous les liens ».
+- Les boutons de création (raccourcir, dépôt, partage) passent en tête de « Tous les liens ».
 - Les fiches d'un lien affichent un fil d'Ariane et l'URL complète.
 - La page de connexion change de présentation.
 - Les pages publiques de téléchargement et de dépôt ont un nouveau cadre : marque au-dessus de la carte, limites du dépôt en tuiles, zone de dépôt plus lisible, progression des envois avec numéro de part, fichiers refusés bordés de rouge.
