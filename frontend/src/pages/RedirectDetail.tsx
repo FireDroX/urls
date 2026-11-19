@@ -115,7 +115,7 @@ function SettingsSection({ link }: { link: Link }) {
     : t('links.noExpiry')
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" aria-labelledby="link-settings-title">
+    <section className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5" aria-labelledby="link-settings-title">
       <h2 id="link-settings-title">
         {t('links.detail.settings')}
       </h2>
@@ -176,7 +176,7 @@ function CheckSection({ link, onChanged }: { link: Link; onChanged: (link: Link)
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" aria-labelledby="link-check-title">
+    <section className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5" aria-labelledby="link-check-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="link-check-title">
           {t('links.health.title')}
@@ -250,7 +250,7 @@ function StatsContent({ stats }: { stats: LinkStats }) {
   }
   return (
     <>
-      <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+      <section className="flex flex-col gap-4 rounded-[10px] border border-border bg-card p-5">
         <p className="text-sm text-muted-foreground">
           <span className="block font-heading text-3xl font-bold text-foreground tabular-nums">{stats.total}</span>
           {t('linkStats.totalLabel', { count: stats.total, days: stats.days })}

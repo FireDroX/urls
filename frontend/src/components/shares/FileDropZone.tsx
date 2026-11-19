@@ -33,7 +33,7 @@ export function FileDropZone({ onFiles, help, disabled = false }: FileDropZonePr
   return (
     <label
       className={cn(
-        'flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-drop-zone-border bg-drop-zone-bg p-5 text-center transition-colors focus-within:border-link-accent hover:border-link-accent',
+        'flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[12px] border-2 border-dashed border-drop-zone-border bg-drop-zone-bg p-5 text-center transition-colors focus-within:border-link-accent hover:border-link-accent',
         dragging && 'border-link-accent bg-state-expired-bg',
         disabled && 'cursor-not-allowed opacity-60 hover:border-drop-zone-border',
       )}

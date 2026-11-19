@@ -25,7 +25,7 @@ export function DropReceiptsList({ receipts }: { receipts: DropReceipt[] }) {
       </h2>
       <ul className="flex flex-col gap-2.5">
         {receipts.map(({ fileId, name, size, status }) => (
-          <li key={fileId} className="flex items-center gap-2.5 rounded-lg border p-3 text-sm">
+          <li key={fileId} className="flex items-center gap-2.5 rounded-[8px] border p-3 text-sm">
             <FileIcon className="size-4 shrink-0" aria-hidden />
             <span className="min-w-0 flex-1 truncate" title={name}>
               {name}

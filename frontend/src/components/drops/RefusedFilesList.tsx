@@ -21,7 +21,7 @@ export function RefusedFilesList({ refused, onDismiss }: RefusedFilesListProps) 
       </h2>
       <ul className="flex flex-col gap-2.5">
         {refused.map(({ id, name, reason }) => (
-          <li key={id} className="flex items-center gap-2.5 rounded-lg border border-refused-border p-3 text-sm">
+          <li key={id} className="flex items-center gap-2.5 rounded-[8px] border border-refused-border p-3 text-sm">
             <TriangleAlertIcon className="size-4 shrink-0 text-state-danger" aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="block truncate" title={name}>

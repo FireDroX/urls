@@ -64,7 +64,7 @@ function UploadRow({
       : `${formatSize(item.size)} · ${t(`shares.upload.phase.${item.phase}`)}`
 
   return (
-    <li className={cn('flex flex-col gap-1.5 rounded-lg border p-3', failed && 'border-refused-border')}>
+    <li className={cn('flex flex-col gap-1.5 rounded-[8px] border p-3', failed && 'border-refused-border')}>
       <div className="flex items-center gap-2.5 text-sm">
         {failed ? (
           <TriangleAlertIcon className="size-4 shrink-0 text-state-danger" aria-hidden />

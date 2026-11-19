@@ -5,7 +5,7 @@ import { formatRelativeTime } from '#utils/relative-time'
 
 function LimitTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-1 basis-[120px] flex-col gap-0.5 rounded-lg bg-state-neutral-bg px-3 py-2.5">
+    <div className="flex flex-1 basis-[120px] flex-col gap-0.5 rounded-[8px] bg-state-neutral-bg px-3 py-2.5">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="font-semibold">{value}</span>
     </div>
