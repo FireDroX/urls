@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowLeft, Copy, FolderUp, Pencil, Power, PowerOff, SearchX, Trash } from 'lucide-react'
+import { FolderUp, Pencil, Power, PowerOff, SearchX } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import {
   deleteShare,
@@ -18,6 +18,10 @@ import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSumma
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { ConfirmDeleteDialog } from '#components/shares/ConfirmDeleteDialog'
 import { FileDropZone } from '#components/shares/FileDropZone'
+import { DeleteLinkButton } from '#components/DeleteLinkButton'
+import { DetailBreadcrumb } from '#components/DetailBreadcrumb'
+import { DetailUrl } from '#components/DetailUrl'
+import { LinkTypeBadge } from '#components/dashboard/LinkTypeBadge'
 import { ShareFilesTable } from '#components/shares/ShareFilesTable'
 import { ShareFormDialog } from '#components/shares/ShareFormDialog'
 import { UploadsList } from '#components/shares/UploadsList'
@@ -38,23 +42,9 @@ const SHARES_LIST_PATH = '/shares'
 
 type DialogState = { kind: 'closed' } | { kind: 'edit' } | { kind: 'delete' } | { kind: 'deleteFile'; file: ShareFile }
 
-function BackLink() {
-  const { t } = useTranslation()
-
-  return (
-    <RouterLink
-      to={SHARES_LIST_PATH}
-      className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeft className="size-4" aria-hidden="true" />
-      {t('shares.backToList')}
-    </RouterLink>
-  )
-}
-
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-1 rounded-[10px] border border-border bg-card p-5">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="font-heading text-lg font-semibold tabular-nums">{children}</dd>
     </div>
@@ -113,7 +103,7 @@ function FilesSection({ files, uploads, onDelete }: FilesSectionProps) {
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="share-files-title">
-      <h2 id="share-files-title" className="font-heading text-xl font-semibold">
+      <h2 id="share-files-title">
         {t('shares.files.title')}
       </h2>
       <FileDropZone onFiles={addFiles} />
@@ -148,18 +138,14 @@ function ShareHeader({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="font-mono text-2xl font-bold text-primary">{sharePath(share.id)}</h1>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('links.copy', { slug: share.id })}
-          onClick={() => void copyLink(share.id)}
-        >
-          <Copy />
-        </Button>
-        <LinkStateBadge link={share} />
-        <LinkOrganizationSummary tags={share.tags} folder={share.folder} className="basis-full" />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1>{sharePath(share.id)}</h1>
+          <LinkTypeBadge type="share" />
+          <LinkStateBadge link={share} />
+        </div>
+        <DetailUrl url={shareUrl(share.id)} slug={share.id} onCopy={() => void copyLink(share.id)} />
+        <LinkOrganizationSummary tags={share.tags} folder={share.folder} />
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={onEdit}>
@@ -170,10 +156,7 @@ function ShareHeader({
           {share.disabled ? <Power /> : <PowerOff />}
           {share.disabled ? t('links.enable') : t('links.disable')}
         </Button>
-        <Button variant="outline" onClick={onDelete}>
-          <Trash />
-          {t('links.delete.action')}
-        </Button>
+        <DeleteLinkButton onClick={onDelete} />
       </div>
     </div>
   )
@@ -292,8 +275,8 @@ export function ShareDetail() {
   useDocumentTitle(sharePath(id))
 
   return (
-    <>
-      <BackLink />
+    <div data-density="detail" className="contents">
+      <DetailBreadcrumb type="share" current={id} />
       {state.status === 'loading' && <Skeleton className="h-16 w-full max-w-lg" aria-busy="true" />}
       {state.status === 'notFound' && (
         <LinksPlaceholder icon={SearchX} title={t('shares.notFoundTitle')} body={t('shares.errors.notFound')} />
@@ -311,6 +294,6 @@ export function ShareDetail() {
         />
       )}
       {state.status === 'ready' && <ShareView share={state.value} uploads={uploads} onChanged={replace} />}
-    </>
+    </div>
   )
 }

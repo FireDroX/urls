@@ -1,35 +1,50 @@
+import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LinkTag } from '#api/link-organization'
-import { readableTextColor } from '#utils/tag-color'
+import { cn } from '#lib/utils'
 
 const PILL_CLASS =
-  'inline-flex max-w-40 items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-white/15'
+  'inline-flex max-w-40 items-center gap-1.5 rounded-full border border-badge-border px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-foreground dark:text-(--tag-color)'
 
 interface TagPillProps {
   tag: LinkTag
   onSelect?: (tag: LinkTag) => void
+  className?: string
 }
 
-export function TagPill({ tag, onSelect }: TagPillProps) {
+function TagLabel({ tag }: { tag: LinkTag }) {
+  return (
+    <>
+      <span className="size-1.5 shrink-0 rounded-full bg-(--tag-color)" aria-hidden="true" />
+      <span className="truncate">{tag.name}</span>
+    </>
+  )
+}
+
+export function TagPill({ tag, onSelect, className }: TagPillProps) {
   const { t } = useTranslation()
-  const style = { backgroundColor: tag.color, color: readableTextColor(tag.color) }
+  const style = { '--tag-color': tag.color } as CSSProperties
 
   if (!onSelect) {
     return (
-      <span className={PILL_CLASS} style={style}>
-        <span className="truncate">{tag.name}</span>
+      <span className={cn(PILL_CLASS, className)} style={style}>
+        <TagLabel tag={tag} />
       </span>
     )
   }
   return (
     <button
       type="button"
-      className={`${PILL_CLASS} cursor-pointer hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none`}
+      className={cn(
+        PILL_CLASS,
+        'cursor-pointer hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+        className,
+      )}
       style={style}
       aria-label={t('listFilters.filterByTag', { name: tag.name })}
       onClick={() => onSelect(tag)}
     >
-      <span className="truncate">{tag.name}</span>
+      <TagLabel tag={tag} />
     </button>
   )
 }

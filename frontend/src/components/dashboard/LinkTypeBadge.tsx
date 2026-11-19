@@ -1,7 +1,7 @@
 import { ArrowRightLeft, FolderUp, Inbox } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { LinkType } from '#api/list-params'
-import { Badge } from '#components/ui/badge'
+import { StatusBadge } from '#components/StatusBadge'
 
 const TYPE_ICONS = {
   redirect: ArrowRightLeft,
@@ -14,9 +14,9 @@ export function LinkTypeBadge({ type }: { type: LinkType }) {
   const Icon = TYPE_ICONS[type]
 
   return (
-    <Badge variant="outline">
+    <StatusBadge tone="outline">
       <Icon aria-hidden="true" />
       {t(`linkTypes.${type}`)}
-    </Badge>
+    </StatusBadge>
   )
 }

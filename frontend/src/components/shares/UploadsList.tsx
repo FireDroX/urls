@@ -6,6 +6,7 @@ import { FormError } from '#components/FormError'
 import { Button } from '#components/ui/button'
 import { useFileSize } from '#hooks/useFileSize'
 import { uploadErrorMessage } from '#lib/share-errors'
+import { cn } from '#lib/utils'
 import type { UploadItem } from '#lib/upload-queue'
 
 const PERCENT = 100
@@ -19,7 +20,7 @@ interface UploadsListProps {
   errorMessage?: (error: unknown, t: TFunction) => string
 }
 
-function ProgressBar({ label, value, max }: { label: string; value: number; max: number }) {
+function ProgressBar({ label, value, max, fillClass }: { label: string; value: number; max: number; fillClass: string }) {
   const { t } = useTranslation()
   const percent = Math.min(PERCENT, Math.floor((value / max) * PERCENT))
 
@@ -35,9 +36,9 @@ function ProgressBar({ label, value, max }: { label: string; value: number; max:
         aria-valuemin={0}
         aria-valuemax={PERCENT}
         aria-valuenow={percent}
-        className="h-1.5 overflow-hidden rounded-full bg-muted"
+        className="h-1.5 overflow-hidden rounded-full bg-bar-track"
       >
-        <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+        <div className={cn('h-full rounded-full transition-[width]', fillClass)} style={{ width: `${percent}%` }} />
       </div>
     </div>
   )
@@ -117,10 +118,10 @@ function UploadRow({
         )}
       </div>
       {!failed && item.hashedBytes > 0 && (
-        <ProgressBar label={t('shares.upload.hashProgress')} value={item.hashedBytes} max={item.size} />
+        <ProgressBar label={t('shares.upload.hashProgress')} value={item.hashedBytes} max={item.size} fillClass="bg-bar-neutral" />
       )}
       {!failed && item.phase !== 'queued' && item.phase !== 'hashing' && (
-        <ProgressBar label={t('shares.upload.sendProgress')} value={item.sentBytes} max={item.size} />
+        <ProgressBar label={t('shares.upload.sendProgress')} value={item.sentBytes} max={item.size} fillClass="bg-bar" />
       )}
       {failed && <FormError message={errorMessage(item.error, t)} />}
     </li>

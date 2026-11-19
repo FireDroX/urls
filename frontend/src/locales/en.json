@@ -17,7 +17,8 @@
     "validation": {
       "emailInvalid": "Invalid email address",
       "passwordRequired": "Password required"
-    }
+    },
+    "backHome": "Back to home"
   },
   "layout": {
     "navigation": "Navigation",
@@ -35,7 +36,14 @@
     "storageUsed": "Storage used",
     "storageUnavailable": "Unavailable",
     "brokenRedirects_one": "{{count}} broken redirect",
-    "brokenRedirects_other": "{{count}} broken redirects"
+    "brokenRedirects_other": "{{count}} broken redirects",
+    "new": "New",
+    "newRedirect": "Redirect",
+    "newShare": "Share",
+    "newDrop": "Drop",
+    "brokenLinks": "Broken links",
+    "folders": "Folders",
+    "tags": "Tags"
   },
   "linkTypes": {
     "redirect": "Redirect",
@@ -62,6 +70,11 @@
       "disabled": "Disabled",
       "expired": "Expired",
       "full": "Full"
+    },
+    "actions": {
+      "shorten": "Shorten",
+      "createDrop": "Create a drop",
+      "shareFiles": "Share files"
     }
   },
   "links": {
@@ -335,7 +348,6 @@
       "storageUnavailable": "Storage is unreachable. The file was kept, try again later."
     },
     "notFoundTitle": "Drop not found",
-    "backToList": "Back to drops",
     "open": "Open drop {{slug}}",
     "detail": {
       "views": "Views (last 90 days)",
@@ -385,7 +397,6 @@
     "emptyBody": "Create a share to drop files into it and get a link to send.",
     "loadFailedTitle": "Could not load the shares",
     "notFoundTitle": "Share not found",
-    "backToList": "Back to shares",
     "open": "Open share {{slug}}",
     "fileSummary_one": "{{count}} file · {{size}}",
     "fileSummary_other": "{{count}} files · {{size}}",
@@ -715,5 +726,8 @@
       "previous": "Previous page",
       "next": "Next page"
     }
+  },
+  "detail": {
+    "breadcrumb": "Breadcrumb"
   }
 }

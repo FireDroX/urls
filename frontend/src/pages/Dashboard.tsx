@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
-import { Link2 } from 'lucide-react'
+import { Inbox, Link, Link2, Upload } from 'lucide-react'
 import { Trans, useTranslation } from 'react-i18next'
+import { Link as RouterLink } from 'react-router'
 import { ALL_LINKS_LIST_STATES, LINK_TYPES } from '#api/list-params'
 import { AllLinksTable } from '#components/dashboard/AllLinksTable'
 import type { OrganizationSelection } from '#components/links/LinkOrganizationSummary'
@@ -11,6 +12,7 @@ import { ListPagination } from '#components/lists/ListPagination'
 import { Button } from '#components/ui/button'
 import { Skeleton } from '#components/ui/skeleton'
 import { useAllLinks, type AllLinksState } from '#hooks/useAllLinks'
+import { CREATE_REQUEST_STATE } from '#hooks/useCreateRequest'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
 import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
 import { useListView } from '#hooks/useListView'
@@ -63,7 +65,7 @@ function AllLinksContent({ state, isFiltered, selection, onRetry, onClear, onPag
         <div className="flex size-12 items-center justify-center rounded-full bg-accent text-muted-foreground">
           <Link2 className="size-5" aria-hidden="true" />
         </div>
-        <h2 className="font-heading text-lg font-semibold">{t('dashboard.emptyTitle')}</h2>
+        <h2>{t('dashboard.emptyTitle')}</h2>
         <p className="max-w-md text-sm text-muted-foreground">
           <Trans i18nKey="dashboard.emptyBody" components={{ r: ROUTE_CODE, d: ROUTE_CODE, u: ROUTE_CODE }} />
         </p>
@@ -100,9 +102,31 @@ export function Dashboard() {
 
   return (
     <>
-      <div>
-        <h1 className="font-heading text-3xl font-bold">{t('dashboard.title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1>{t('dashboard.title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <RouterLink to="/redirects" state={CREATE_REQUEST_STATE}>
+              <Link />
+              {t('dashboard.actions.shorten')}
+            </RouterLink>
+          </Button>
+          <Button variant="outline" asChild>
+            <RouterLink to="/drops" state={CREATE_REQUEST_STATE}>
+              <Inbox />
+              {t('dashboard.actions.createDrop')}
+            </RouterLink>
+          </Button>
+          <Button asChild>
+            <RouterLink to="/shares" state={CREATE_REQUEST_STATE}>
+              <Upload />
+              {t('dashboard.actions.shareFiles')}
+            </RouterLink>
+          </Button>
+        </div>
       </div>
       <ListFilterBar
         view={view}

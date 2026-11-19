@@ -17,7 +17,8 @@
     "validation": {
       "emailInvalid": "Adresse e-mail invalide",
       "passwordRequired": "Mot de passe requis"
-    }
+    },
+    "backHome": "Retour à l'accueil"
   },
   "layout": {
     "navigation": "Navigation",
@@ -35,7 +36,14 @@
     "storageUsed": "Stockage utilisé",
     "storageUnavailable": "Indisponible",
     "brokenRedirects_one": "{{count}} redirection cassée",
-    "brokenRedirects_other": "{{count}} redirections cassées"
+    "brokenRedirects_other": "{{count}} redirections cassées",
+    "new": "Nouveau",
+    "newRedirect": "Redirection",
+    "newShare": "Partage",
+    "newDrop": "Dépôt",
+    "brokenLinks": "Liens cassés",
+    "folders": "Dossiers",
+    "tags": "Tags"
   },
   "linkTypes": {
     "redirect": "Redirection",
@@ -62,6 +70,11 @@
       "disabled": "Désactivé",
       "expired": "Expiré",
       "full": "Plein"
+    },
+    "actions": {
+      "shorten": "Raccourcir",
+      "createDrop": "Créer un dépôt",
+      "shareFiles": "Partager des fichiers"
     }
   },
   "links": {
@@ -335,7 +348,6 @@
       "storageUnavailable": "Le stockage est injoignable. Le fichier est conservé, réessayez plus tard."
     },
     "notFoundTitle": "Dépôt introuvable",
-    "backToList": "Retour aux dépôts",
     "open": "Ouvrir le dépôt {{slug}}",
     "detail": {
       "views": "Vues sur 90 jours",
@@ -385,7 +397,6 @@
     "emptyBody": "Créez un partage pour y déposer des fichiers et obtenir un lien à envoyer.",
     "loadFailedTitle": "Impossible de charger les partages",
     "notFoundTitle": "Partage introuvable",
-    "backToList": "Retour aux partages",
     "open": "Ouvrir le partage {{slug}}",
     "fileSummary_one": "{{count}} fichier · {{size}}",
     "fileSummary_other": "{{count}} fichiers · {{size}}",
@@ -715,5 +726,8 @@
       "previous": "Page précédente",
       "next": "Page suivante"
     }
+  },
+  "detail": {
+    "breadcrumb": "Fil d'Ariane"
   }
 }

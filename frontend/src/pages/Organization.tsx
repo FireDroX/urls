@@ -91,7 +91,7 @@ function OrganizationSection({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="font-heading text-xl font-semibold">{title}</h2>
+        <h2>{title}</h2>
         <Button onClick={onNew}>
           <Plus />
           {newLabel}
@@ -263,7 +263,7 @@ export function Organization() {
   return (
     <>
       <div>
-        <h1 className="font-heading text-3xl font-bold">{t('organization.title')}</h1>
+        <h1>{t('organization.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('organization.subtitle')}</p>
       </div>
       <TagsSection />

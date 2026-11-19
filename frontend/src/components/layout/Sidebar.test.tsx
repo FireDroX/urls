@@ -1,7 +1,10 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { listFolders } from '#api/folders'
 import { getLinksHealth } from '#api/links'
+import { listTags } from '#api/tags'
 import { getStorageUsage } from '#api/storage'
 import { refreshLinkHealth } from '#lib/link-health-refresh'
 import { refreshStorageUsage } from '#lib/storage-usage-refresh'
@@ -15,7 +18,10 @@ vi.mock('#api/links', () => ({
   getLinksHealth: vi.fn(),
 }))
 
-const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Fichiers', 'Réglages']
+vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
+vi.mock('#api/folders', () => ({ listFolders: vi.fn() }))
+
+const ENTRIES = ['Tous les liens', 'Redirections', 'Partages', 'Liens cassés', 'Fichiers', 'Réglages']
 
 function renderAt(path: string) {
   render(
@@ -32,6 +38,8 @@ function activeEntries(): string[] {
 beforeEach(() => {
   vi.mocked(getStorageUsage).mockReturnValue(new Promise(() => {}))
   vi.mocked(getLinksHealth).mockResolvedValue({ broken: 0 })
+  vi.mocked(listTags).mockResolvedValue([])
+  vi.mocked(listFolders).mockResolvedValue([])
 })
 
 describe('Sidebar', () => {
@@ -39,6 +47,7 @@ describe('Sidebar', () => {
     ['/', ['Tous les liens']],
     ['/redirects', ['Redirections']],
     ['/redirects/docs', ['Redirections']],
+    ['/redirects?health=broken', ['Liens cassés']],
     ['/shares', ['Partages']],
     ['/shares/photos', ['Partages']],
     ['/files', ['Fichiers']],
@@ -64,7 +73,7 @@ describe('Sidebar', () => {
     expect(getStorageUsage).toHaveBeenCalledTimes(2)
   })
 
-  it('shows the number of broken redirects next to Redirections', async () => {
+  it('shows the number of broken redirects next to Liens cassés', async () => {
     vi.mocked(getLinksHealth).mockResolvedValue({ broken: 3 })
     renderAt('/')
 
@@ -105,5 +114,41 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Redirections' })).toHaveAttribute('href', '/redirects')
     expect(screen.getByRole('link', { name: 'Partages' })).toHaveAttribute('href', '/shares')
     expect(screen.getByRole('link', { name: 'Réglages' })).toHaveAttribute('href', '/settings')
+    expect(screen.getByRole('link', { name: /Liens cassés/ })).toHaveAttribute('href', '/redirects?health=broken')
+  })
+
+  it('offers a creation menu', async () => {
+    const user = userEvent.setup()
+    renderAt('/')
+
+    await user.click(screen.getByRole('button', { name: 'Nouveau' }))
+
+    expect(await screen.findByRole('menuitem', { name: 'Redirection' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Partage' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Dépôt' })).toBeInTheDocument()
+  })
+
+  it('lists folders and tags with their filter links', async () => {
+    vi.mocked(listFolders).mockResolvedValue([
+      { id: 'f1', name: 'École', linkCount: 1, createdAt: '', updatedAt: '' },
+    ])
+    vi.mocked(listTags).mockResolvedValue([
+      { id: 't1', name: 'stage', color: '#fdba74', linkCount: 1, createdAt: '', updatedAt: '' },
+    ])
+    renderAt('/')
+
+    expect(await screen.findByRole('link', { name: 'École' })).toHaveAttribute('href', '/?folder=f1')
+    expect(screen.getByRole('link', { name: 'stage' })).toHaveAttribute('href', '/?tag=t1')
+    expect(screen.getByText('Dossiers')).toBeInTheDocument()
+    expect(screen.getByText('Tags')).toBeInTheDocument()
+  })
+
+  it('hides the folder and tag sections when they cannot be read', async () => {
+    vi.mocked(listTags).mockRejectedValue(new Error('offline'))
+    renderAt('/')
+
+    await waitFor(() => expect(listTags).toHaveBeenCalled())
+    expect(screen.queryByText('Dossiers')).not.toBeInTheDocument()
+    expect(screen.queryByText('Tags')).not.toBeInTheDocument()
   })
 })

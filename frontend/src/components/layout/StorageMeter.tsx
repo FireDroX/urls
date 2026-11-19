@@ -31,14 +31,14 @@ function MeterFrame({ label, percent }: { label: string; percent: number }) {
         <span>{label}</span>
       </div>
       <div
-        className="h-1.5 rounded-full bg-accent"
+        className="h-1.5 rounded-full bg-bar-track"
         role="progressbar"
         aria-label={t('layout.storageUsed')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(percent)}
       >
-        <div className="h-1.5 rounded-full bg-sidebar-primary" style={{ width: `${percent}%` }} />
+        <div className="h-1.5 rounded-full bg-bar" style={{ width: `${percent}%` }} />
       </div>
     </div>
   )
