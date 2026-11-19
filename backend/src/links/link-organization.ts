@@ -1,3 +1,4 @@
+import type { AllLinksListState } from '../common/variables.global.js';
 import type { Folder } from '../folders/entities/folder.entity.js';
 import type { Tag } from '../tags/entities/tag.entity.js';
 import type { Link } from './entities/link.entity.js';
@@ -25,4 +26,8 @@ export interface ResolvedOrganization {
 export interface LinkWithOrganization {
   link: Link;
   organization: LinkOrganization;
+}
+
+export interface AllLinkSummary extends LinkWithOrganization {
+  state: AllLinksListState;
 }

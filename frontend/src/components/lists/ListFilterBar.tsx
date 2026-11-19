@@ -35,6 +35,7 @@ interface ListFilterBarProps {
   view: ListView
   states: { value: string; label: string }[]
   healths?: { value: string; label: string }[]
+  types?: { value: string; label: string }[]
   tags: LinkTag[]
   folders: LinkFolder[]
   searchPlaceholder: string
@@ -44,6 +45,7 @@ interface ListFilterBarProps {
 export function ListFilterBar({
   view,
   states,
+  types,
   healths,
   tags,
   folders,
@@ -75,6 +77,14 @@ export function ListFilterBar({
           ...folders.map((folder) => ({ value: folder.id, label: folder.name })),
         ]}
       />
+      {types && (
+        <FilterSelect
+          label={t('listFilters.type')}
+          value={view.type ?? ALL}
+          onValueChange={(value) => onChange({ type: orNull(value) })}
+          options={[{ value: ALL, label: t('listFilters.allTypes') }, ...types]}
+        />
+      )}
       <FilterSelect
         label={t('listFilters.state')}
         value={view.state ?? ALL}

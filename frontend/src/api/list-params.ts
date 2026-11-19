@@ -13,6 +13,7 @@ export interface ListParams {
   folder?: string
   state?: string
   health?: string
+  type?: string
   sort?: string
   page?: number
   pageSize?: number
@@ -27,5 +28,9 @@ export const LIST_SORTS = ['created_desc', 'created_asc', 'updated_desc', 'slug_
 export const LINK_LIST_STATES = ['active', 'disabled', 'expired'] as const
 export const LINK_HEALTH_FILTERS = ['broken', 'ok', 'unchecked'] as const
 export const DROP_LIST_STATES = ['open', 'full', 'expired', 'disabled'] as const
+export const LINK_TYPES = ['redirect', 'share', 'drop'] as const
+export const ALL_LINKS_LIST_STATES = ['active', 'disabled', 'expired', 'full'] as const
 
 export type ListSort = (typeof LIST_SORTS)[number]
+export type LinkType = (typeof LINK_TYPES)[number]
+export type AllLinkState = (typeof ALL_LINKS_LIST_STATES)[number]

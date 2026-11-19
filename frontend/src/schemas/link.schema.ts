@@ -17,6 +17,7 @@ const LINK_SLUG_REGEX = /^[A-Za-z0-9_-]+$/
 const RESERVED_LINK_SLUGS: readonly string[] = [
   'account',
   'admin',
+  'all',
   'api',
   'assets',
   'd',

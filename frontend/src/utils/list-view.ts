@@ -14,6 +14,7 @@ export interface ListView {
   folder: string | null
   state: string | null
   health: string | null
+  type: string | null
   sort: ListSort
   page: number
 }
@@ -39,18 +40,21 @@ function parsePage(raw: string | null): number {
 export function parseListView(
   params: URLSearchParams,
   states: readonly string[],
+  types: readonly string[] = [],
   healths: readonly string[] = [],
 ): ListView {
   const tag = params.get('tag')
   const folder = params.get('folder')
   const state = params.get('state')
   const health = params.get('health')
+  const type = params.get('type')
   const sort = params.get('sort')
   return {
     q: parseQuery(params.get('q')),
     tag: tag !== null && PUBLIC_ID_PATTERN.test(tag) ? tag : null,
     folder: folder !== null && (folder === LIST_FOLDER_NONE || PUBLIC_ID_PATTERN.test(folder)) ? folder : null,
     state: state !== null && states.includes(state) ? state : null,
+    type: type !== null && types.includes(type) ? type : null,
     health: health !== null && healths.includes(health) ? health : null,
     sort: LIST_SORTS.find((candidate) => candidate === sort) ?? DEFAULT_SORT,
     page: parsePage(params.get('page')),
@@ -64,6 +68,7 @@ export function listViewToSearchParams(view: ListView): URLSearchParams {
   if (view.folder) params.set('folder', view.folder)
   if (view.state) params.set('state', view.state)
   if (view.health) params.set('health', view.health)
+  if (view.type) params.set('type', view.type)
   if (view.sort !== DEFAULT_SORT) params.set('sort', view.sort)
   if (view.page > 1) params.set('page', String(view.page))
   return params
@@ -76,12 +81,20 @@ export function listViewToParams(view: ListView): ListParams {
   if (view.folder) params.folder = view.folder
   if (view.state) params.state = view.state
   if (view.health) params.health = view.health
+  if (view.type) params.type = view.type
   if (view.sort !== DEFAULT_SORT) params.sort = view.sort
   return params
 }
 
 export function isFilteredView(view: ListView): boolean {
-  return view.q !== '' || view.tag !== null || view.folder !== null || view.state !== null || view.health !== null
+  return (
+    view.q !== '' ||
+    view.tag !== null ||
+    view.folder !== null ||
+    view.state !== null ||
+    view.type !== null ||
+    view.health !== null
+  )
 }
 
 export function withFilters(view: ListView, patch: ListFilters): ListView {

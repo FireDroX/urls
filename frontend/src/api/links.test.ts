@@ -7,6 +7,7 @@ import {
   getLink,
   getLinksHealth,
   getLinkStats,
+  listAllLinks,
   linkUrl,
   listLinks,
   updateLink,
@@ -67,6 +68,14 @@ describe('links api', () => {
 
     await expect(checkLink('docs')).resolves.toEqual(result)
     expect(apiClient.post).toHaveBeenCalledWith('/links/docs/check')
+  })
+
+  it('lists every type from /links/all', async () => {
+    const result = { items: [], total: 0, page: 1, pageSize: 50 }
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(result))
+
+    await expect(listAllLinks({ type: 'share', page: 2 })).resolves.toEqual(result)
+    expect(apiClient.get).toHaveBeenCalledWith('/links/all', { params: { type: 'share', page: 2 } })
   })
 
   it('creates a link with the given payload', async () => {

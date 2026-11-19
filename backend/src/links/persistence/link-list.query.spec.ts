@@ -2,6 +2,7 @@ import type { SelectQueryBuilder } from 'typeorm';
 import { describe, expect, it } from 'vitest';
 import type { Link } from '../entities/link.entity.js';
 import {
+  allLinksStateClause,
   dropStateClause,
   findLinkPage,
   linkHealthClause,
@@ -232,5 +233,54 @@ describe('state clauses', () => {
     expect(dropStateClause('open', NOW).sql).toContain(
       'AND NOT (link.maxFiles IS NULL',
     );
+  });
+});
+
+describe('findLinkPage without a type', () => {
+  it('filters on the three link types', async () => {
+    const qb = buildQueryBuilder();
+    await findLinkPage(
+      qb as unknown as SelectQueryBuilder<Link>,
+      null,
+      BASE,
+      null,
+    );
+
+    expect(qb.where).toHaveBeenCalledWith('link.type IN (:...types)', {
+      types: ['redirect', 'share', 'drop'],
+    });
+  });
+});
+
+describe('allLinksStateClause', () => {
+  it('ORs one clause per type, mapping active to open for drops', () => {
+    const { sql, params } = allLinksStateClause('active', NOW, null);
+
+    expect(sql).toContain("(link.type = 'redirect' AND (");
+    expect(sql).toContain("(link.type = 'share' AND (");
+    expect(sql).toContain("(link.type = 'drop' AND (");
+    expect(sql).toContain('NOT (link.maxFiles IS NULL');
+    expect(params).toEqual({ now: NOW, rejected: 'rejected' });
+  });
+
+  it('counts a used-up share as expired and keeps full for drops only', () => {
+    const expired = allLinksStateClause('expired', NOW, 'share');
+    expect(expired.sql).toContain('link.downloadCount >= link.maxDownloads');
+
+    const full = allLinksStateClause('full', NOW, null);
+    expect(full.sql).not.toContain("'redirect'");
+    expect(full.sql).not.toContain("'share'");
+    expect(full.sql).toContain("(link.type = 'drop' AND (");
+  });
+
+  it('matches nothing for full on a redirect or a share', () => {
+    expect(allLinksStateClause('full', NOW, 'redirect').sql).toBe('1 = 0');
+    expect(allLinksStateClause('full', NOW, 'share').sql).toBe('1 = 0');
+  });
+
+  it('scopes to the requested type', () => {
+    const { sql } = allLinksStateClause('disabled', NOW, 'drop');
+
+    expect(sql).toBe("(link.type = 'drop' AND (link.disabled = true))");
   });
 });

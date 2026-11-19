@@ -17,12 +17,16 @@ export interface UseListView {
   clearFilters: () => void
 }
 
-const NO_HEALTHS: readonly string[] = []
+const NO_LIST: readonly string[] = []
 
-export function useListView(states: readonly string[], healths: readonly string[] = NO_HEALTHS): UseListView {
+export function useListView(
+  states: readonly string[],
+  types: readonly string[] = NO_LIST,
+  healths: readonly string[] = NO_LIST,
+): UseListView {
   const [searchParams, setSearchParams] = useSearchParams()
   const key = searchParams.toString()
-  const view = useMemo(() => parseListView(new URLSearchParams(key), states, healths), [key, states, healths])
+  const view = useMemo(() => parseListView(new URLSearchParams(key), states, types, healths), [key, states, types, healths])
 
   const write = useCallback(
     (next: ListView) => setSearchParams(listViewToSearchParams(next), { replace: true }),
@@ -32,7 +36,7 @@ export function useListView(states: readonly string[], healths: readonly string[
   const setFilters = useCallback((patch: ListFilters) => write(withFilters(view, patch)), [view, write])
   const setPage = useCallback((page: number) => write({ ...view, page }), [view, write])
   const clearFilters = useCallback(
-    () => write({ q: '', tag: null, folder: null, state: null, health: null, sort: view.sort, page: 1 }),
+    () => write({ q: '', tag: null, folder: null, state: null, type: null, health: null, sort: view.sort, page: 1 }),
     [view.sort, write],
   )
 

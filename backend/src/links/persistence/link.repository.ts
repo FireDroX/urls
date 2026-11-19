@@ -1,4 +1,5 @@
 import type { Link } from '../entities/link.entity.js';
+import type { ListAllLinksQuery } from '../dto/in/list-all-links-query.dto.js';
 import type { ListLinksQuery } from '../dto/in/list-links-query.dto.js';
 import type { ResolvedOrganization } from '../link-organization.js';
 
@@ -10,6 +11,10 @@ export type NewLink = Pick<
 export interface LinkRepository {
   findPage(
     query: ListLinksQuery,
+    now: Date,
+  ): Promise<{ items: Link[]; total: number }>;
+  findAllPage(
+    query: ListAllLinksQuery,
     now: Date,
   ): Promise<{ items: Link[]; total: number }>;
   findByPublicId(publicId: string): Promise<Link | null>;

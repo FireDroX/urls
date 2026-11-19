@@ -26,6 +26,7 @@ import { refreshLinkHealth } from '#lib/link-health-refresh'
 import { linkDetailPath } from '#utils/link-stats'
 import { listViewToParams } from '#utils/list-view'
 
+const NO_TYPES: readonly string[] = []
 const SKELETON_ROWS = 3
 
 interface DialogState {
@@ -84,7 +85,7 @@ function LinksContent({ state, actions, isFiltered, selection, onRetry, onClear,
 export function Redirects() {
   const { t } = useTranslation()
   useDocumentTitle(t('links.title'))
-  const { view, setFilters, setPage, clearFilters, isFiltered } = useListView(LINK_LIST_STATES, LINK_HEALTH_FILTERS)
+  const { view, setFilters, setPage, clearFilters, isFiltered } = useListView(LINK_LIST_STATES, NO_TYPES, LINK_HEALTH_FILTERS)
   const params = useMemo(() => listViewToParams(view), [view])
   const { state, reload, refresh, replace } = useLinks(params)
   const { options } = useLinkOrganizationOptions()

@@ -78,6 +78,8 @@ describe('createLinkFormSchema (creation)', () => {
     ['été', 'Lettres, chiffres, « - » et « _ » uniquement'],
     ['API', 'Ce slug est réservé'],
     ['settings', 'Ce slug est réservé'],
+    ['all', 'Ce slug est réservé'],
+    ['health', 'Ce slug est réservé'],
   ])('rejects the slug %s', (slug, message) => {
     expect(firstError(schema.safeParse(values({ slug })))).toBe(message)
   })

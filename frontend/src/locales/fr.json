@@ -37,12 +37,32 @@
     "brokenRedirects_one": "{{count}} redirection cassée",
     "brokenRedirects_other": "{{count}} redirections cassées"
   },
+  "linkTypes": {
+    "redirect": "Redirection",
+    "share": "Partage",
+    "drop": "Dépôt"
+  },
   "dashboard": {
     "title": "Tous les liens",
     "subtitle": "Redirections, partages et dépôts, au même endroit.",
     "linksRegion": "Liens",
     "emptyTitle": "Aucun lien pour l'instant",
-    "emptyBody": "Les redirections <r>/r/</r>, les partages <d>/d/</d> et les dépôts <u>/u/</u> apparaîtront ici."
+    "emptyBody": "Les redirections <r>/r/</r>, les partages <d>/d/</d> et les dépôts <u>/u/</u> apparaîtront ici.",
+    "loadFailedTitle": "Impossible de charger les liens",
+    "loadFailedBody": "Vérifiez votre connexion puis réessayez.",
+    "columns": {
+      "type": "Type",
+      "link": "Lien",
+      "target": "Destination ou titre",
+      "state": "État",
+      "createdAt": "Créé le"
+    },
+    "state": {
+      "active": "Actif",
+      "disabled": "Désactivé",
+      "expired": "Expiré",
+      "full": "Plein"
+    }
   },
   "links": {
     "title": "Redirections",
@@ -655,15 +675,18 @@
     "placeholders": {
       "links": "Rechercher un slug ou une destination",
       "shares": "Rechercher un slug",
-      "drops": "Rechercher un slug ou un titre"
+      "drops": "Rechercher un slug ou un titre",
+      "all": "Rechercher un slug, une destination ou un titre"
     },
     "tag": "Filtrer par tag",
     "folder": "Filtrer par dossier",
+    "type": "Filtrer par type",
     "state": "Filtrer par état",
     "sort": "Trier",
     "allTags": "Tous les tags",
     "allFolders": "Tous les dossiers",
     "noFolder": "Sans dossier",
+    "allTypes": "Tous les types",
     "allStates": "Tous les états",
     "health": {
       "label": "Filtrer par vérification",
