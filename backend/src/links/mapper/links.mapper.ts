@@ -2,13 +2,21 @@ import { HttpStatus, type HttpRedirectResponse } from '@nestjs/common';
 import type { PageResponseDto } from '../../common/dto/page-response.dto.js';
 import { ResponseDto } from '../../common/dto/response.dto.js';
 import type { ListPage } from '../../common/list-query.js';
-import { LINK_STATS_TIME_ZONE } from '../../common/variables.global.js';
+import {
+  LINK_CHECK_BROKEN_AFTER,
+  LINK_STATS_TIME_ZONE,
+} from '../../common/variables.global.js';
 import { LinkOrganizationMapper } from './link-organization.mapper.js';
 import type { LinkCheckResponseDto } from '../dto/out/link-check-response.dto.js';
-import type { LinkResponseDto } from '../dto/out/link-response.dto.js';
+import type { LinkHealthResponseDto } from '../dto/out/link-health-response.dto.js';
+import type {
+  LinkLastCheckDto,
+  LinkResponseDto,
+} from '../dto/out/link-response.dto.js';
+import type { LinkCheck } from '../entities/link-check.entity.js';
 import type { LinkCheckReport } from '../services/link-checks.service.js';
 import type { LinkStatsResponseDto } from '../dto/out/link-stats-response.dto.js';
-import type { LinkWithOrganization } from '../link-organization.js';
+import type { RedirectView } from '../redirect-view.js';
 import type { LinkStats } from '../services/links.service.js';
 
 export class LinksMapper {
@@ -16,12 +24,12 @@ export class LinksMapper {
     return { url: destination, statusCode: HttpStatus.FOUND };
   }
 
-  static toResponse(item: LinkWithOrganization): ResponseDto<LinkResponseDto> {
+  static toResponse(item: RedirectView): ResponseDto<LinkResponseDto> {
     return new ResponseDto(LinksMapper.toDto(item));
   }
 
   static toListResponse(
-    page: ListPage<LinkWithOrganization>,
+    page: ListPage<RedirectView>,
   ): ResponseDto<PageResponseDto<LinkResponseDto>> {
     return new ResponseDto({
       ...page,
@@ -63,10 +71,26 @@ export class LinksMapper {
     });
   }
 
+  static toHealthResponse(broken: number): ResponseDto<LinkHealthResponseDto> {
+    return new ResponseDto({ broken });
+  }
+
+  private static toLastCheck(check: LinkCheck | null): LinkLastCheckDto | null {
+    if (!check) return null;
+    return {
+      outcome: check.outcome,
+      statusCode: check.statusCode,
+      errorKind: check.errorKind,
+      checkedAt: check.checkedAt.toISOString(),
+      broken: check.consecutiveFailures >= LINK_CHECK_BROKEN_AFTER,
+    };
+  }
+
   private static toDto({
     link,
     organization,
-  }: LinkWithOrganization): LinkResponseDto {
+    check,
+  }: RedirectView): LinkResponseDto {
     return {
       id: link.publicId,
       type: link.type,
@@ -74,6 +98,7 @@ export class LinksMapper {
       expiresAt: link.expiresAt?.toISOString() ?? null,
       disabled: link.disabled,
       ...LinkOrganizationMapper.toDto(organization),
+      lastCheck: LinksMapper.toLastCheck(check),
       createdAt: link.createdAt.toISOString(),
       updatedAt: link.updatedAt.toISOString(),
     };

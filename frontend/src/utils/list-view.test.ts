@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DROP_LIST_STATES, LINK_LIST_STATES, LIST_PAGE_SIZE } from '#api/list-params'
+import { DROP_LIST_STATES, LINK_HEALTH_FILTERS, LINK_LIST_STATES, LIST_PAGE_SIZE } from '#api/list-params'
 import {
   isFilteredView,
   listViewToParams,
@@ -9,10 +9,10 @@ import {
   type ListView,
 } from './list-view'
 
-const parse = (query: string, states: readonly string[] = LINK_LIST_STATES) =>
-  parseListView(new URLSearchParams(query), states)
+const parse = (query: string, states: readonly string[] = LINK_LIST_STATES, healths: readonly string[] = []) =>
+  parseListView(new URLSearchParams(query), states, healths)
 
-const DEFAULT_VIEW: ListView = { q: '', tag: null, folder: null, state: null, sort: 'created_desc', page: 1 }
+const DEFAULT_VIEW: ListView = { q: '', tag: null, folder: null, state: null, health: null, sort: 'created_desc', page: 1 }
 
 describe('parseListView', () => {
   it('returns the defaults for an empty query', () => {
@@ -25,6 +25,7 @@ describe('parseListView', () => {
       tag: 'abc_1-2',
       folder: 'none',
       state: 'expired',
+      health: null,
       sort: 'slug_asc',
       page: 3,
     })
@@ -39,6 +40,12 @@ describe('parseListView', () => {
     expect(parse(`page=${page}`).page).toBe(1)
   })
 
+  it('accepts the health filters of the given list only', () => {
+    expect(parse('health=broken', LINK_LIST_STATES, LINK_HEALTH_FILTERS).health).toBe('broken')
+    expect(parse('health=sick', LINK_LIST_STATES, LINK_HEALTH_FILTERS).health).toBeNull()
+    expect(parse('health=broken').health).toBeNull()
+  })
+
   it('accepts the states of the given list only', () => {
     expect(parse('state=open', DROP_LIST_STATES).state).toBe('open')
     expect(parse('state=active', DROP_LIST_STATES).state).toBeNull()
@@ -51,8 +58,8 @@ describe('listViewToSearchParams', () => {
   })
 
   it('round-trips a full view', () => {
-    const view: ListView = { q: 'a b', tag: 't1', folder: 'none', state: 'disabled', sort: 'created_asc', page: 2 }
-    expect(parse(listViewToSearchParams(view).toString())).toEqual(view)
+    const view: ListView = { q: 'a b', tag: 't1', folder: 'none', state: 'disabled', health: 'ok', sort: 'created_asc', page: 2 }
+    expect(parse(listViewToSearchParams(view).toString(), LINK_LIST_STATES, LINK_HEALTH_FILTERS)).toEqual(view)
   })
 })
 
@@ -73,6 +80,8 @@ describe('isFilteredView and withFilters', () => {
   it('counts filters but not the sort or the page', () => {
     expect(isFilteredView({ ...DEFAULT_VIEW, sort: 'slug_asc', page: 3 })).toBe(false)
     expect(isFilteredView({ ...DEFAULT_VIEW, folder: 'none' })).toBe(true)
+    expect(isFilteredView({ ...DEFAULT_VIEW, health: 'broken' })).toBe(true)
+    expect(listViewToParams({ ...DEFAULT_VIEW, health: 'broken' })).toMatchObject({ health: 'broken' })
   })
 
   it('goes back to the first page when a filter changes', () => {

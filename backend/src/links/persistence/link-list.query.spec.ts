@@ -4,6 +4,7 @@ import type { Link } from '../entities/link.entity.js';
 import {
   dropStateClause,
   findLinkPage,
+  linkHealthClause,
   linkStateClause,
   shareStateClause,
   type LinkListQuery,
@@ -34,6 +35,7 @@ const BASE: LinkListQuery = { sort: 'created_desc', page: 1, pageSize: 50 };
 async function run(
   query: Partial<LinkListQuery>,
   state: Parameters<typeof findLinkPage>[3] = null,
+  health: Parameters<typeof findLinkPage>[4] = null,
 ) {
   const qb = buildQueryBuilder();
   await findLinkPage(
@@ -41,6 +43,7 @@ async function run(
     'redirect',
     { ...BASE, ...query },
     state,
+    health,
   );
   return qb;
 }
@@ -117,6 +120,16 @@ describe('findLinkPage', () => {
     });
   });
 
+  it('adds the health clause with its parameters', async () => {
+    const { sql, params } = linkHealthClause('broken', 2);
+    const qb = await run({}, null, { sql, params });
+
+    expect(qb.andWhere).toHaveBeenCalledWith(`(${sql})`, {
+      brokenAfter: 2,
+      skipped: 'skipped',
+    });
+  });
+
   it('combines every filter', async () => {
     const qb = await run(
       {
@@ -145,6 +158,30 @@ describe('findLinkPage', () => {
     const qb = await run({ sort });
 
     expect(qb.orderBy).toHaveBeenCalledWith(column, order);
+  });
+});
+
+describe('health clauses', () => {
+  it('keeps broken links whatever the outcome once the threshold is reached', () => {
+    const { sql, params } = linkHealthClause('broken', 2);
+    expect(sql).toContain('lc.link_id = link.id');
+    expect(sql).toContain('lc.consecutive_failures >= :brokenAfter');
+    expect(sql).not.toContain('NOT EXISTS');
+    expect(params).toEqual({ brokenAfter: 2, skipped: 'skipped' });
+  });
+
+  it('keeps ok links below the threshold and not skipped', () => {
+    const { sql } = linkHealthClause('ok', 2);
+    expect(sql).toContain('lc.consecutive_failures < :brokenAfter');
+    expect(sql).toContain('lc.outcome <> :skipped');
+    expect(sql.startsWith('EXISTS')).toBe(true);
+  });
+
+  it('keeps unchecked links: no row, or skipped below the threshold', () => {
+    const { sql } = linkHealthClause('unchecked', 2);
+    expect(sql.startsWith('NOT EXISTS')).toBe(true);
+    expect(sql).toContain('lc.consecutive_failures >= :brokenAfter OR');
+    expect(sql).toContain('lc.outcome <> :skipped');
   });
 });
 

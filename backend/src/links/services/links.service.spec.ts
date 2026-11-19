@@ -5,6 +5,7 @@ import { LinkNotFoundException } from '../../common/exceptions/links/link-not-fo
 import { SlugAlreadyTakenException } from '../../common/exceptions/links/slug-already-taken.exception.js';
 import { ValidationException } from '../../common/exceptions/validation.exception.js';
 import {
+  LINK_CHECK_BROKEN_AFTER,
   LINK_DESTINATION_MAX_LENGTH,
   LINK_SLUG_MAX_LENGTH,
   PUBLIC_ID_GENERATION_ATTEMPTS,
@@ -20,12 +21,14 @@ import type {
 } from '../../events/services/events.service.js';
 import { FolderNotFoundException } from '../../common/exceptions/folders/folder-not-found.exception.js';
 import { TagNotFoundException } from '../../common/exceptions/tags/tag-not-found.exception.js';
+import type { LinkCheck } from '../entities/link-check.entity.js';
 import type { Link } from '../entities/link.entity.js';
 import { EMPTY_LINK_ORGANIZATION } from '../link-organization.js';
 import type {
   LinkRepository,
   NewLink,
 } from '../persistence/link.repository.js';
+import type { LinkCheckRepository } from '../persistence/link-check.repository.js';
 import type { LinkOrganizationService } from './link-organization.service.js';
 import { LinksService } from './links.service.js';
 
@@ -82,6 +85,10 @@ describe('LinksService', () => {
     loadFor: ReturnType<typeof vi.fn>;
     loadOne: ReturnType<typeof vi.fn>;
   };
+  let checks: {
+    findByLinkIds: ReturnType<typeof vi.fn>;
+    countBrokenRedirects: ReturnType<typeof vi.fn>;
+  };
   let audit: { record: ReturnType<typeof vi.fn> };
   let events: {
     recordClick: ReturnType<typeof vi.fn>;
@@ -103,6 +110,10 @@ describe('LinksService', () => {
       loadFor: vi.fn().mockResolvedValue(new Map()),
       loadOne: vi.fn().mockResolvedValue(EMPTY_LINK_ORGANIZATION),
     };
+    checks = {
+      findByLinkIds: vi.fn().mockResolvedValue([]),
+      countBrokenRedirects: vi.fn().mockResolvedValue(0),
+    };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     events = {
       recordClick: vi.fn().mockResolvedValue(undefined),
@@ -110,6 +121,7 @@ describe('LinksService', () => {
     };
     service = new LinksService(
       repository as unknown as LinkRepository,
+      checks as unknown as LinkCheckRepository,
       audit as unknown as AuditLogService,
       events as unknown as EventsService,
       organization as unknown as LinkOrganizationService,
@@ -419,6 +431,86 @@ describe('LinksService', () => {
       await service.detail('abc123');
 
       expect(organization.loadOne).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('health', () => {
+    const check = { linkId: 'internal-uuid', outcome: 'broken' } as LinkCheck;
+
+    it('loads the checks of a whole page in one query', async () => {
+      const links = [buildLink(), buildLink({ id: 'other', publicId: 'zzz' })];
+      repository.findPage.mockResolvedValue({ items: links, total: 2 });
+      checks.findByLinkIds.mockResolvedValue([check]);
+
+      const { items } = await service.list({});
+
+      expect(checks.findByLinkIds).toHaveBeenCalledTimes(1);
+      expect(checks.findByLinkIds).toHaveBeenCalledWith([
+        'internal-uuid',
+        'other',
+      ]);
+      expect(items.map((item) => item.check)).toEqual([check, null]);
+    });
+
+    it('passes the health filter to the repository', async () => {
+      await service.list({ health: 'broken' });
+
+      expect(repository.findPage).toHaveBeenCalledWith(
+        expect.objectContaining({ health: 'broken' }),
+        expect.any(Date),
+      );
+    });
+
+    it('rejects an unknown health filter without reading', async () => {
+      await expect(service.list({ health: 'sick' })).rejects.toBeInstanceOf(
+        ValidationException,
+      );
+      expect(repository.findPage).not.toHaveBeenCalled();
+    });
+
+    it('returns the check of the detail', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+      checks.findByLinkIds.mockResolvedValue([check]);
+
+      expect((await service.detail('abc123')).check).toBe(check);
+    });
+
+    it('returns no check for a redirect never checked', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+
+      expect((await service.detail('abc123')).check).toBeNull();
+    });
+
+    it('returns no check right after the creation', async () => {
+      const created = await service.create(
+        { destination: 'https://example.com' },
+        USER_ID,
+      );
+
+      expect(created.check).toBeNull();
+      expect(checks.findByLinkIds).not.toHaveBeenCalled();
+    });
+
+    it('reads the check back after an update', async () => {
+      repository.findByPublicId.mockResolvedValue(buildLink());
+      checks.findByLinkIds.mockResolvedValue([check]);
+
+      const updated = await service.update(
+        'abc123',
+        { disabled: true },
+        USER_ID,
+      );
+
+      expect(updated.check).toBe(check);
+    });
+
+    it('counts the broken redirects with the threshold', async () => {
+      checks.countBrokenRedirects.mockResolvedValue(3);
+
+      expect(await service.health()).toBe(3);
+      expect(checks.countBrokenRedirects).toHaveBeenCalledWith(
+        LINK_CHECK_BROKEN_AFTER,
+      );
     });
   });
 

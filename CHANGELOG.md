@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.12 — 2026-11-19
+
+- Les redirections dont la destination ne répond plus (deux contrôles consécutifs en échec) sont signalées « Cassée » dans la liste, avec le code HTTP ou la cause de l'échec en infobulle ; celles qui n'ont pas encore été vérifiées sont signalées « Non vérifiée ».
+- Un filtre « Santé » (cassées, OK, non vérifiées) s'ajoute aux filtres de la liste des redirections, et un compteur de redirections cassées apparaît à côté de « Redirections » dans le menu.
+- La fiche d'une redirection affiche son dernier contrôle (résultat, code, date relative) et un bouton « Vérifier maintenant ».
+
 ## 0.2.11 — 2026-11-18
 
 - La fiche d'une redirection permet désormais de la modifier, de la désactiver ou de la supprimer, comme celles des partages et des dépôts.

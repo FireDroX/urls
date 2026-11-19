@@ -17,7 +17,11 @@ function build() {
   const result = { outcome: 'ok', statusCode: 200, errorKind: null };
   const probe = { check: vi.fn().mockResolvedValue(result) };
   const check = { linkId: link.id, ...result } as LinkCheck;
-  const repository = { record: vi.fn().mockResolvedValue(check) };
+  const repository = {
+    record: vi.fn().mockResolvedValue(check),
+    findByLinkIds: vi.fn(),
+    countBrokenRedirects: vi.fn(),
+  };
   const service = new LinkChecksService(
     linksService as unknown as LinksService,
     probe as unknown as DestinationProbe,

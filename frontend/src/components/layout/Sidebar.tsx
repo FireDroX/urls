@@ -1,6 +1,7 @@
 import { ArrowRightLeft, Files, FolderUp, Inbox, LayoutDashboard, Settings, Tags } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router'
+import { useBrokenLinksCount } from '#hooks/useBrokenLinksCount'
 import { StorageMeter } from '#components/layout/StorageMeter'
 import { cn } from '#lib/utils'
 
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   const { t } = useTranslation()
+  const brokenCount = useBrokenLinksCount()
 
   return (
     <nav
@@ -36,6 +38,15 @@ export function Sidebar() {
         >
           <Icon className="size-4" aria-hidden="true" />
           {t(labelKey)}
+          {to === '/redirects' && brokenCount !== null && brokenCount > 0 && (
+            <span
+              role="img"
+              aria-label={t('layout.brokenRedirects', { count: brokenCount })}
+              className="ml-auto rounded-full bg-destructive/10 px-1.5 text-xs font-semibold text-destructive tabular-nums"
+            >
+              {brokenCount}
+            </span>
+          )}
         </NavLink>
       ))}
       <div className="mt-auto hidden pt-4 md:block">

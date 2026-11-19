@@ -3,6 +3,7 @@ import { toLikePattern, type ListPage } from '../../common/list-query.js';
 import {
   LIST_FOLDER_NONE,
   LIST_LIKE_ESCAPE,
+  type LinkHealthFilter,
   type LinkListSort,
 } from '../../common/variables.global.js';
 import type { Link, LinkType } from '../entities/link.entity.js';
@@ -114,11 +115,39 @@ export function dropStateClause(
   }
 }
 
+const LINK_CHECK_ROW =
+  'SELECT 1 FROM link_checks lc WHERE lc.link_id = link.id';
+
+export function linkHealthClause(
+  health: LinkHealthFilter,
+  brokenAfter: number,
+): StateClause {
+  const params = { brokenAfter, skipped: 'skipped' };
+  switch (health) {
+    case 'broken':
+      return {
+        sql: `EXISTS (${LINK_CHECK_ROW} AND lc.consecutive_failures >= :brokenAfter)`,
+        params,
+      };
+    case 'ok':
+      return {
+        sql: `EXISTS (${LINK_CHECK_ROW} AND lc.consecutive_failures < :brokenAfter AND lc.outcome <> :skipped)`,
+        params,
+      };
+    case 'unchecked':
+      return {
+        sql: `NOT EXISTS (${LINK_CHECK_ROW} AND (lc.consecutive_failures >= :brokenAfter OR lc.outcome <> :skipped))`,
+        params,
+      };
+  }
+}
+
 export async function findLinkPage(
   qb: SelectQueryBuilder<Link>,
   type: LinkType,
   query: LinkListQuery,
   state: StateClause | null,
+  health: StateClause | null = null,
 ): Promise<Pick<ListPage<Link>, 'items' | 'total'>> {
   qb.where('link.type = :type', { type });
   if (query.q !== undefined) {
@@ -143,6 +172,9 @@ export async function findLinkPage(
   }
   if (state) {
     qb.andWhere(`(${state.sql})`, state.params);
+  }
+  if (health) {
+    qb.andWhere(`(${health.sql})`, health.params);
   }
   const { column, order } = SORTS[query.sort];
   qb.orderBy(column, order);

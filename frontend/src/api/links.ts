@@ -4,12 +4,39 @@ import type { ListParams, Page } from '#api/list-params'
 import type { ResponseDto } from '#api/response-dto'
 import { apiClient } from '#lib/api-client'
 
+export const LINK_CHECK_ERROR_KINDS = ['dns', 'connection', 'tls', 'timeout', 'too_many_redirects', 'invalid_redirect'] as const
+
+export type LinkCheckOutcome = 'ok' | 'broken' | 'skipped'
+export type LinkCheckErrorKind = (typeof LINK_CHECK_ERROR_KINDS)[number]
+
+export interface LinkLastCheck {
+  outcome: LinkCheckOutcome
+  statusCode: number | null
+  errorKind: LinkCheckErrorKind | null
+  checkedAt: string
+  broken: boolean
+}
+
+export interface LinkCheckResult {
+  id: string
+  outcome: LinkCheckOutcome
+  statusCode: number | null
+  errorKind: LinkCheckErrorKind | null
+  consecutiveFailures: number
+  checkedAt: string
+}
+
+export interface LinksHealth {
+  broken: number
+}
+
 export interface Link extends LinkOrganization {
   id: string
   type: 'redirect'
   destination: string | null
   expiresAt: string | null
   disabled: boolean
+  lastCheck: LinkLastCheck | null
   createdAt: string
   updatedAt: string
 }
@@ -75,6 +102,16 @@ export async function getLink(id: string, signal?: AbortSignal): Promise<Link> {
 
 export async function getLinkStats(id: string, days: number, signal?: AbortSignal): Promise<LinkStats> {
   const { data } = await apiClient.get<ResponseDto<LinkStats>>(`${linkPath(id)}/stats`, { params: { days }, signal })
+  return data.data
+}
+
+export async function getLinksHealth(): Promise<LinksHealth> {
+  const { data } = await apiClient.get<ResponseDto<LinksHealth>>(`${LINKS_PATH}/health`)
+  return data.data
+}
+
+export async function checkLink(id: string): Promise<LinkCheckResult> {
+  const { data } = await apiClient.post<ResponseDto<LinkCheckResult>>(`${linkPath(id)}/check`)
   return data.data
 }
 

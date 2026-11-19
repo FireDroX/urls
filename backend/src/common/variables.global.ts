@@ -102,6 +102,7 @@ export const LINK_CHECK_REDIRECT_STATUSES: readonly number[] = [
 export const LINK_CHECK_GET_FALLBACK_STATUSES: readonly number[] = [405, 501];
 export const LINK_CHECK_CRON = '0 4 * * *';
 export const LINK_CHECK_BATCH_SIZE = 50;
+export const LINK_CHECK_BROKEN_AFTER = 2;
 export const LINK_CHECK_DELAY_MS = 1_000;
 export const PUBLIC_LINK_CACHE_CONTROL = 'no-store';
 
@@ -212,3 +213,5 @@ export const LINK_LIST_SORTS = [
 export type LinkListSort = (typeof LINK_LIST_SORTS)[number];
 export const LINK_LIST_STATES = ['active', 'disabled', 'expired'] as const;
 export type LinkListState = (typeof LINK_LIST_STATES)[number];
+export const LINK_HEALTH_FILTERS = ['broken', 'ok', 'unchecked'] as const;
+export type LinkHealthFilter = (typeof LINK_HEALTH_FILTERS)[number];

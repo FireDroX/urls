@@ -41,6 +41,7 @@ import {
   LINK_STATS_MIN_DAYS,
 } from '../common/variables.global.js';
 import type { LinkCheckResponseDto } from './dto/out/link-check-response.dto.js';
+import type { LinkHealthResponseDto } from './dto/out/link-health-response.dto.js';
 import type { LinkResponseDto } from './dto/out/link-response.dto.js';
 import type { LinkStatsResponseDto } from './dto/out/link-stats-response.dto.js';
 import { LinksExceptionFilter } from './filter/links.exception.filter.js';
@@ -79,6 +80,14 @@ export class LinksController {
     @Query() query: unknown,
   ): Promise<ResponseDto<PageResponseDto<LinkResponseDto>>> {
     return LinksMapper.toListResponse(await this.linksService.list(query));
+  }
+
+  @Get('health')
+  @ApiOperation({
+    summary: 'Nombre de redirections cassées (non supprimées)',
+  })
+  async health(): Promise<ResponseDto<LinkHealthResponseDto>> {
+    return LinksMapper.toHealthResponse(await this.linksService.health());
   }
 
   @Get(':id')

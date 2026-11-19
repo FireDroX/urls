@@ -33,7 +33,9 @@
     "signOut": "Sign out",
     "storage": "S3 storage",
     "storageUsed": "Storage used",
-    "storageUnavailable": "Unavailable"
+    "storageUnavailable": "Unavailable",
+    "brokenRedirects_one": "{{count}} broken redirect",
+    "brokenRedirects_other": "{{count}} broken redirects"
   },
   "dashboard": {
     "title": "All links",
@@ -77,6 +79,34 @@
     "enabledToast": "Redirect enabled.",
     "detail": {
       "settings": "Settings"
+    },
+    "health": {
+      "broken": "Broken",
+      "unchecked": "Unchecked",
+      "neverChecked": "Never checked",
+      "outcomes": {
+        "ok": "OK",
+        "broken": "Broken",
+        "skipped": "Skipped"
+      },
+      "httpStatus": "HTTP {{code}}",
+      "errorKinds": {
+        "dns": "Domain not found",
+        "connection": "Connection failed",
+        "tls": "TLS error",
+        "timeout": "Timed out",
+        "too_many_redirects": "Too many redirects",
+        "invalid_redirect": "Invalid redirect"
+      },
+      "title": "Last check",
+      "result": "Result",
+      "code": "Code",
+      "checkedAt": "Checked",
+      "noCode": "None",
+      "check": "Check now",
+      "checking": "Checking…",
+      "checked": "Check complete.",
+      "checkFailed": "The check failed."
     },
     "form": {
       "createTitle": "New redirect",
@@ -634,6 +664,13 @@
     "allFolders": "All folders",
     "noFolder": "No folder",
     "allStates": "All states",
+    "health": {
+      "label": "Filter by health",
+      "all": "All health states",
+      "broken": "Broken",
+      "ok": "OK",
+      "unchecked": "Unchecked"
+    },
     "sorts": {
       "created_desc": "Newest",
       "created_asc": "Oldest",

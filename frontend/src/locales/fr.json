@@ -33,7 +33,9 @@
     "signOut": "Se déconnecter",
     "storage": "Stockage S3",
     "storageUsed": "Stockage utilisé",
-    "storageUnavailable": "Indisponible"
+    "storageUnavailable": "Indisponible",
+    "brokenRedirects_one": "{{count}} redirection cassée",
+    "brokenRedirects_other": "{{count}} redirections cassées"
   },
   "dashboard": {
     "title": "Tous les liens",
@@ -77,6 +79,34 @@
     "enabledToast": "Redirection réactivée.",
     "detail": {
       "settings": "Réglages"
+    },
+    "health": {
+      "broken": "Cassée",
+      "unchecked": "Non vérifiée",
+      "neverChecked": "Jamais vérifiée",
+      "outcomes": {
+        "ok": "OK",
+        "broken": "Cassée",
+        "skipped": "Ignorée"
+      },
+      "httpStatus": "HTTP {{code}}",
+      "errorKinds": {
+        "dns": "Nom de domaine introuvable",
+        "connection": "Connexion impossible",
+        "tls": "Erreur TLS",
+        "timeout": "Délai dépassé",
+        "too_many_redirects": "Trop de redirections",
+        "invalid_redirect": "Redirection invalide"
+      },
+      "title": "Dernière vérification",
+      "result": "Résultat",
+      "code": "Code",
+      "checkedAt": "Vérifiée",
+      "noCode": "Aucun",
+      "check": "Vérifier maintenant",
+      "checking": "Vérification…",
+      "checked": "Vérification terminée.",
+      "checkFailed": "La vérification a échoué."
     },
     "form": {
       "createTitle": "Nouvelle redirection",
@@ -634,6 +664,13 @@
     "allFolders": "Tous les dossiers",
     "noFolder": "Sans dossier",
     "allStates": "Tous les états",
+    "health": {
+      "label": "Filtrer par santé",
+      "all": "Toutes les santés",
+      "broken": "Cassées",
+      "ok": "OK",
+      "unchecked": "Non vérifiées"
+    },
     "sorts": {
       "created_desc": "Plus récents",
       "created_asc": "Plus anciens",

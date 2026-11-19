@@ -21,6 +21,7 @@ const link: Link = {
   destination: 'https://example.com/',
   expiresAt: null,
   disabled: false,
+  lastCheck: null,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   tags: [],

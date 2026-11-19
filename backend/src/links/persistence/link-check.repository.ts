@@ -7,4 +7,6 @@ export interface LinkCheckRepository {
     result: LinkCheckResult,
     checkedAt: Date,
   ): Promise<LinkCheck>;
+  findByLinkIds(linkIds: string[]): Promise<LinkCheck[]>;
+  countBrokenRedirects(brokenAfter: number): Promise<number>;
 }
