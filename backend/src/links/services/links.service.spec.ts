@@ -224,6 +224,7 @@ describe('LinksService', () => {
       'api',
       'Login',
       'R',
+      'all',
     ])('rejects the slug %s', async (slug) => {
       await expect(
         service.create({ destination: 'https://example.com', slug }, USER_ID),

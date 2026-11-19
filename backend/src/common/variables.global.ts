@@ -15,7 +15,6 @@ export const KNOWN_DEFAULT_SECRETS: readonly string[] = [
   'password123',
   'secret',
   'admin',
-  'all',
   'root',
   'urls',
 ];
