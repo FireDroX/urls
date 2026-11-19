@@ -291,7 +291,7 @@ describe('Redirects page (filters and pagination)', () => {
     const user = userEvent.setup()
     renderAt('/redirects')
 
-    await user.click(await screen.findByRole('combobox', { name: 'Filtrer par santé' }))
+    await user.click(await screen.findByRole('combobox', { name: 'Filtrer par vérification' }))
     await user.click(await screen.findByRole('option', { name: 'Cassées' }))
 
     await waitFor(() => expect(vi.mocked(listLinks).mock.calls.at(-1)?.[0]).toMatchObject({ health: 'broken', page: 1 }))

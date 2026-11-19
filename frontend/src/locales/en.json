@@ -87,6 +87,7 @@
       "outcomes": {
         "ok": "OK",
         "broken": "Broken",
+        "failed": "Failed",
         "skipped": "Skipped"
       },
       "httpStatus": "HTTP {{code}}",
@@ -665,8 +666,8 @@
     "noFolder": "No folder",
     "allStates": "All states",
     "health": {
-      "label": "Filter by health",
-      "all": "All health states",
+      "label": "Filter by check",
+      "all": "All checks",
       "broken": "Broken",
       "ok": "OK",
       "unchecked": "Unchecked"

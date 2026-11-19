@@ -87,6 +87,7 @@
       "outcomes": {
         "ok": "OK",
         "broken": "Cassée",
+        "failed": "Échec",
         "skipped": "Ignorée"
       },
       "httpStatus": "HTTP {{code}}",
@@ -665,8 +666,8 @@
     "noFolder": "Sans dossier",
     "allStates": "Tous les états",
     "health": {
-      "label": "Filtrer par santé",
-      "all": "Toutes les santés",
+      "label": "Filtrer par vérification",
+      "all": "Toutes les vérifications",
       "broken": "Cassées",
       "ok": "OK",
       "unchecked": "Non vérifiées"

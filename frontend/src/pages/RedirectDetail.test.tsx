@@ -217,6 +217,24 @@ describe('RedirectDetail page', () => {
     expect(within(section).getByText('il y a 3 heures')).toBeInTheDocument()
   })
 
+  it('shows an isolated failure as a failed check, without the broken badge', async () => {
+    vi.mocked(getLink).mockResolvedValue({
+      ...link,
+      lastCheck: {
+        outcome: 'broken',
+        statusCode: 500,
+        errorKind: null,
+        checkedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+        broken: false,
+      },
+    })
+    renderPage()
+
+    const section = (await screen.findByRole('heading', { name: 'Dernière vérification' })).closest('section')!
+    expect(within(section).getByText('Échec')).toBeInTheDocument()
+    expect(screen.queryByText('Cassée')).not.toBeInTheDocument()
+  })
+
   it('checks now, then shows the new result', async () => {
     const user = userEvent.setup()
     vi.mocked(checkLink).mockResolvedValue({

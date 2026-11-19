@@ -17,7 +17,10 @@ export function useLastCheckDetails(lastCheck: LinkLastCheck | null): LastCheckD
     const result = t('links.health.neverChecked')
     return { result, code: t('links.health.noCode'), relativeDate: null, fullDate: null, summary: result }
   }
-  const result = t(`links.health.outcomes.${lastCheck.outcome}`)
+  const result =
+    lastCheck.outcome === 'broken' && !lastCheck.broken
+      ? t('links.health.outcomes.failed')
+      : t(`links.health.outcomes.${lastCheck.outcome}`)
   const code =
     lastCheck.statusCode !== null
       ? t('links.health.httpStatus', { code: lastCheck.statusCode })
