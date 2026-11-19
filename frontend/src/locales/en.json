@@ -35,12 +35,32 @@
     "storageUsed": "Storage used",
     "storageUnavailable": "Unavailable"
   },
+  "linkTypes": {
+    "redirect": "Redirect",
+    "share": "Share",
+    "drop": "Drop box"
+  },
   "dashboard": {
     "title": "All links",
     "subtitle": "Redirects, shares and drop boxes, in one place.",
     "linksRegion": "Links",
     "emptyTitle": "No links yet",
-    "emptyBody": "Redirects <r>/r/</r>, shares <d>/d/</d> and drop boxes <u>/u/</u> will show up here."
+    "emptyBody": "Redirects <r>/r/</r>, shares <d>/d/</d> and drop boxes <u>/u/</u> will show up here.",
+    "loadFailedTitle": "Could not load the links",
+    "loadFailedBody": "Check your connection, then try again.",
+    "columns": {
+      "type": "Type",
+      "link": "Link",
+      "target": "Destination or title",
+      "state": "Status",
+      "createdAt": "Created"
+    },
+    "state": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "expired": "Expired",
+      "full": "Full"
+    }
   },
   "links": {
     "title": "Redirects",
@@ -624,15 +644,18 @@
     "placeholders": {
       "links": "Search a slug or a destination",
       "shares": "Search a slug",
-      "drops": "Search a slug or a title"
+      "drops": "Search a slug or a title",
+      "all": "Search a slug, a destination or a title"
     },
     "tag": "Filter by tag",
     "folder": "Filter by folder",
+    "type": "Filter by type",
     "state": "Filter by state",
     "sort": "Sort",
     "allTags": "All tags",
     "allFolders": "All folders",
     "noFolder": "No folder",
+    "allTypes": "All types",
     "allStates": "All states",
     "sorts": {
       "created_desc": "Newest",

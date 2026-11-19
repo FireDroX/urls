@@ -1,8 +1,10 @@
 import type { SelectQueryBuilder } from 'typeorm';
 import { toLikePattern, type ListPage } from '../../common/list-query.js';
 import {
+  LINK_TYPES,
   LIST_FOLDER_NONE,
   LIST_LIKE_ESCAPE,
+  type AllLinksListState,
   type LinkListSort,
 } from '../../common/variables.global.js';
 import type { Link, LinkType } from '../entities/link.entity.js';
@@ -114,13 +116,47 @@ export function dropStateClause(
   }
 }
 
+export function allLinksStateClause(
+  state: AllLinksListState,
+  now: Date,
+  type: LinkType | null,
+): StateClause {
+  const parts: string[] = [];
+  let params: Record<string, unknown> = { now };
+  for (const scope of type ? [type] : LINK_TYPES) {
+    const clause = typeStateClause(scope, state, now);
+    if (!clause) continue;
+    parts.push(`(link.type = '${scope}' AND (${clause.sql}))`);
+    params = { ...params, ...clause.params };
+  }
+  return { sql: parts.length ? parts.join(' OR ') : '1 = 0', params };
+}
+
+function typeStateClause(
+  type: LinkType,
+  state: AllLinksListState,
+  now: Date,
+): StateClause | null {
+  if (type === 'drop') {
+    return dropStateClause(state === 'active' ? 'open' : state, now);
+  }
+  if (state === 'full') return null;
+  return type === 'share'
+    ? shareStateClause(state, now)
+    : linkStateClause(state, now);
+}
+
 export async function findLinkPage(
   qb: SelectQueryBuilder<Link>,
-  type: LinkType,
+  type: LinkType | null,
   query: LinkListQuery,
   state: StateClause | null,
 ): Promise<Pick<ListPage<Link>, 'items' | 'total'>> {
-  qb.where('link.type = :type', { type });
+  if (type) {
+    qb.where('link.type = :type', { type });
+  } else {
+    qb.where('link.type IN (:...types)', { types: LINK_TYPES });
+  }
   if (query.q !== undefined) {
     qb.andWhere(
       `(link.publicId COLLATE utf8mb4_unicode_ci LIKE :pattern ${ESCAPE} OR link.destination LIKE :pattern ${ESCAPE} OR link.title LIKE :pattern ${ESCAPE})`,

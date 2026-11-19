@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '#lib/api-client'
-import { createLink, deleteLink, getLink, getLinkStats, linkUrl, listLinks, updateLink, type Link } from './links'
+import { createLink, deleteLink, getLink, getLinkStats, linkUrl, listAllLinks, listLinks, updateLink, type Link } from './links'
 
 vi.mock('#lib/api-client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -33,6 +33,14 @@ describe('links api', () => {
 
     await expect(listLinks({ q: 'a', page: 2 })).resolves.toEqual(result)
     expect(apiClient.get).toHaveBeenCalledWith('/links', { params: { q: 'a', page: 2 } })
+  })
+
+  it('lists every type from /links/all', async () => {
+    const result = { items: [], total: 0, page: 1, pageSize: 50 }
+    vi.mocked(apiClient.get).mockResolvedValue(envelope(result))
+
+    await expect(listAllLinks({ type: 'share', page: 2 })).resolves.toEqual(result)
+    expect(apiClient.get).toHaveBeenCalledWith('/links/all', { params: { type: 'share', page: 2 } })
   })
 
   it('creates a link with the given payload', async () => {

@@ -1,6 +1,6 @@
 import { redirectPath } from '#api/redirects'
 import type { LinkOrganization, LinkOrganizationPayload } from '#api/link-organization'
-import type { ListParams, Page } from '#api/list-params'
+import type { AllLinkState, LinkType, ListParams, Page } from '#api/list-params'
 import type { ResponseDto } from '#api/response-dto'
 import { apiClient } from '#lib/api-client'
 
@@ -90,4 +90,21 @@ export async function updateLink(id: string, payload: UpdateLinkPayload): Promis
 
 export async function deleteLink(id: string): Promise<void> {
   await apiClient.delete(linkPath(id))
+}
+
+export interface AnyLink extends LinkOrganization {
+  type: LinkType
+  id: string
+  destination: string | null
+  title: string | null
+  state: AllLinkState
+  expiresAt: string | null
+  disabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function listAllLinks(params?: ListParams): Promise<Page<AnyLink>> {
+  const { data } = await apiClient.get<ResponseDto<Page<AnyLink>>>(`${LINKS_PATH}/all`, { params })
+  return data.data
 }

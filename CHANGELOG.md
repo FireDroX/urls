@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.12 — 2026-11-19
+
+- La page « Tous les liens » liste désormais les redirections, les partages et les dépôts ensemble, avec recherche, filtres (type, tag, dossier, état) et pagination ; chaque ligne mène à la fiche du lien.
+- Le slug « all » est réservé et ne peut plus être choisi pour un lien.
+
 ## 0.2.11 — 2026-11-18
 
 - La fiche d'une redirection permet désormais de la modifier, de la désactiver ou de la supprimer, comme celles des partages et des dépôts.
