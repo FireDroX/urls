@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { listFolders } from '#api/folders'
-import { deleteLink, getLink, getLinkStats, updateLink, type Link, type LinkStats } from '#api/links'
+import { checkLink, deleteLink, getLink, getLinkStats, updateLink, type Link, type LinkStats } from '#api/links'
 import { listTags } from '#api/tags'
 import { RedirectDetail } from './RedirectDetail'
 
@@ -15,6 +15,7 @@ vi.mock('#api/links', async (importOriginal) => ({
   getLinkStats: vi.fn(),
   updateLink: vi.fn(),
   deleteLink: vi.fn(),
+  checkLink: vi.fn(),
 }))
 
 vi.mock('#api/tags', () => ({ listTags: vi.fn() }))
@@ -30,6 +31,7 @@ const link: Link = {
   destination: 'https://example.com/docs',
   expiresAt: null,
   disabled: false,
+  lastCheck: null,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   tags: [],
@@ -186,6 +188,88 @@ describe('RedirectDetail page', () => {
 
     await waitFor(() => expect(updateLink).toHaveBeenCalledWith('docs', { destination: 'https://example.org/new' }))
     expect(await screen.findByRole('link', { name: 'https://example.org/new' })).toBeInTheDocument()
+  })
+
+  it('shows a redirect never checked', async () => {
+    renderPage()
+
+    const section = (await screen.findByRole('heading', { name: 'Dernière vérification' })).closest('section')!
+    expect(within(section).getByText('Jamais vérifiée')).toBeInTheDocument()
+    expect(within(section).getByRole('button', { name: 'Vérifier maintenant' })).toBeEnabled()
+  })
+
+  it('shows the last check with its code and a relative date', async () => {
+    vi.mocked(getLink).mockResolvedValue({
+      ...link,
+      lastCheck: {
+        outcome: 'broken',
+        statusCode: 404,
+        errorKind: null,
+        checkedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+        broken: true,
+      },
+    })
+    renderPage()
+
+    const section = (await screen.findByRole('heading', { name: 'Dernière vérification' })).closest('section')!
+    expect(within(section).getByText('Cassée')).toBeInTheDocument()
+    expect(within(section).getByText('HTTP 404')).toBeInTheDocument()
+    expect(within(section).getByText('il y a 3 heures')).toBeInTheDocument()
+  })
+
+  it('shows an isolated failure as a failed check, without the broken badge', async () => {
+    vi.mocked(getLink).mockResolvedValue({
+      ...link,
+      lastCheck: {
+        outcome: 'broken',
+        statusCode: 500,
+        errorKind: null,
+        checkedAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+        broken: false,
+      },
+    })
+    renderPage()
+
+    const section = (await screen.findByRole('heading', { name: 'Dernière vérification' })).closest('section')!
+    expect(within(section).getByText('Échec')).toBeInTheDocument()
+    expect(screen.queryByText('Cassée')).not.toBeInTheDocument()
+  })
+
+  it('checks now, then shows the new result', async () => {
+    const user = userEvent.setup()
+    vi.mocked(checkLink).mockResolvedValue({
+      id: 'docs',
+      outcome: 'ok',
+      statusCode: 200,
+      errorKind: null,
+      consecutiveFailures: 0,
+      checkedAt: new Date().toISOString(),
+    })
+    vi.mocked(getLink)
+      .mockResolvedValueOnce(link)
+      .mockResolvedValueOnce({
+        ...link,
+        lastCheck: { outcome: 'ok', statusCode: 200, errorKind: null, checkedAt: new Date().toISOString(), broken: false },
+      })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Vérifier maintenant' }))
+
+    expect(checkLink).toHaveBeenCalledWith('docs')
+    expect(await screen.findByText('HTTP 200')).toBeInTheDocument()
+    expect(toast.success).toHaveBeenCalledWith('Vérification terminée.')
+  })
+
+  it('shows the delay of a rate limited check', async () => {
+    const user = userEvent.setup()
+    const error = apiError(429)
+    error.response!.headers = new AxiosHeaders({ 'retry-after': '42' })
+    vi.mocked(checkLink).mockRejectedValue(error)
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Vérifier maintenant' }))
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expect.stringContaining('42')))
   })
 
   it('shows the settings of the redirect', async () => {

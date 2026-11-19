@@ -1,16 +1,17 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, ChartColumn, Copy, Pencil, Power, PowerOff, SearchX, Trash } from 'lucide-react'
+import { ArrowLeft, ChartColumn, Copy, Pencil, RefreshCw, Power, PowerOff, SearchX, Trash } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { redirectPath } from '#api/redirects'
-import { updateLink, type Link, type LinkStats } from '#api/links'
+import { checkLink, getLink, updateLink, type Link, type LinkStats } from '#api/links'
 import { DeleteLinkDialog } from '#components/links/DeleteLinkDialog'
 import { LinkFormDialog } from '#components/links/LinkFormDialog'
 import { ClicksChart } from '#components/links/ClicksChart'
 import { LinksPlaceholder } from '#components/links/LinksPlaceholder'
 import { LinkOrganizationSummary } from '#components/links/LinkOrganizationSummary'
 import { TagPill } from '#components/links/TagPill'
+import { LinkHealthBadge } from '#components/links/LinkHealthBadge'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { TopClicksList, type TopClicksEntry } from '#components/links/TopClicksList'
 import { Button } from '#components/ui/button'
@@ -18,9 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#
 import { Skeleton } from '#components/ui/skeleton'
 import { useCopyLink } from '#hooks/useCopyLink'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
+import { useLastCheckDetails } from '#hooks/useLastCheckDetails'
 import { useLink, useLinkStats, type LoadState } from '#hooks/useLinkDetail'
 import { extractErrorMessage } from '#lib/api-errors'
 import { linkErrorMessages } from '#lib/link-errors'
+import { refreshLinkHealth } from '#lib/link-health-refresh'
 import { LINK_STATS_DAY_OPTIONS, linkDetailPath, parseStatsDays } from '#utils/link-stats'
 
 const DAYS_PARAM = 'days'
@@ -85,6 +88,7 @@ function LinkHeader({
           <Copy />
         </Button>
         <LinkStateBadge link={link} />
+        <LinkHealthBadge lastCheck={link.lastCheck} />
         <LinkOrganizationSummary tags={link.tags} folder={link.folder} className="basis-full" />
       </div>
       <div className="flex flex-wrap gap-2">
@@ -150,6 +154,52 @@ function SettingsSection({ link }: { link: Link }) {
         </dd>
         <dt className="text-muted-foreground">{t('linkOrganization.folder')}</dt>
         <dd>{link.folder?.name ?? t('linkOrganization.noFolder')}</dd>
+      </dl>
+    </section>
+  )
+}
+
+function CheckSection({ link, onChanged }: { link: Link; onChanged: (link: Link) => void }) {
+  const { t } = useTranslation()
+  const details = useLastCheckDetails(link.lastCheck)
+  const [checking, setChecking] = useState(false)
+
+  async function runCheck() {
+    setChecking(true)
+    try {
+      await checkLink(link.id)
+      onChanged(await getLink(link.id))
+      refreshLinkHealth()
+      toast.success(t('links.health.checked'))
+    } catch (error) {
+      toast.error(extractErrorMessage(error, t('links.health.checkFailed'), linkErrorMessages(t)))
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" aria-labelledby="link-check-title">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="link-check-title" className="font-heading text-xl font-semibold">
+          {t('links.health.title')}
+        </h2>
+        <Button variant="outline" disabled={checking} onClick={() => void runCheck()}>
+          <RefreshCw />
+          {checking ? t('links.health.checking') : t('links.health.check')}
+        </Button>
+      </div>
+      <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[auto_1fr]">
+        <dt className="text-muted-foreground">{t('links.health.result')}</dt>
+        <dd>{details.result}</dd>
+        {link.lastCheck && (
+          <>
+            <dt className="text-muted-foreground">{t('links.health.code')}</dt>
+            <dd>{details.code}</dd>
+            <dt className="text-muted-foreground">{t('links.health.checkedAt')}</dt>
+            <dd title={details.fullDate ?? undefined}>{details.relativeDate}</dd>
+          </>
+        )}
       </dl>
     </section>
   )
@@ -272,9 +322,11 @@ function LinkDetailContent({
       return
     }
     onChanged(saved)
+    refreshLinkHealth()
   }
 
   function handleDeleted() {
+    refreshLinkHealth()
     toast.success(t('links.deleted'))
     void navigate('/redirects', { replace: true })
   }
@@ -283,6 +335,7 @@ function LinkDetailContent({
     try {
       const saved = await updateLink(link.id, { disabled: !link.disabled })
       onChanged(saved)
+      refreshLinkHealth()
       toast.success(saved.disabled ? t('links.disabledToast') : t('links.enabledToast'))
     } catch (error) {
       toast.error(extractErrorMessage(error, undefined, linkErrorMessages(t)))
@@ -298,6 +351,7 @@ function LinkDetailContent({
         onDelete={() => setDialog('delete')}
       />
       <SettingsSection link={link} />
+      <CheckSection link={link} onChanged={onChanged} />
       <StatsSection id={link.id} days={days} onDaysChange={onDaysChange} />
       <LinkFormDialog
         open={dialog === 'edit'}

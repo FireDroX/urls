@@ -5,6 +5,7 @@ import { Link as RouterLink } from 'react-router'
 import { redirectPath } from '#api/redirects'
 import type { Link } from '#api/links'
 import { LinkOrganizationSummary, type OrganizationSelection } from '#components/links/LinkOrganizationSummary'
+import { LinkHealthBadge } from '#components/links/LinkHealthBadge'
 import { LinkStateBadge } from '#components/links/LinkStateBadge'
 import { Button } from '#components/ui/button'
 import {
@@ -63,7 +64,10 @@ function LinkRow({ link, formatDate, actions, selection }: LinkRowProps) {
         </span>
       </TableCell>
       <TableCell>
-        <LinkStateBadge link={link} />
+        <div className="flex flex-wrap items-center gap-1">
+          <LinkStateBadge link={link} />
+          <LinkHealthBadge lastCheck={link.lastCheck} />
+        </div>
       </TableCell>
       <TableCell className="whitespace-nowrap text-muted-foreground">
         {link.expiresAt ? formatDate(link.expiresAt) : t('links.noExpiry')}

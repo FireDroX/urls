@@ -12,6 +12,7 @@ import {
 import { dropState } from '../../common/drop-state.js';
 import { isLinkExpired, isLinkUsedUp } from '../../common/link-expiry.js';
 import {
+  LINK_CHECK_BROKEN_AFTER,
   PUBLIC_ID_GENERATION_ATTEMPTS,
   type AllLinksListState,
 } from '../../common/variables.global.js';
@@ -33,9 +34,10 @@ import type { Link } from '../entities/link.entity.js';
 import {
   EMPTY_LINK_ORGANIZATION,
   type AllLinkSummary,
-  type LinkWithOrganization,
   type ResolvedOrganization,
 } from '../link-organization.js';
+import type { LinkCheckRepository } from '../persistence/link-check.repository.js';
+import type { RedirectView } from '../redirect-view.js';
 import type {
   LinkRepository,
   NewLink,
@@ -74,23 +76,31 @@ export class LinksService {
   constructor(
     @Inject('LinksRepository')
     private readonly repository: LinkRepository,
+    @Inject('LinkChecksRepository')
+    private readonly checks: LinkCheckRepository,
     private readonly auditLog: AuditLogService,
     private readonly events: EventsService,
     private readonly organization: LinkOrganizationService,
     private readonly files: FilesService,
   ) {}
 
-  async list(query: unknown): Promise<ListPage<LinkWithOrganization>> {
+  async list(query: unknown): Promise<ListPage<RedirectView>> {
     const parsed = parseDto(listLinksQuerySchema, query);
     const { items: links, total } = await this.repository.findPage(
       parsed,
       new Date(),
     );
     const organizations = await this.organization.loadFor(links);
+    const checks = new Map(
+      (await this.checks.findByLinkIds(links.map(({ id }) => id))).map(
+        (check) => [check.linkId, check],
+      ),
+    );
     return {
       items: links.map((link) => ({
         link,
         organization: organizations.get(link.id) ?? EMPTY_LINK_ORGANIZATION,
+        check: checks.get(link.id) ?? null,
       })),
       total,
       page: parsed.page,
@@ -126,9 +136,13 @@ export class LinksService {
     };
   }
 
-  async detail(publicId: string): Promise<LinkWithOrganization> {
+  async detail(publicId: string): Promise<RedirectView> {
     const link = await this.get(publicId);
-    return { link, organization: await this.organization.loadOne(link) };
+    return this.view(link);
+  }
+
+  health(): Promise<number> {
+    return this.checks.countBrokenRedirects(LINK_CHECK_BROKEN_AFTER);
   }
 
   listDueForCheck(limit: number): Promise<Link[]> {
@@ -164,7 +178,7 @@ export class LinksService {
     return link.destination;
   }
 
-  async create(input: unknown, userId: string): Promise<LinkWithOrganization> {
+  async create(input: unknown, userId: string): Promise<RedirectView> {
     const dto = parseDto(createLinkSchema, input);
     const organization = await this.organization.resolve(dto);
     const fields = {
@@ -189,14 +203,18 @@ export class LinksService {
         folderId: dto.folderId ?? null,
       },
     });
-    return { link, organization: await this.organization.loadOne(link) };
+    return {
+      link,
+      organization: await this.organization.loadOne(link),
+      check: null,
+    };
   }
 
   async update(
     publicId: string,
     input: unknown,
     userId: string,
-  ): Promise<LinkWithOrganization> {
+  ): Promise<RedirectView> {
     const dto = parseDto(updateLinkSchema, input);
     const link = await this.get(publicId);
     const organization = await this.organization.resolve(dto);
@@ -215,10 +233,7 @@ export class LinksService {
       targetId: saved.publicId,
       metadata: { previousId: publicId, changes: dto },
     });
-    return {
-      link: saved,
-      organization: await this.organization.loadOne(saved),
-    };
+    return this.view(saved);
   }
 
   async remove(publicId: string, userId: string): Promise<void> {
@@ -229,6 +244,14 @@ export class LinksService {
       userId,
       targetId: link.publicId,
     });
+  }
+
+  private async view(link: Link): Promise<RedirectView> {
+    const [organization, [check = null]] = await Promise.all([
+      this.organization.loadOne(link),
+      this.checks.findByLinkIds([link.id]),
+    ]);
+    return { link, organization, check };
   }
 
   private async insertWithGeneratedId(

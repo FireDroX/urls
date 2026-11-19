@@ -29,6 +29,7 @@ const link: Link = {
   destination: 'https://example.com/docs',
   expiresAt: null,
   disabled: false,
+  lastCheck: null,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   tags: [],
@@ -278,6 +279,53 @@ describe('Redirects page (filters and pagination)', () => {
       page: 2,
       pageSize: 50,
     })
+  })
+
+  it('asks the API for the broken redirects from the URL', async () => {
+    renderAt('/redirects?health=broken')
+
+    await waitFor(() => expect(listLinks).toHaveBeenCalledWith({ health: 'broken', page: 1, pageSize: 50 }))
+  })
+
+  it('filters by health from the select', async () => {
+    const user = userEvent.setup()
+    renderAt('/redirects')
+
+    await user.click(await screen.findByRole('combobox', { name: 'Filtrer par vérification' }))
+    await user.click(await screen.findByRole('option', { name: 'Cassées' }))
+
+    await waitFor(() => expect(vi.mocked(listLinks).mock.calls.at(-1)?.[0]).toMatchObject({ health: 'broken', page: 1 }))
+  })
+
+  it('shows a badge with the status in a tooltip for a broken redirect', async () => {
+    const lastCheck = {
+      outcome: 'broken' as const,
+      statusCode: 404,
+      errorKind: null,
+      checkedAt: '2026-11-14T10:00:00.000Z',
+      broken: true,
+    }
+    vi.mocked(listLinks).mockResolvedValue(pageOf([{ ...link, lastCheck }]))
+    renderAt('/redirects')
+
+    const badge = await screen.findByText('Cassée')
+    expect(badge.closest('span[title]')?.getAttribute('title')).toContain('HTTP 404')
+  })
+
+  it('shows an unchecked badge for a redirect never checked', async () => {
+    renderAt('/redirects')
+
+    expect(await screen.findByText('Non vérifiée')).toBeInTheDocument()
+  })
+
+  it('shows no health badge for a healthy redirect', async () => {
+    const lastCheck = { outcome: 'ok' as const, statusCode: 200, errorKind: null, checkedAt: '2026-11-14T10:00:00.000Z', broken: false }
+    vi.mocked(listLinks).mockResolvedValue(pageOf([{ ...link, lastCheck }]))
+    renderAt('/redirects')
+
+    await screen.findByText('/r/docs')
+    expect(screen.queryByText('Cassée')).not.toBeInTheDocument()
+    expect(screen.queryByText('Non vérifiée')).not.toBeInTheDocument()
   })
 
   it('shows the filtered empty state and clears the filters', async () => {

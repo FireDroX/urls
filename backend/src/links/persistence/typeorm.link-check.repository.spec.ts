@@ -11,6 +11,7 @@ describe('TypeormLinkCheckRepository', () => {
   let ormRepository: {
     query: ReturnType<typeof vi.fn>;
     findOneByOrFail: ReturnType<typeof vi.fn>;
+    findBy: ReturnType<typeof vi.fn>;
   };
   let repository: TypeormLinkCheckRepository;
 
@@ -21,6 +22,7 @@ describe('TypeormLinkCheckRepository', () => {
     ormRepository = {
       query: vi.fn().mockResolvedValue(undefined),
       findOneByOrFail: vi.fn(),
+      findBy: vi.fn().mockResolvedValue([]),
     };
     repository = new TypeormLinkCheckRepository(
       ormRepository as unknown as Repository<LinkCheck>,
@@ -107,5 +109,28 @@ describe('TypeormLinkCheckRepository', () => {
       linkId: LINK_ID,
     });
     expect(saved).toBe(row);
+  });
+
+  it('does not query for an empty list of links', async () => {
+    expect(await repository.findByLinkIds([])).toEqual([]);
+    expect(ormRepository.findBy).not.toHaveBeenCalled();
+  });
+
+  it('reads the checks of several links in one query', async () => {
+    const rows = [{ linkId: 'a' }, { linkId: 'b' }];
+    ormRepository.findBy.mockResolvedValue(rows);
+
+    expect(await repository.findByLinkIds(['a', 'b'])).toBe(rows);
+    expect(ormRepository.findBy).toHaveBeenCalledTimes(1);
+  });
+
+  it('counts the broken redirects not deleted, with a bound threshold', async () => {
+    ormRepository.query.mockResolvedValue([{ total: '3' }]);
+
+    expect(await repository.countBrokenRedirects(2)).toBe(3);
+    expect(sentSql()).toContain("l.type = 'redirect'");
+    expect(sentSql()).toContain('l.deleted_at IS NULL');
+    expect(sentSql()).toContain('lc.consecutive_failures >= ?');
+    expect(sentParams()).toEqual([2]);
   });
 });

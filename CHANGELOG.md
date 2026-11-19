@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.13 — 2026-11-19
+
+- Les redirections dont la destination ne répond plus (deux contrôles consécutifs en échec) sont signalées « Cassée » dans la liste, avec le code HTTP ou la cause de l'échec en infobulle ; celles qui n'ont pas encore été vérifiées sont signalées « Non vérifiée ».
+- Un filtre de vérification (« Cassées », « OK », « Non vérifiées ») s'ajoute aux filtres de la liste des redirections, et un compteur de redirections cassées apparaît à côté de « Redirections » dans le menu. Un premier contrôle en échec s'affiche « Échec » sur la fiche de la redirection ; elle n'est signalée « Cassée » (badge et compteur) qu'après deux échecs consécutifs.
+- La fiche d'une redirection affiche son dernier contrôle (résultat, code, date relative) et un bouton « Vérifier maintenant ».
+
 ## 0.2.12 — 2026-11-19
 
 - La page « Tous les liens » liste désormais les redirections, les partages et les dépôts ensemble, avec recherche, filtres (type, tag, dossier, état) et pagination ; chaque ligne mène à la fiche du lien.

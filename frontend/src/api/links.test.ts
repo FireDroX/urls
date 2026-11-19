@@ -1,6 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '#lib/api-client'
-import { createLink, deleteLink, getLink, getLinkStats, linkUrl, listAllLinks, listLinks, updateLink, type Link } from './links'
+import {
+  checkLink,
+  createLink,
+  deleteLink,
+  getLink,
+  getLinksHealth,
+  getLinkStats,
+  listAllLinks,
+  linkUrl,
+  listLinks,
+  updateLink,
+  type Link,
+} from './links'
 
 vi.mock('#lib/api-client', () => ({
   apiClient: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -12,6 +24,7 @@ const link: Link = {
   destination: 'https://example.com/',
   expiresAt: null,
   disabled: false,
+  lastCheck: null,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   tags: [],
@@ -33,6 +46,28 @@ describe('links api', () => {
 
     await expect(listLinks({ q: 'a', page: 2 })).resolves.toEqual(result)
     expect(apiClient.get).toHaveBeenCalledWith('/links', { params: { q: 'a', page: 2 } })
+  })
+
+  it('reads the number of broken redirects', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue(envelope({ broken: 3 }))
+
+    await expect(getLinksHealth()).resolves.toEqual({ broken: 3 })
+    expect(apiClient.get).toHaveBeenCalledWith('/links/health')
+  })
+
+  it('checks a link by its public id', async () => {
+    const result = {
+      id: 'docs',
+      outcome: 'broken',
+      statusCode: 404,
+      errorKind: null,
+      consecutiveFailures: 2,
+      checkedAt: '2026-11-14T10:00:00.000Z',
+    }
+    vi.mocked(apiClient.post).mockResolvedValue(envelope(result))
+
+    await expect(checkLink('docs')).resolves.toEqual(result)
+    expect(apiClient.post).toHaveBeenCalledWith('/links/docs/check')
   })
 
   it('lists every type from /links/all', async () => {

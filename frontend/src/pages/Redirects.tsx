@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { LINK_LIST_STATES } from '#api/list-params'
+import { LINK_HEALTH_FILTERS, LINK_LIST_STATES } from '#api/list-params'
 import { updateLink, type Link } from '#api/links'
 import { DeleteLinkDialog } from '#components/links/DeleteLinkDialog'
 import { LinkFormDialog } from '#components/links/LinkFormDialog'
@@ -22,9 +22,11 @@ import { useListView } from '#hooks/useListView'
 import { useLinks, type LinksState } from '#hooks/useLinks'
 import { extractErrorMessage } from '#lib/api-errors'
 import { linkErrorMessages } from '#lib/link-errors'
+import { refreshLinkHealth } from '#lib/link-health-refresh'
 import { linkDetailPath } from '#utils/link-stats'
 import { listViewToParams } from '#utils/list-view'
 
+const NO_TYPES: readonly string[] = []
 const SKELETON_ROWS = 3
 
 interface DialogState {
@@ -83,7 +85,7 @@ function LinksContent({ state, actions, isFiltered, selection, onRetry, onClear,
 export function Redirects() {
   const { t } = useTranslation()
   useDocumentTitle(t('links.title'))
-  const { view, setFilters, setPage, clearFilters, isFiltered } = useListView(LINK_LIST_STATES)
+  const { view, setFilters, setPage, clearFilters, isFiltered } = useListView(LINK_LIST_STATES, NO_TYPES, LINK_HEALTH_FILTERS)
   const params = useMemo(() => listViewToParams(view), [view])
   const { state, reload, refresh, replace } = useLinks(params)
   const { options } = useLinkOrganizationOptions()
@@ -92,6 +94,7 @@ export function Redirects() {
     onFolderSelect: (folder) => setFilters({ folder: folder.id }),
   }
   const states = LINK_LIST_STATES.map((value) => ({ value, label: t(`links.state.${value}`) }))
+  const healths = LINK_HEALTH_FILTERS.map((value) => ({ value, label: t(`listFilters.health.${value}`) }))
   const lastPage = state.status === 'ready' ? Math.max(1, Math.ceil(state.total / state.pageSize)) : null
   const beyondLastPage = state.status === 'ready' && state.links.length === 0 && state.total > 0
 
@@ -118,6 +121,7 @@ export function Redirects() {
 
   function handleDeleted() {
     refresh()
+    refreshLinkHealth()
     toast.success(t('links.deleted'))
     closeDialog()
   }
@@ -127,6 +131,7 @@ export function Redirects() {
       const saved = await updateLink(link.id, { disabled: !link.disabled })
       replace(link.id, saved)
       refresh()
+      refreshLinkHealth()
       toast.success(saved.disabled ? t('links.disabledToast') : t('links.enabledToast'))
     } catch (error) {
       toast.error(extractErrorMessage(error, undefined, linkErrorMessages(t)))
@@ -156,6 +161,7 @@ export function Redirects() {
       <ListFilterBar
         view={view}
         states={states}
+        healths={healths}
         tags={options.tags}
         folders={options.folders}
         searchPlaceholder={t('listFilters.placeholders.links')}

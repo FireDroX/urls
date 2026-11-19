@@ -21,6 +21,7 @@ const link: Link = {
   destination: 'https://example.com/',
   expiresAt: null,
   disabled: false,
+  lastCheck: null,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   tags: [],
@@ -78,6 +79,7 @@ describe('createLinkFormSchema (creation)', () => {
     ['API', 'Ce slug est réservé'],
     ['settings', 'Ce slug est réservé'],
     ['all', 'Ce slug est réservé'],
+    ['health', 'Ce slug est réservé'],
   ])('rejects the slug %s', (slug, message) => {
     expect(firstError(schema.safeParse(values({ slug })))).toBe(message)
   })
