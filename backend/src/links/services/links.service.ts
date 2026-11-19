@@ -9,19 +9,30 @@ import {
   generatePublicId,
   isWellFormedLinkId,
 } from '../../common/public-id.js';
-import { PUBLIC_ID_GENERATION_ATTEMPTS } from '../../common/variables.global.js';
+import { dropState } from '../../common/drop-state.js';
+import { isLinkExpired, isLinkUsedUp } from '../../common/link-expiry.js';
+import {
+  PUBLIC_ID_GENERATION_ATTEMPTS,
+  type AllLinksListState,
+} from '../../common/variables.global.js';
 import type { Visitor } from '../../common/visitor.js';
 import {
   EventsService,
   type LinkClickStats,
 } from '../../events/services/events.service.js';
+import {
+  FilesService,
+  type LinkFilesSummary,
+} from '../../files/services/files.service.js';
 import { createLinkSchema } from '../dto/in/create-link.dto.js';
+import { listAllLinksQuerySchema } from '../dto/in/list-all-links-query.dto.js';
 import { listLinksQuerySchema } from '../dto/in/list-links-query.dto.js';
 import { linkStatsQuerySchema } from '../dto/in/link-stats-query.dto.js';
 import { updateLinkSchema } from '../dto/in/update-link.dto.js';
 import type { Link } from '../entities/link.entity.js';
 import {
   EMPTY_LINK_ORGANIZATION,
+  type AllLinkSummary,
   type LinkWithOrganization,
   type ResolvedOrganization,
 } from '../link-organization.js';
@@ -32,6 +43,25 @@ import type {
 import { LinkOrganizationService } from './link-organization.service.js';
 
 const REDIRECT = 'redirect';
+const NO_FILES: LinkFilesSummary = { fileCount: 0, totalSize: 0 };
+
+function unifiedState(
+  link: Link,
+  usage: LinkFilesSummary,
+  now: Date,
+): AllLinksListState {
+  if (link.disabled) return 'disabled';
+  switch (link.type) {
+    case 'drop': {
+      const state = dropState(link, usage, now);
+      return state === 'open' ? 'active' : state;
+    }
+    case 'share':
+      return isLinkUsedUp(link, now) ? 'expired' : 'active';
+    default:
+      return isLinkExpired(link, now) ? 'expired' : 'active';
+  }
+}
 
 export interface LinkStats {
   link: Link;
@@ -47,6 +77,7 @@ export class LinksService {
     private readonly auditLog: AuditLogService,
     private readonly events: EventsService,
     private readonly organization: LinkOrganizationService,
+    private readonly files: FilesService,
   ) {}
 
   async list(query: unknown): Promise<ListPage<LinkWithOrganization>> {
@@ -60,6 +91,34 @@ export class LinksService {
       items: links.map((link) => ({
         link,
         organization: organizations.get(link.id) ?? EMPTY_LINK_ORGANIZATION,
+      })),
+      total,
+      page: parsed.page,
+      pageSize: parsed.pageSize,
+    };
+  }
+
+  async listAll(query: unknown): Promise<ListPage<AllLinkSummary>> {
+    const parsed = parseDto(listAllLinksQuerySchema, query);
+    const now = new Date();
+    const { items: links, total } = await this.repository.findAllPage(
+      parsed,
+      now,
+    );
+    const dropIds = links
+      .filter((link) => link.type === 'drop')
+      .map((link) => link.id);
+    const [organizations, usages] = await Promise.all([
+      this.organization.loadFor(links),
+      dropIds.length
+        ? this.files.summarizeCountedLinks(dropIds)
+        : Promise.resolve(new Map<string, LinkFilesSummary>()),
+    ]);
+    return {
+      items: links.map((link) => ({
+        link,
+        organization: organizations.get(link.id) ?? EMPTY_LINK_ORGANIZATION,
+        state: unifiedState(link, usages.get(link.id) ?? NO_FILES, now),
       })),
       total,
       page: parsed.page,

@@ -82,6 +82,45 @@ describe('LinksMapper', () => {
     });
   });
 
+  it('maps the all-links list without any internal id', () => {
+    const { data } = LinksMapper.toAllListResponse({
+      items: [
+        {
+          link: {
+            id: 'uuid-drop',
+            publicId: 'drop1',
+            type: 'drop',
+            destination: null,
+            title: 'Photos',
+            expiresAt: null,
+            disabled: false,
+            createdAt: new Date('2026-11-01T00:00:00Z'),
+            updatedAt: new Date('2026-11-02T00:00:00Z'),
+          } as Link,
+          organization: { tags: [], folder: null },
+          state: 'full',
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 50,
+    });
+
+    expect(data?.items[0]).toEqual({
+      type: 'drop',
+      id: 'drop1',
+      destination: null,
+      title: 'Photos',
+      state: 'full',
+      tags: [],
+      folder: null,
+      expiresAt: null,
+      disabled: false,
+      createdAt: '2026-11-01T00:00:00.000Z',
+      updatedAt: '2026-11-02T00:00:00.000Z',
+    });
+    expect(JSON.stringify(data)).not.toContain('uuid-drop');
+  });
   it('redirects with a 302, never a permanent redirect', () => {
     expect(LinksMapper.toRedirect('https://example.com/')).toEqual({
       url: 'https://example.com/',

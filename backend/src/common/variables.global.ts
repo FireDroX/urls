@@ -61,6 +61,7 @@ export const LINK_SLUG_REGEX = /^[A-Za-z0-9_-]+$/;
 export const RESERVED_LINK_SLUGS: readonly string[] = [
   'account',
   'admin',
+  'all',
   'api',
   'assets',
   'd',
@@ -212,3 +213,10 @@ export const LINK_LIST_SORTS = [
 export type LinkListSort = (typeof LINK_LIST_SORTS)[number];
 export const LINK_LIST_STATES = ['active', 'disabled', 'expired'] as const;
 export type LinkListState = (typeof LINK_LIST_STATES)[number];
+export const ALL_LINKS_LIST_STATES = [
+  'active',
+  'disabled',
+  'expired',
+  'full',
+] as const;
+export type AllLinksListState = (typeof ALL_LINKS_LIST_STATES)[number];

@@ -27,6 +27,7 @@ import type {
   NewLink,
 } from '../persistence/link.repository.js';
 import type { LinkOrganizationService } from './link-organization.service.js';
+import type { FilesService } from '../../files/services/files.service.js';
 import { LinksService } from './links.service.js';
 
 const USER_ID = 'user-1';
@@ -71,6 +72,7 @@ function buildLink(overrides: Partial<Link> = {}): Link {
 describe('LinksService', () => {
   let repository: {
     findPage: ReturnType<typeof vi.fn>;
+    findAllPage: ReturnType<typeof vi.fn>;
     findByPublicId: ReturnType<typeof vi.fn>;
     insert: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
@@ -87,11 +89,13 @@ describe('LinksService', () => {
     recordClick: ReturnType<typeof vi.fn>;
     clickStats: ReturnType<typeof vi.fn>;
   };
+  let files: { summarizeCountedLinks: ReturnType<typeof vi.fn> };
   let service: LinksService;
 
   beforeEach(() => {
     repository = {
       findPage: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+      findAllPage: vi.fn().mockResolvedValue({ items: [], total: 0 }),
       findByPublicId: vi.fn().mockResolvedValue(null),
       insert: vi.fn((link: NewLink) => Promise.resolve(buildLink(link))),
       save: vi.fn((link: Link) => Promise.resolve(link)),
@@ -103,6 +107,7 @@ describe('LinksService', () => {
       loadFor: vi.fn().mockResolvedValue(new Map()),
       loadOne: vi.fn().mockResolvedValue(EMPTY_LINK_ORGANIZATION),
     };
+    files = { summarizeCountedLinks: vi.fn().mockResolvedValue(new Map()) };
     audit = { record: vi.fn().mockResolvedValue(undefined) };
     events = {
       recordClick: vi.fn().mockResolvedValue(undefined),
@@ -113,6 +118,7 @@ describe('LinksService', () => {
       audit as unknown as AuditLogService,
       events as unknown as EventsService,
       organization as unknown as LinkOrganizationService,
+      files as unknown as FilesService,
     );
   });
 
@@ -218,6 +224,7 @@ describe('LinksService', () => {
       'api',
       'Login',
       'R',
+      'all',
     ])('rejects the slug %s', async (slug) => {
       await expect(
         service.create({ destination: 'https://example.com', slug }, USER_ID),
@@ -455,6 +462,98 @@ describe('LinksService', () => {
       );
       expect(repository.findPage).not.toHaveBeenCalled();
     });
+  });
+
+  describe('listAll', () => {
+    const drop = (overrides: Partial<Link> = {}) =>
+      buildLink({
+        id: 'drop-uuid',
+        publicId: 'drop1',
+        type: 'drop',
+        destination: null,
+        title: 'Photos',
+        maxFiles: 3,
+        maxTotalBytes: 1000,
+        ...overrides,
+      });
+
+    it('maps mixed types with a unified state', async () => {
+      repository.findAllPage.mockResolvedValue({
+        items: [
+          buildLink({ id: 'r', publicId: 'red1' }),
+          buildLink({
+            id: 's',
+            publicId: 'sha1',
+            type: 'share',
+            destination: null,
+            maxDownloads: 2,
+            downloadCount: 2,
+          }),
+          drop(),
+          drop({ id: 'd2', publicId: 'drop2' }),
+          drop({ id: 'd3', publicId: 'drop3', expiresAt: new Date(PAST) }),
+          buildLink({ id: 'r2', publicId: 'red2', disabled: true }),
+        ],
+        total: 6,
+      });
+      files.summarizeCountedLinks.mockResolvedValue(
+        new Map([['d2', { fileCount: 3, totalSize: 10 }]]),
+      );
+
+      const result = await service.listAll({});
+
+      expect(result.items.map((item) => item.state)).toEqual([
+        'active',
+        'expired',
+        'active',
+        'full',
+        'expired',
+        'disabled',
+      ]);
+      expect(result).toMatchObject({ total: 6, page: 1, pageSize: 50 });
+    });
+
+    it('loads organizations once and file usage only for drops', async () => {
+      repository.findAllPage.mockResolvedValue({
+        items: [buildLink(), drop()],
+        total: 2,
+      });
+
+      await service.listAll({});
+
+      expect(organization.loadFor).toHaveBeenCalledTimes(1);
+      expect(files.summarizeCountedLinks).toHaveBeenCalledWith(['drop-uuid']);
+    });
+
+    it('skips the file usage when there is no drop', async () => {
+      repository.findAllPage.mockResolvedValue({
+        items: [buildLink()],
+        total: 1,
+      });
+
+      await service.listAll({});
+
+      expect(files.summarizeCountedLinks).not.toHaveBeenCalled();
+    });
+
+    it('passes the parsed query and the type to the repository', async () => {
+      await service.listAll({ type: 'share', state: 'full', page: '2' });
+
+      expect(repository.findAllPage).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'share', state: 'full', page: 2 }),
+        expect.any(Date),
+      );
+    });
+
+    it.each([{ type: 'file' }, { state: 'open' }, { unknown: '1' }])(
+      'rejects %o without reading',
+      async (query) => {
+        await expect(service.listAll(query)).rejects.toBeInstanceOf(
+          ValidationException,
+        );
+        expect(repository.findAllPage).not.toHaveBeenCalled();
+      },
+    );
   });
 
   describe('update', () => {

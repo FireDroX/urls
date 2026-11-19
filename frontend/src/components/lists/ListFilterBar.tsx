@@ -34,13 +34,14 @@ function FilterSelect({ label, value, onValueChange, options }: FilterSelectProp
 interface ListFilterBarProps {
   view: ListView
   states: { value: string; label: string }[]
+  types?: { value: string; label: string }[]
   tags: LinkTag[]
   folders: LinkFolder[]
   searchPlaceholder: string
   onChange: (patch: ListFilters) => void
 }
 
-export function ListFilterBar({ view, states, tags, folders, searchPlaceholder, onChange }: ListFilterBarProps) {
+export function ListFilterBar({ view, states, types, tags, folders, searchPlaceholder, onChange }: ListFilterBarProps) {
   const { t } = useTranslation()
   const orNull = (value: string) => (value === ALL ? null : value)
 
@@ -66,6 +67,14 @@ export function ListFilterBar({ view, states, tags, folders, searchPlaceholder, 
           ...folders.map((folder) => ({ value: folder.id, label: folder.name })),
         ]}
       />
+      {types && (
+        <FilterSelect
+          label={t('listFilters.type')}
+          value={view.type ?? ALL}
+          onValueChange={(value) => onChange({ type: orNull(value) })}
+          options={[{ value: ALL, label: t('listFilters.allTypes') }, ...types]}
+        />
+      )}
       <FilterSelect
         label={t('listFilters.state')}
         value={view.state ?? ALL}

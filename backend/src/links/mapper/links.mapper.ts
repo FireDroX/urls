@@ -4,11 +4,15 @@ import { ResponseDto } from '../../common/dto/response.dto.js';
 import type { ListPage } from '../../common/list-query.js';
 import { LINK_STATS_TIME_ZONE } from '../../common/variables.global.js';
 import { LinkOrganizationMapper } from './link-organization.mapper.js';
+import type { AllLinkResponseDto } from '../dto/out/all-link-response.dto.js';
 import type { LinkCheckResponseDto } from '../dto/out/link-check-response.dto.js';
 import type { LinkResponseDto } from '../dto/out/link-response.dto.js';
 import type { LinkCheckReport } from '../services/link-checks.service.js';
 import type { LinkStatsResponseDto } from '../dto/out/link-stats-response.dto.js';
-import type { LinkWithOrganization } from '../link-organization.js';
+import type {
+  AllLinkSummary,
+  LinkWithOrganization,
+} from '../link-organization.js';
 import type { LinkStats } from '../services/links.service.js';
 
 export class LinksMapper {
@@ -26,6 +30,26 @@ export class LinksMapper {
     return new ResponseDto({
       ...page,
       items: page.items.map((item) => LinksMapper.toDto(item)),
+    });
+  }
+
+  static toAllListResponse(
+    page: ListPage<AllLinkSummary>,
+  ): ResponseDto<PageResponseDto<AllLinkResponseDto>> {
+    return new ResponseDto({
+      ...page,
+      items: page.items.map(({ link, organization, state }) => ({
+        type: link.type,
+        id: link.publicId,
+        destination: link.destination,
+        title: link.title,
+        state,
+        ...LinkOrganizationMapper.toDto(organization),
+        expiresAt: link.expiresAt?.toISOString() ?? null,
+        disabled: link.disabled,
+        createdAt: link.createdAt.toISOString(),
+        updatedAt: link.updatedAt.toISOString(),
+      })),
     });
   }
 

@@ -421,6 +421,7 @@ describe('SharesService', () => {
 
     it.each([
       ['a reserved slug', { slug: 'api' }],
+      ['the reserved slug all', { slug: 'all' }],
       ['a slug with forbidden characters', { slug: 'bad slug' }],
       ['a past expiration', { expiresAt: PAST }],
       ['a zero download limit', { maxDownloads: 0 }],

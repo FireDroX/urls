@@ -6,6 +6,7 @@ import { LinkTag } from '../tags/entities/link-tag.entity.js';
 import { TagsModule } from '../tags/tags.module.js';
 import { AuditModule } from '../audit/audit.module.js';
 import { EventsModule } from '../events/events.module.js';
+import { FilesModule } from '../files/files.module.js';
 import { LinkCheck } from './entities/link-check.entity.js';
 import { Link } from './entities/link.entity.js';
 import { LinksController } from './links.controller.js';
@@ -27,6 +28,7 @@ import { PinnedHttpTransport } from './services/pinned-http.transport.js';
     EventsModule,
     TagsModule,
     FoldersModule,
+    FilesModule,
   ],
   controllers: [LinksController, RedirectsController],
   providers: [

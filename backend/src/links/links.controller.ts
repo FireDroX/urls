@@ -40,6 +40,7 @@ import {
   LINK_STATS_MAX_DAYS,
   LINK_STATS_MIN_DAYS,
 } from '../common/variables.global.js';
+import type { AllLinkResponseDto } from './dto/out/all-link-response.dto.js';
 import type { LinkCheckResponseDto } from './dto/out/link-check-response.dto.js';
 import type { LinkResponseDto } from './dto/out/link-response.dto.js';
 import type { LinkStatsResponseDto } from './dto/out/link-stats-response.dto.js';
@@ -79,6 +80,22 @@ export class LinksController {
     @Query() query: unknown,
   ): Promise<ResponseDto<PageResponseDto<LinkResponseDto>>> {
     return LinksMapper.toListResponse(await this.linksService.list(query));
+  }
+
+  @Get('all')
+  @ApiOperation({
+    summary: 'Lister les redirections, partages et dépôts ensemble',
+  })
+  @ApiBadRequestResponse({
+    description: 'Paramètre inconnu ou invalide.',
+    type: ErrorResponseDto,
+  })
+  async listAll(
+    @Query() query: unknown,
+  ): Promise<ResponseDto<PageResponseDto<AllLinkResponseDto>>> {
+    return LinksMapper.toAllListResponse(
+      await this.linksService.listAll(query),
+    );
   }
 
   @Get(':id')

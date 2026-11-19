@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LinkCheck } from '../entities/link-check.entity.js';
+import type { ListAllLinksQuery } from '../dto/in/list-all-links-query.dto.js';
 import type { ListLinksQuery } from '../dto/in/list-links-query.dto.js';
 import { Link } from '../entities/link.entity.js';
 import type { ResolvedOrganization } from '../link-organization.js';
 import type { LinkRepository, NewLink } from './link.repository.js';
 import { saveWithOrganization } from './link-organization.writer.js';
-import { findLinkPage, linkStateClause } from './link-list.query.js';
+import {
+  allLinksStateClause,
+  findLinkPage,
+  linkStateClause,
+} from './link-list.query.js';
 
 @Injectable()
 export class TypeormLinkRepository implements LinkRepository {
@@ -25,6 +30,19 @@ export class TypeormLinkRepository implements LinkRepository {
       'redirect',
       query,
       query.state ? linkStateClause(query.state, now) : null,
+    );
+  }
+
+  findAllPage(
+    query: ListAllLinksQuery,
+    now: Date,
+  ): Promise<{ items: Link[]; total: number }> {
+    const type = query.type ?? null;
+    return findLinkPage(
+      this.repository.createQueryBuilder('link'),
+      type,
+      query,
+      query.state ? allLinksStateClause(query.state, now, type) : null,
     );
   }
 
