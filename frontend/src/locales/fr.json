@@ -451,10 +451,11 @@
       "deleteDescription": "{{name}} ne sera plus téléchargeable depuis ce partage."
     },
     "upload": {
-      "dropTitle": "Déposez vos fichiers ici, ou cliquez pour les choisir",
+      "dropTitle": "Glissez vos fichiers ici",
+      "dropBrowse": "ou <browse>parcourez votre appareil</browse>",
+      "part": "part {{current}}/{{total}}",
       "dropHelp": "Jusqu'à 20 Gio par fichier et 50 fichiers par partage.",
       "region": "Envois en cours",
-      "percent": "{{percent}} %",
       "hashProgress": "Calcul de l'empreinte",
       "sendProgress": "Envoi",
       "cancel": "Annuler l'envoi de {{name}}",
@@ -504,17 +505,24 @@
     "verificationFailed": "La vérification a échoué, réessayez.",
     "loadFailedTitle": "Impossible d'ouvrir ce partage"
   },
+  "publicFrame": {
+    "shareFooter": "url.addrien.fr · partage privé",
+    "dropFooter": "url.addrien.fr · dépôt privé"
+  },
   "dropUpload": {
     "title": "Envoyer des fichiers",
     "untitled": "Dépôt de fichiers",
-    "filesRemaining_one": "{{count}} fichier restant sur {{max}}",
-    "filesRemaining_other": "{{count}} fichiers restants sur {{max}}",
-    "bytesRemaining": "{{remaining}} restants sur {{total}}",
-    "closesAt": "Fermeture le {{date}}",
+    "subtitle": "Vous êtes invité à envoyer des fichiers.",
+    "limits": {
+      "files": "Fichiers",
+      "size": "Taille",
+      "closes": "Ferme"
+    },
+    "roomLeft_one": "{{count}} fichier et {{size}} encore possibles",
+    "roomLeft_other": "{{count}} fichiers et {{size}} encore possibles",
     "noExpiry": "Pas de date de fermeture",
     "nameLabel": "Votre nom (facultatif)",
     "namePlaceholder": "Pour que le destinataire sache de qui vient l'envoi",
-    "dropHelp": "Encore {{size}} disponibles",
     "verifyHint": "Une vérification est demandée pour chaque fichier.",
     "refused": {
       "title": "Fichiers refusés",

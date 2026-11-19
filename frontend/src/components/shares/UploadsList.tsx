@@ -1,13 +1,13 @@
 import { useRef, type ChangeEvent } from 'react'
 import type { TFunction } from 'i18next'
-import { RotateCw, X } from 'lucide-react'
+import { FileIcon, RotateCw, TriangleAlertIcon, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { FormError } from '#components/FormError'
 import { Button } from '#components/ui/button'
 import { useFileSize } from '#hooks/useFileSize'
 import { uploadErrorMessage } from '#lib/share-errors'
 import { cn } from '#lib/utils'
 import type { UploadItem } from '#lib/upload-queue'
+import { currentPartOf } from '#utils/file-parts'
 
 const PERCENT = 100
 
@@ -21,25 +21,18 @@ interface UploadsListProps {
 }
 
 function ProgressBar({ label, value, max, fillClass }: { label: string; value: number; max: number; fillClass: string }) {
-  const { t } = useTranslation()
   const percent = Math.min(PERCENT, Math.floor((value / max) * PERCENT))
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{label}</span>
-        <span className="tabular-nums">{t('shares.upload.percent', { percent })}</span>
-      </div>
-      <div
-        role="progressbar"
-        aria-label={label}
-        aria-valuemin={0}
-        aria-valuemax={PERCENT}
-        aria-valuenow={percent}
-        className="h-1.5 overflow-hidden rounded-full bg-bar-track"
-      >
-        <div className={cn('h-full rounded-full transition-[width]', fillClass)} style={{ width: `${percent}%` }} />
-      </div>
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={PERCENT}
+      aria-valuenow={percent}
+      className="h-1.5 overflow-hidden rounded-full bg-bar-track"
+    >
+      <div className={cn('h-full rounded-full transition-[width]', fillClass)} style={{ width: `${percent}%` }} />
     </div>
   )
 }
@@ -65,17 +58,23 @@ function UploadRow({
     if (selected && fileId) onResume?.(fileId, selected)
   }
 
+  const progressText =
+    item.phase === 'uploading' && item.partSize
+      ? `${formatSize(item.sentBytes)} / ${formatSize(item.size)} · ${t('shares.upload.part', currentPartOf(item.size, item.partSize, item.sentBytes))}`
+      : `${formatSize(item.size)} · ${t(`shares.upload.phase.${item.phase}`)}`
+
   return (
-    <li className="flex flex-col gap-2 p-4">
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium" title={item.name}>
-            {item.name}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {formatSize(item.size)} · {t(`shares.upload.phase.${item.phase}`)}
-          </p>
-        </div>
+    <li className={cn('flex flex-col gap-1.5 rounded-lg border p-3', failed && 'border-refused-border')}>
+      <div className="flex items-center gap-2.5 text-sm">
+        {failed ? (
+          <TriangleAlertIcon className="size-4 shrink-0 text-state-danger" aria-hidden />
+        ) : (
+          <FileIcon className="size-4 shrink-0" aria-hidden />
+        )}
+        <span className="min-w-0 flex-1 truncate" title={item.name}>
+          {item.name}
+        </span>
+        <span className="text-[13px] text-muted-foreground">{progressText}</span>
         {failed && fileId && onResume && (
           <>
             <input
@@ -104,7 +103,7 @@ function UploadRow({
         {closable && (
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             aria-label={
               failed
                 ? t('shares.upload.dismiss', { name: item.name })
@@ -123,7 +122,11 @@ function UploadRow({
       {!failed && item.phase !== 'queued' && item.phase !== 'hashing' && (
         <ProgressBar label={t('shares.upload.sendProgress')} value={item.sentBytes} max={item.size} fillClass="bg-bar" />
       )}
-      {failed && <FormError message={errorMessage(item.error, t)} />}
+      {failed && (
+        <p role="alert" className="text-xs text-state-danger">
+          {errorMessage(item.error, t)}
+        </p>
+      )}
     </li>
   )
 }
@@ -135,10 +138,7 @@ export function UploadsList({ items, onCancel, onDismiss, onResume, onAbandon, e
     return null
   }
   return (
-    <ul
-      aria-label={t('shares.upload.region')}
-      className="divide-y divide-border rounded-xl border border-border bg-card"
-    >
+    <ul aria-label={t('shares.upload.region')} className="flex flex-col gap-2.5">
       {items.map((item) => (
         <UploadRow
           key={item.key}

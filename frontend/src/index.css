@@ -57,6 +57,9 @@
   --bar-neutral: #a8a29e;
   --bar-track: #e7e5e4;
   --link-accent: #c2410c;
+  --refused-border: rgba(220, 38, 38, 0.35);
+  --drop-zone-border: rgba(234, 88, 12, 0.45);
+  --drop-zone-bg: rgba(249, 115, 22, 0.05);
 }
 
 body {
@@ -114,6 +117,9 @@ body {
   --color-bar-neutral: var(--bar-neutral);
   --color-bar-track: var(--bar-track);
   --color-link-accent: var(--link-accent);
+  --color-refused-border: var(--refused-border);
+  --color-drop-zone-border: var(--drop-zone-border);
+  --color-drop-zone-bg: var(--drop-zone-bg);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -171,6 +177,9 @@ body {
   --bar-neutral: #57534e;
   --bar-track: #292524;
   --link-accent: #fb923c;
+  --refused-border: rgba(255, 100, 103, 0.35);
+  --drop-zone-border: rgba(249, 115, 22, 0.45);
+  --drop-zone-bg: rgba(249, 115, 22, 0.05);
 }
 
 @layer base {

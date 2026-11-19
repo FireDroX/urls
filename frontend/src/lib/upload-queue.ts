@@ -17,6 +17,7 @@ export interface UploadItem {
   phase: UploadPhase
   hashedBytes: number
   sentBytes: number
+  partSize: number | null
   error: unknown
 }
 
@@ -152,6 +153,7 @@ export class UploadQueue {
         phase: 'queued',
         hashedBytes: 0,
         sentBytes: 0,
+        partSize: null,
         error: null,
       },
     ])
@@ -247,6 +249,7 @@ export class UploadQueue {
       },
       onHashed: (hashedBytes) => this.update(key, { hashedBytes }),
       onSent: (sentBytes) => this.update(key, { sentBytes }),
+      onPartSize: (partSize) => this.update(key, { partSize }),
       onTokenIssued: (uploadToken) => {
         this.update(key, { uploadToken })
         const fileId = this.find(key)?.fileId

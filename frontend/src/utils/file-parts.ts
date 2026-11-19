@@ -25,3 +25,8 @@ export function missingParts(fileSize: number, partSize: number, received: reado
   const receivedSizes = new Map(received.map((part) => [part.partNumber, part.size]))
   return splitIntoParts(fileSize, partSize).filter((part) => receivedSizes.get(part.partNumber) !== partSizeOf(part))
 }
+
+export function currentPartOf(fileSize: number, partSize: number, sentBytes: number): { current: number; total: number } {
+  const total = Math.max(1, Math.ceil(fileSize / partSize))
+  return { current: Math.min(total, Math.floor(sentBytes / partSize) + 1), total }
+}

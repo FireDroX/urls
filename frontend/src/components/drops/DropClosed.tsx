@@ -3,5 +3,11 @@ import { StatusMessage } from '#components/StatusMessage'
 
 export function DropClosed() {
   const { t } = useTranslation()
-  return <StatusMessage title={t('dropUpload.closed.title')} body={t('dropUpload.closed.body')} />
+  return (
+    <StatusMessage
+      title={t('dropUpload.closed.title')}
+      body={t('dropUpload.closed.body')}
+      footer={t('publicFrame.dropFooter')}
+    />
+  )
 }

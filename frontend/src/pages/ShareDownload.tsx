@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router'
 import { isAxiosError } from 'axios'
-import { DownloadIcon, FileIcon } from 'lucide-react'
+import { ClockIcon, DownloadIcon, FileIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { requestShareDownload, type PublicShare, type PublicShareFile } from '#api/public-shares'
 import { FormError } from '#components/FormError'
-import { Mascot } from '#components/Logo'
+import { IconTile } from '#components/IconTile'
+import { PublicFrame } from '#components/PublicFrame'
 import { StatusMessage } from '#components/StatusMessage'
 import { TurnstileWidget } from '#components/Turnstile'
 import { Button } from '#components/ui/button'
@@ -43,22 +44,21 @@ function ShareFileRow({
   const formatSize = useFileSize()
 
   return (
-    <li className="flex items-center gap-3 py-3">
-      <FileIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium" title={file.name}>
-          {file.name}
-        </p>
-        <p className="text-xs text-muted-foreground">{formatSize(file.size)}</p>
-      </div>
+    <li className="flex items-center gap-3 border-b border-table-divider px-4 py-3 text-sm last:border-b-0">
+      <FileIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <span className="min-w-0 flex-1 truncate" title={file.name}>
+        {file.name}
+      </span>
+      <span className="text-[13px] text-muted-foreground">{formatSize(file.size)}</span>
       <Button
-        size="sm"
+        variant="ghost"
+        size="icon"
         disabled={disabled}
         aria-label={t('share.downloadFile', { name: file.name })}
+        title={pending ? t('share.preparing') : t('share.download')}
         onClick={() => onDownload(file)}
       >
         <DownloadIcon aria-hidden />
-        {pending ? t('share.preparing') : t('share.download')}
       </Button>
     </li>
   )
@@ -107,50 +107,50 @@ function SharePreview({ share, onExpired, onStale }: SharePreviewProps) {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/30 p-4">
-      <main className="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-sm">
-        <header className="mb-4 flex items-center gap-4">
-          <Mascot className="h-14 shrink-0" />
-          <div className="min-w-0">
-            <h1 className="font-heading text-xl font-bold">{t('share.title')}</h1>
-            <p className="text-sm text-muted-foreground">
-              {t('share.summary', { count: share.fileCount, size: formatSize(share.totalSize) })}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {expiry ? t('share.expiresAt', { date: expiry }) : t('share.noExpiry')}
-            </p>
-          </div>
-        </header>
-        <ul aria-label={t('share.filesRegion')} className="divide-y divide-border border-y border-border">
-          {share.files.map((file) => (
-            <ShareFileRow
-              key={file.id}
-              file={file}
-              disabled={turnstileToken === null || pendingFileId !== null}
-              pending={pendingFileId === file.id}
-              onDownload={(selected) => void download(selected)}
-            />
-          ))}
-        </ul>
-        <div className="mt-4 flex flex-col gap-3">
-          <TurnstileWidget
-            onVerify={setTurnstileToken}
-            onExpire={() => setTurnstileToken(null)}
-            resetKey={turnstileResetKey}
+    <PublicFrame footer={t('publicFrame.shareFooter')}>
+      <header className="flex flex-col items-start gap-2.5 px-7 pt-7 pb-5">
+        <IconTile icon={DownloadIcon} />
+        <h1 className="text-[26px] font-bold">{t('share.title')}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t('share.summary', { count: share.fileCount, size: formatSize(share.totalSize) })}
+        </p>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-state-neutral-bg px-2.5 py-1 text-[13px] text-state-neutral">
+          <ClockIcon className="size-3.5" aria-hidden />
+          {expiry ? t('share.expiresAt', { date: expiry }) : t('share.noExpiry')}
+        </span>
+      </header>
+      <ul aria-label={t('share.filesRegion')} className="border-t border-border">
+        {share.files.map((file) => (
+          <ShareFileRow
+            key={file.id}
+            file={file}
+            disabled={turnstileToken === null || pendingFileId !== null}
+            pending={pendingFileId === file.id}
+            onDownload={(selected) => void download(selected)}
           />
-          {turnstileToken === null && <p className="text-sm text-muted-foreground">{t('share.verifyHint')}</p>}
-          <FormError message={error} />
-        </div>
-      </main>
-    </div>
+        ))}
+      </ul>
+      <div className="flex flex-col gap-3.5 border-t border-border px-7 pt-5 pb-7">
+        <TurnstileWidget
+          onVerify={setTurnstileToken}
+          onExpire={() => setTurnstileToken(null)}
+          resetKey={turnstileResetKey}
+        />
+        {turnstileToken === null && (
+          <p className="text-center text-xs text-muted-foreground">{t('share.verifyHint')}</p>
+        )}
+        <FormError message={error} />
+      </div>
+    </PublicFrame>
   )
 }
 
 function ShareSkeleton() {
+  const { t } = useTranslation()
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Skeleton className="h-64 w-full max-w-lg" />
-    </div>
+    <PublicFrame footer={t('publicFrame.shareFooter')}>
+      <Skeleton className="h-64 w-full" />
+    </PublicFrame>
   )
 }
 
@@ -163,12 +163,12 @@ export function ShareDownload() {
     case 'loading':
       return <ShareSkeleton />
     case 'notFound':
-      return <NotFound />
+      return <NotFound footer={t('publicFrame.shareFooter')} />
     case 'expired':
-      return <LinkExpired />
+      return <LinkExpired footer={t('publicFrame.shareFooter')} />
     case 'failed':
       return (
-        <StatusMessage title={t('share.loadFailedTitle')} body={state.message}>
+        <StatusMessage title={t('share.loadFailedTitle')} body={state.message} footer={t('publicFrame.shareFooter')}>
           <Button variant="outline" onClick={reload}>
             {t('common.retry')}
           </Button>
