@@ -40,6 +40,7 @@ interface SectionProps {
   failedTitle: string
   onNew: () => void
   onRetry: () => void
+  dialogs: ReactNode
   children: ReactNode
 }
 
@@ -54,6 +55,7 @@ function OrganizationSection({
   failedTitle,
   onNew,
   onRetry,
+  dialogs,
   children,
 }: SectionProps) {
   const { t } = useTranslation()
@@ -98,6 +100,7 @@ function OrganizationSection({
         </Button>
       </div>
       {content()}
+      {dialogs}
     </section>
   )
 }
@@ -146,6 +149,29 @@ function TagsSection() {
       failedTitle={t('organization.tags.loadFailedTitle')}
       onNew={() => setDialog({ kind: 'form', open: true })}
       onRetry={reload}
+      dialogs={
+        <>
+          <TagFormDialog
+            open={dialog.open && dialog.kind === 'form'}
+            tag={dialog.item}
+            onOpenChange={(open) => !open && closeDialog()}
+            onSaved={handleSaved}
+          />
+          {dialog.item && (
+            <ConfirmDeleteDialog
+              open={dialog.open && dialog.kind === 'delete'}
+              title={t('organization.tags.delete.title')}
+              description={t('organization.tags.delete.description', {
+                name: dialog.item.name,
+                count: dialog.item.linkCount,
+              })}
+              onOpenChange={(open) => !open && closeDialog()}
+              onConfirm={() => confirmDelete(dialog.item!)}
+              errorMessage={deleteErrorMessage}
+            />
+          )}
+        </>
+      }
     >
       {state.status === 'ready' && (
         <TagsTable
@@ -154,25 +180,6 @@ function TagsSection() {
             onEdit: (tag) => setDialog({ kind: 'form', item: tag, open: true }),
             onDelete: (tag) => setDialog({ kind: 'delete', item: tag, open: true }),
           }}
-        />
-      )}
-      <TagFormDialog
-        open={dialog.open && dialog.kind === 'form'}
-        tag={dialog.item}
-        onOpenChange={(open) => !open && closeDialog()}
-        onSaved={handleSaved}
-      />
-      {dialog.item && (
-        <ConfirmDeleteDialog
-          open={dialog.open && dialog.kind === 'delete'}
-          title={t('organization.tags.delete.title')}
-          description={t('organization.tags.delete.description', {
-            name: dialog.item.name,
-            count: dialog.item.linkCount,
-          })}
-          onOpenChange={(open) => !open && closeDialog()}
-          onConfirm={() => confirmDelete(dialog.item!)}
-          errorMessage={deleteErrorMessage}
         />
       )}
     </OrganizationSection>
@@ -223,6 +230,29 @@ function FoldersSection() {
       failedTitle={t('organization.folders.loadFailedTitle')}
       onNew={() => setDialog({ kind: 'form', open: true })}
       onRetry={reload}
+      dialogs={
+        <>
+          <FolderFormDialog
+            open={dialog.open && dialog.kind === 'form'}
+            folder={dialog.item}
+            onOpenChange={(open) => !open && closeDialog()}
+            onSaved={handleSaved}
+          />
+          {dialog.item && (
+            <ConfirmDeleteDialog
+              open={dialog.open && dialog.kind === 'delete'}
+              title={t('organization.folders.delete.title')}
+              description={t('organization.folders.delete.description', {
+                name: dialog.item.name,
+                count: dialog.item.linkCount,
+              })}
+              onOpenChange={(open) => !open && closeDialog()}
+              onConfirm={() => confirmDelete(dialog.item!)}
+              errorMessage={deleteErrorMessage}
+            />
+          )}
+        </>
+      }
     >
       {state.status === 'ready' && (
         <FoldersTable
@@ -231,25 +261,6 @@ function FoldersSection() {
             onEdit: (folder) => setDialog({ kind: 'form', item: folder, open: true }),
             onDelete: (folder) => setDialog({ kind: 'delete', item: folder, open: true }),
           }}
-        />
-      )}
-      <FolderFormDialog
-        open={dialog.open && dialog.kind === 'form'}
-        folder={dialog.item}
-        onOpenChange={(open) => !open && closeDialog()}
-        onSaved={handleSaved}
-      />
-      {dialog.item && (
-        <ConfirmDeleteDialog
-          open={dialog.open && dialog.kind === 'delete'}
-          title={t('organization.folders.delete.title')}
-          description={t('organization.folders.delete.description', {
-            name: dialog.item.name,
-            count: dialog.item.linkCount,
-          })}
-          onOpenChange={(open) => !open && closeDialog()}
-          onConfirm={() => confirmDelete(dialog.item!)}
-          errorMessage={deleteErrorMessage}
         />
       )}
     </OrganizationSection>
