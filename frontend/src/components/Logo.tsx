@@ -1,29 +1,20 @@
 import { useTranslation } from 'react-i18next'
 import { cn } from '#lib/utils'
 
-const LOGO_WIDTH = 72
-const LOGO_HEIGHT = 80
 const MASCOT_WIDTH = 600
 const MASCOT_HEIGHT = 761
+const DEFAULT_MARK_SIZE = 28
 
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({ size = DEFAULT_MARK_SIZE, className }: { size?: number; className?: string }) {
   return (
-    <>
-      <img
-        src="/logo-light.svg"
-        alt=""
-        width={LOGO_WIDTH}
-        height={LOGO_HEIGHT}
-        className={cn('h-8 w-auto dark:hidden', className)}
-      />
-      <img
-        src="/logo-dark.svg"
-        alt=""
-        width={LOGO_WIDTH}
-        height={LOGO_HEIGHT}
-        className={cn('hidden h-8 w-auto dark:block', className)}
-      />
-    </>
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className={className}>
+      <g className="fill-foreground">
+        <rect x="4" y="4" width="7" height="32" />
+        <rect x="4" y="4" width="26" height="7" />
+        <rect x="4" y="29" width="26" height="7" />
+      </g>
+      <rect x="16" y="17" width="14" height="6" fill="#ec3013" />
+    </svg>
   )
 }
 
@@ -51,7 +42,7 @@ export function Mascot({ className }: { className?: string }) {
 
 export function Wordmark() {
   return (
-    <span className="font-heading text-lg font-bold tracking-tight">
+    <span className="font-heading text-lg font-bold tracking-[-0.01em]">
       url<span className="font-medium text-muted-foreground">.addrien</span>
     </span>
   )

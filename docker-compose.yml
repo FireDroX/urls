@@ -1,4 +1,4 @@
-# Full stack (mysql + rustfs + backend + frontend) for a blank server or a
+# Full stack (mariadb + rustfs + backend + frontend) for a blank server or a
 # local run. In prod the database and the S3 already exist (shared with
 # NestWiki): use docker-compose.external.yml there.
 #
@@ -6,24 +6,24 @@
 # shared only with the backend. The frontend sits on `default` alone and
 # never sees the database or the storage. Only the frontend port is
 # published, on BIND_ADDRESS (127.0.0.1: reachable by the Cloudflare Tunnel
-# running on the host); mysql/rustfs on BACKING_BIND_ADDRESS.
+# running on the host); mariadb/rustfs on BACKING_BIND_ADDRESS.
 services:
-  mysql:
-    image: mysql:8.4
+  mariadb:
+    image: mariadb:11
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
-      MYSQL_DATABASE: ${DB_DATABASE:-urls}
-      MYSQL_USER: ${DB_USERNAME:-urls}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?}
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
+      MARIADB_DATABASE: ${DB_DATABASE:-urls}
+      MARIADB_USER: ${DB_USERNAME:-urls}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?}
     ports:
       - "${BACKING_BIND_ADDRESS:-127.0.0.1}:${MYSQL_HOST_PORT:-3307}:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - mariadb-data:/var/lib/mysql
     networks:
       - database
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -77,7 +77,7 @@ services:
     env_file:
       - backend/.env
     environment:
-      DB_HOST: mysql
+      DB_HOST: mariadb
       DB_PORT: "3306"
       S3_ENDPOINT: http://rustfs:9000
     mem_limit: ${BACKEND_MEM_LIMIT:-512m}
@@ -87,7 +87,7 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      mysql:
+      mariadb:
         condition: service_healthy
       rustfs:
         condition: service_started
@@ -117,5 +117,5 @@ networks:
     internal: true
 
 volumes:
-  mysql-data:
+  mariadb-data:
   rustfs-data:

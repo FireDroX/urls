@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import type { INestApplication } from '@nestjs/common';
+import { type INestApplication, RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
+import { parsesAsJson } from './common/json-body.js';
 import {
   DEFAULT_TRUSTED_PROXY_HOPS,
   JSON_BODY_LIMIT,
@@ -39,8 +40,10 @@ async function bootstrap() {
   });
 
   app.set('trust proxy', trustedProxyHops());
-  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
-  app.setGlobalPrefix('api');
+  app.useBodyParser('json', { limit: JSON_BODY_LIMIT, type: parsesAsJson });
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'r/:id', method: RequestMethod.GET }],
+  });
   app.enableCors({
     origin: process.env.PUBLIC_URL,
     credentials: true,

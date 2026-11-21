@@ -7,7 +7,27 @@ export type AuditAction =
   | 'auth.login.failed'
   | 'auth.login.locked'
   | 'auth.password.changed'
-  | 'settings.updated';
+  | 'settings.updated'
+  | 'links.created'
+  | 'links.updated'
+  | 'links.deleted'
+  | 'shares.created'
+  | 'shares.updated'
+  | 'shares.deleted'
+  | 'drops.created'
+  | 'drops.updated'
+  | 'drops.deleted'
+  | 'files.created'
+  | 'files.deleted'
+  | 'drops.files.shared'
+  | 'drops.files.received'
+  | 'drops.files.cancelled'
+  | 'tags.created'
+  | 'tags.updated'
+  | 'tags.deleted'
+  | 'folders.created'
+  | 'folders.updated'
+  | 'folders.deleted';
 
 export interface AuditEntry {
   action: AuditAction;

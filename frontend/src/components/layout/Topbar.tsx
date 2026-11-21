@@ -28,7 +28,7 @@ export function Topbar() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4">
       <Link to="/" className="flex items-center gap-2 text-foreground no-underline">
-        <LogoMark />
+        <LogoMark size={28} />
         <Wordmark />
       </Link>
       <div className="ml-auto flex items-center gap-2">
@@ -45,7 +45,7 @@ export function Topbar() {
             <Button
               variant="secondary"
               size="icon"
-              className="rounded-full text-xs font-semibold"
+              className="rounded-full bg-state-neutral-bg text-[13px] text-foreground hover:bg-state-neutral-bg/80"
               aria-label={t('layout.account')}
             >
               {user ? initialsOf(user.email) : '?'}

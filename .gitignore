@@ -33,6 +33,10 @@ graphify-out/
 # Claude
 .claude/
 
+# dev-* skills: local config, state and worktrees
+.dev/
+.worktrees/
+
 # Scripts d'infra locaux (hors dépôt)
 infra/
 

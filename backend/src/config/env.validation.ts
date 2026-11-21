@@ -1,6 +1,7 @@
 import { InvalidEnvironmentException } from '../common/exceptions/config/invalid-environment.exception.js';
 import {
   KNOWN_DEFAULT_SECRETS,
+  MIN_IP_HASH_SECRET_LENGTH,
   MIN_JWT_SECRET_LENGTH,
   MIN_PASSWORD_LENGTH,
 } from '../common/variables.global.js';
@@ -105,6 +106,7 @@ export function validateEnvironment(config: RawEnvironment): RawEnvironment {
     ...requiredSecret(config, 'JWT_ACCESS_SECRET', MIN_JWT_SECRET_LENGTH),
     ...requiredSecret(config, 'JWT_REFRESH_SECRET', MIN_JWT_SECRET_LENGTH),
     ...distinctJwtSecrets(config),
+    ...requiredSecret(config, 'IP_HASH_SECRET', MIN_IP_HASH_SECRET_LENGTH),
     ...required(config, 'DB_HOST'),
     ...required(config, 'DB_USERNAME'),
     ...required(config, 'DB_DATABASE'),

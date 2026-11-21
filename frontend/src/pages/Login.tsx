@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { isAxiosError } from 'axios'
 import { Controller, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { FormError } from '#components/FormError'
-import { Mascot } from '#components/Logo'
+import { LogoMark } from '#components/Logo'
 import { TurnstileWidget } from '#components/Turnstile'
 import { Button } from '#components/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '#components/ui/field'
@@ -119,12 +119,17 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/30 p-4">
-      <main className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
+    <div className="flex min-h-svh items-center justify-center bg-login-background p-4">
+      <main className="w-full max-w-[384px] rounded-[7px] border border-border bg-card p-6 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 w-fit">
-            <Mascot className="h-19" />
-          </div>
+          <Link
+            to="/"
+            aria-label={t('auth.backHome')}
+            title={t('auth.backHome')}
+            className="mx-auto mb-4 block w-fit"
+          >
+            <LogoMark size={76} />
+          </Link>
           <h1 className="text-2xl font-semibold">{t('common.appName')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t('auth.tagline')}</p>
         </div>

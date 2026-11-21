@@ -1,7 +1,10 @@
 {
   "common": {
     "appName": "url.addrien",
-    "mascotAlt": "Rouge-gorge dans son nid"
+    "mascotAlt": "Rouge-gorge dans son nid",
+    "backHome": "Retour à l'accueil",
+    "cancel": "Annuler",
+    "retry": "Réessayer"
   },
   "auth": {
     "tagline": "Mes liens et fichiers partagés",
@@ -14,25 +17,194 @@
     "validation": {
       "emailInvalid": "Adresse e-mail invalide",
       "passwordRequired": "Mot de passe requis"
-    }
+    },
+    "backHome": "Retour à l'accueil"
   },
   "layout": {
     "navigation": "Navigation",
     "allLinks": "Tous les liens",
+    "redirects": "Redirections",
+    "shares": "Partages",
+    "drops": "Dépôts",
+    "files": "Fichiers",
+    "organization": "Organisation",
     "settings": "Réglages",
     "toggleTheme": "Changer de thème",
     "account": "Mon compte",
     "signOut": "Se déconnecter",
     "storage": "Stockage S3",
     "storageUsed": "Stockage utilisé",
-    "storageUnavailable": "Indisponible"
+    "storageUnavailable": "Indisponible",
+    "brokenRedirects_one": "{{count}} redirection cassée",
+    "brokenRedirects_other": "{{count}} redirections cassées",
+    "new": "Nouveau",
+    "newRedirect": "Redirection",
+    "newShare": "Partage",
+    "newDrop": "Dépôt",
+    "brokenLinks": "Liens cassés",
+    "folders": "Dossiers",
+    "tags": "Tags"
+  },
+  "linkTypes": {
+    "redirect": "Redirection",
+    "share": "Partage",
+    "drop": "Dépôt"
   },
   "dashboard": {
     "title": "Tous les liens",
     "subtitle": "Redirections, partages et dépôts, au même endroit.",
     "linksRegion": "Liens",
     "emptyTitle": "Aucun lien pour l'instant",
-    "emptyBody": "Les redirections <r>/r/</r>, les partages <d>/d/</d> et les dépôts <u>/u/</u> apparaîtront ici."
+    "emptyBody": "Les redirections <r>/r/</r>, les partages <d>/d/</d> et les dépôts <u>/u/</u> apparaîtront ici.",
+    "loadFailedTitle": "Impossible de charger les liens",
+    "loadFailedBody": "Vérifiez votre connexion puis réessayez.",
+    "columns": {
+      "type": "Type",
+      "link": "Lien",
+      "target": "Destination ou titre",
+      "state": "État",
+      "createdAt": "Créé le"
+    },
+    "state": {
+      "active": "Actif",
+      "disabled": "Désactivé",
+      "expired": "Expiré",
+      "full": "Plein"
+    },
+    "actions": {
+      "shorten": "Raccourcir",
+      "createDrop": "Créer un dépôt",
+      "shareFiles": "Partager des fichiers"
+    }
+  },
+  "links": {
+    "title": "Redirections",
+    "subtitle": "Des liens courts /r/ qui renvoient vers l'adresse de votre choix.",
+    "new": "Nouvelle redirection",
+    "emptyTitle": "Aucune redirection pour l'instant",
+    "emptyBody": "Créez une redirection pour obtenir un lien court à partager.",
+    "loadFailedTitle": "Impossible de charger les redirections",
+    "loadFailedBody": "Vérifiez votre connexion, puis réessayez.",
+    "columns": {
+      "link": "Lien",
+      "destination": "Destination",
+      "state": "État",
+      "expiresAt": "Expiration",
+      "actions": "Actions"
+    },
+    "state": {
+      "active": "Actif",
+      "disabled": "Désactivé",
+      "expired": "Expiré"
+    },
+    "noExpiry": "Jamais",
+    "copy": "Copier le lien {{slug}}",
+    "copied": "Lien copié.",
+    "copyFailed": "Impossible de copier le lien.",
+    "actions": "Actions pour {{slug}}",
+    "edit": "Modifier",
+    "disable": "Désactiver",
+    "enable": "Réactiver",
+    "created": "Redirection créée.",
+    "updated": "Redirection mise à jour.",
+    "deleted": "Redirection supprimée.",
+    "disabledToast": "Redirection désactivée.",
+    "enabledToast": "Redirection réactivée.",
+    "detail": {
+      "settings": "Réglages"
+    },
+    "health": {
+      "broken": "Cassée",
+      "unchecked": "Non vérifiée",
+      "neverChecked": "Jamais vérifiée",
+      "outcomes": {
+        "ok": "OK",
+        "broken": "Cassée",
+        "failed": "Échec",
+        "skipped": "Ignorée"
+      },
+      "httpStatus": "HTTP {{code}}",
+      "errorKinds": {
+        "dns": "Nom de domaine introuvable",
+        "connection": "Connexion impossible",
+        "tls": "Erreur TLS",
+        "timeout": "Délai dépassé",
+        "too_many_redirects": "Trop de redirections",
+        "invalid_redirect": "Redirection invalide"
+      },
+      "title": "Dernière vérification",
+      "result": "Résultat",
+      "code": "Code",
+      "checkedAt": "Vérifiée",
+      "noCode": "Aucun",
+      "check": "Vérifier maintenant",
+      "checking": "Vérification…",
+      "checked": "Vérification terminée.",
+      "checkFailed": "La vérification a échoué."
+    },
+    "form": {
+      "createTitle": "Nouvelle redirection",
+      "createDescription": "Le lien court renverra vers la destination indiquée.",
+      "editTitle": "Modifier la redirection",
+      "editDescription": "Destination, slug, expiration et état restent modifiables à tout moment.",
+      "destination": "Destination",
+      "destinationPlaceholder": "https://exemple.fr/une-page",
+      "slug": "Slug",
+      "slugOptional": "Slug (facultatif)",
+      "slugHelp": "Laissez vide pour un identifiant généré. Lettres, chiffres, « - » et « _ ».",
+      "slugEditHelp": "Changer le slug invalide l'ancienne adresse du lien.",
+      "expiresAt": "Expiration (facultatif)",
+      "expiresAtHelp": "Laissez vide pour un lien qui n'expire jamais.",
+      "noExpiry": "Aucune",
+      "disabled": "Désactivé",
+      "disabledHelp": "Un lien désactivé répond « lien introuvable ».",
+      "create": "Créer",
+      "save": "Enregistrer"
+    },
+    "delete": {
+      "action": "Supprimer",
+      "title": "Supprimer cette redirection ?",
+      "description": "Le lien /r/{{slug}} cessera de fonctionner. Son slug restera réservé et ne pourra pas être réutilisé.",
+      "confirm": "Supprimer"
+    },
+    "validation": {
+      "destinationRequired": "Destination requise",
+      "destinationTooLong": "{{max}} caractères maximum",
+      "destinationInvalid": "Adresse http:// ou https:// attendue",
+      "slugTooShort": "Au moins {{min}} caractères",
+      "slugTooLong": "{{max}} caractères maximum",
+      "slugCharacters": "Lettres, chiffres, « - » et « _ » uniquement",
+      "slugReserved": "Ce slug est réservé",
+      "expiresInPast": "La date d'expiration doit être dans le futur"
+    },
+    "errors": {
+      "invalid": "Destination ou slug invalide.",
+      "notFound": "Cette redirection n'existe plus.",
+      "slugTaken": "Ce slug est déjà pris."
+    },
+    "stats": "Statistiques",
+    "viewStats": "Statistiques de {{slug}}"
+  },
+  "linkStats": {
+    "title": "Clics",
+    "timeZoneNote": "Jours comptés en UTC.",
+    "period": "Période",
+    "lastDays_one": "Dernier jour",
+    "lastDays_other": "{{count}} derniers jours",
+    "totalLabel_one": "clic sur les {{days}} derniers jours",
+    "totalLabel_other": "clics sur les {{days}} derniers jours",
+    "clicks": "Clics",
+    "clicksCount_one": "{{count}} clic",
+    "clicksCount_other": "{{count}} clics",
+    "topSources": "Principales sources",
+    "topCountries": "Principaux pays",
+    "direct": "Direct",
+    "unknownCountry": "Inconnu",
+    "emptyTitle": "Aucun clic sur cette période",
+    "emptyBody": "Les clics sur le lien court apparaîtront ici, par jour, par source et par pays.",
+    "loadFailedTitle": "Impossible de charger les statistiques",
+    "notFoundTitle": "Redirection introuvable",
+    "backToList": "Retour aux redirections"
   },
   "settings": {
     "title": "Réglages",
@@ -59,10 +231,429 @@
       "mismatch": "Les deux mots de passe diffèrent"
     }
   },
+  "files": {
+    "title": "Fichiers",
+    "subtitle": "Tous les fichiers stockés, leur origine et la place qu'ils occupent.",
+    "emptyTitle": "Aucun fichier stocké",
+    "emptyBody": "Les fichiers déposés dans un partage apparaîtront ici.",
+    "emptyOrphansTitle": "Aucun fichier orphelin",
+    "emptyOrphansBody": "Tous les fichiers appartiennent à un partage existant.",
+    "loadFailedTitle": "Impossible de charger les fichiers",
+    "loadFailedBody": "Vérifiez votre connexion, puis réessayez.",
+    "deleted": "Fichier supprimé.",
+    "deleteTitle": "Supprimer ce fichier ?",
+    "deleteDescription": "{{name}} ({{size}}) sera supprimé définitivement du stockage.",
+    "download": "Télécharger {{name}}",
+    "delete": "Supprimer {{name}}",
+    "inUseHint": "Ce fichier est encore attaché à un partage ou à un dépôt : retirez-le depuis celui-ci.",
+    "filter": {
+      "label": "Filtre",
+      "all": "Tous",
+      "orphans": "Orphelins"
+    },
+    "columns": {
+      "name": "Nom",
+      "size": "Taille",
+      "mime": "Type",
+      "status": "État",
+      "origin": "Origine",
+      "date": "Date"
+    },
+    "origin": {
+      "redirect": "Redirection",
+      "share": "Partage",
+      "drop": "Dépôt",
+      "shareDeleted": "partage supprimé",
+      "dropDeleted": "dépôt supprimé",
+      "linkDeleted": "lien supprimé"
+    },
+    "usage": {
+      "title": "Place occupée",
+      "label": "Quota utilisé",
+      "used": "{{used}} utilisés sur {{total}}",
+      "orphans": "dont {{size}} de fichiers orphelins",
+      "storage": "Usage réel du stockage : {{size}}",
+      "storageUnavailable": "Usage réel du stockage indisponible"
+    },
+    "errors": {
+      "invalid": "Requête invalide.",
+      "notFound": "Fichier introuvable.",
+      "storageUnavailable": "Stockage injoignable, réessayez dans un instant.",
+      "inUse": "Ce fichier est encore attaché à un partage ou à un dépôt.",
+      "notReady": "Ce fichier n'est pas encore prêt."
+    }
+  },
+  "drops": {
+    "title": "Dépôts",
+    "subtitle": "Des liens /u/ pour recevoir des fichiers, dans la limite d'un nombre et d'une taille.",
+    "new": "Nouveau dépôt",
+    "emptyTitle": "Aucun dépôt pour l'instant",
+    "emptyBody": "Créez un dépôt pour obtenir un lien où l'on pourra vous envoyer des fichiers.",
+    "loadFailedTitle": "Impossible de charger les dépôts",
+    "untitled": "Sans titre",
+    "filesOfMax": "{{current}} / {{max}}",
+    "sizeOfMax": "{{current}} / {{max}}",
+    "copyAction": "Copier le lien",
+    "created": "Dépôt créé.",
+    "updated": "Dépôt mis à jour.",
+    "deleted": "Dépôt supprimé.",
+    "disabledToast": "Dépôt désactivé.",
+    "enabledToast": "Dépôt réactivé.",
+    "columns": {
+      "title": "Titre",
+      "files": "Fichiers reçus",
+      "size": "Taille reçue"
+    },
+    "state": {
+      "open": "Ouvert",
+      "full": "Plein",
+      "expired": "Expiré",
+      "disabled": "Désactivé"
+    },
+    "form": {
+      "createTitle": "Nouveau dépôt",
+      "createDescription": "Les fichiers reçus s'arrêtent aux limites choisies ici.",
+      "editTitle": "Modifier le dépôt",
+      "editDescription": "Titre, slug, limites et expiration restent modifiables à tout moment.",
+      "title": "Titre (facultatif)",
+      "titleHelp": "Pour vous y retrouver dans la liste.",
+      "slugEditHelp": "Changer le slug invalide l'ancienne adresse du dépôt.",
+      "maxFiles": "Nombre de fichiers maximum",
+      "maxFilesHelp": "De 1 à 50 fichiers.",
+      "maxTotalSize": "Taille totale maximum",
+      "maxTotalSizeHelp": "Somme des fichiers reçus, jusqu'à 75 Gio.",
+      "unit": "Unité",
+      "units": {
+        "MiB": "Mio",
+        "GiB": "Gio"
+      },
+      "expiresAtHelp": "Proposée à 7 jours. Laissez vide pour un dépôt qui n'expire jamais."
+    },
+    "delete": {
+      "title": "Supprimer ce dépôt ?",
+      "description": "Le lien /u/{{slug}} cessera de fonctionner. Son slug restera réservé."
+    },
+    "validation": {
+      "titleTooLong": "{{max}} caractères maximum",
+      "titleCharacters": "Caractères de contrôle interdits",
+      "maxFiles": "Nombre entier de 1 à {{max}}",
+      "maxTotalSize": "Nombre entier supérieur à 0",
+      "maxTotalSizeTooLarge": "{{max}} Gio au maximum"
+    },
+    "errors": {
+      "invalid": "Titre, slug, limite ou expiration invalide.",
+      "notFound": "Ce dépôt n'existe plus.",
+      "slugTaken": "Ce slug est déjà pris.",
+      "fileNotFound": "Ce fichier n'existe plus.",
+      "storageUnavailable": "Le stockage est injoignable. Le fichier est conservé, réessayez plus tard."
+    },
+    "notFoundTitle": "Dépôt introuvable",
+    "open": "Ouvrir le dépôt {{slug}}",
+    "detail": {
+      "views": "Vues sur 90 jours",
+      "files": "Fichiers reçus",
+      "size": "Taille reçue"
+    },
+    "files": {
+      "title": "Fichiers reçus",
+      "emptyTitle": "Aucun fichier reçu pour l'instant",
+      "emptyBody": "Les fichiers envoyés via le lien /u/ apparaîtront ici.",
+      "name": "Nom",
+      "uploader": "Expéditeur",
+      "anonymous": "Anonyme",
+      "size": "Taille",
+      "status": "État",
+      "receivedAt": "Reçu le",
+      "download": "Télécharger {{name}}",
+      "delete": "Supprimer {{name}}",
+      "deleted": "Fichier supprimé.",
+      "deleteTitle": "Supprimer ce fichier ?",
+      "deleteDescription": "{{name}} sera supprimé définitivement. Un envoi en cours sera annulé."
+    },
+    "share": {
+      "action": "Créer un partage",
+      "title": "Créer un partage à partir de ce dépôt",
+      "description": "Les fichiers choisis sont déplacés vers un nouveau partage /d/, pas copiés : ils n'appartiennent plus au dépôt.",
+      "files": "Fichiers à partager",
+      "closeDrop": "Fermer le dépôt",
+      "closeDropHelp": "Désactive le dépôt pour que plus personne ne puisse y envoyer de fichiers avec son lien.",
+      "submit": "Créer le partage",
+      "validation": {
+        "noFile": "Choisissez au moins un fichier",
+        "tooManyFiles": "{{max}} fichiers au maximum"
+      },
+      "errors": {
+        "invalid": "Fichiers, slug, expiration ou limite invalide.",
+        "notFound": "Un fichier ou ce dépôt n'existe plus. La liste a été actualisée.",
+        "notReady": "Un fichier n'est plus prêt. La liste a été actualisée."
+      }
+    }
+  },
+  "shares": {
+    "title": "Partages",
+    "subtitle": "Des liens /d/ pour partager un ou plusieurs fichiers.",
+    "new": "Nouveau partage",
+    "emptyTitle": "Aucun partage pour l'instant",
+    "emptyBody": "Créez un partage pour y déposer des fichiers et obtenir un lien à envoyer.",
+    "loadFailedTitle": "Impossible de charger les partages",
+    "notFoundTitle": "Partage introuvable",
+    "open": "Ouvrir le partage {{slug}}",
+    "fileSummary_one": "{{count}} fichier · {{size}}",
+    "fileSummary_other": "{{count}} fichiers · {{size}}",
+    "downloadsOfMax": "{{current}} / {{max}}",
+    "created": "Partage créé.",
+    "updated": "Partage mis à jour.",
+    "deleted": "Partage supprimé.",
+    "disabledToast": "Partage désactivé.",
+    "enabledToast": "Partage réactivé.",
+    "columns": {
+      "files": "Fichiers",
+      "downloads": "Téléchargements"
+    },
+    "form": {
+      "createTitle": "Nouveau partage",
+      "createDescription": "Vous déposerez les fichiers sur la fiche du partage.",
+      "editTitle": "Modifier le partage",
+      "editDescription": "Slug, expiration, téléchargements et état restent modifiables à tout moment.",
+      "slugEditHelp": "Changer le slug invalide l'ancienne adresse du partage.",
+      "slugLocked": "Le slug ne peut pas changer pendant un envoi.",
+      "expiresAtHelp": "Laissez vide pour un partage qui n'expire jamais.",
+      "maxDownloads": "Téléchargements maximum (facultatif)",
+      "maxDownloadsHelp": "Laissez vide pour ne pas limiter les téléchargements."
+    },
+    "delete": {
+      "title": "Supprimer ce partage ?",
+      "description": "Le lien /d/{{slug}} cessera de fonctionner et ses fichiers ne seront plus accessibles. Son slug restera réservé."
+    },
+    "detail": {
+      "views": "Vues sur 90 jours",
+      "downloads": "Téléchargements",
+      "totalSize": "Taille totale"
+    },
+    "fileStatus": {
+      "uploading": "Envoi inachevé",
+      "verifying": "Vérification",
+      "ready": "Prêt",
+      "rejected": "Rejeté"
+    },
+    "files": {
+      "title": "Fichiers",
+      "emptyTitle": "Aucun fichier dans ce partage",
+      "emptyBody": "Déposez un fichier ci-dessus : il sera disponible sur le lien une fois vérifié.",
+      "name": "Nom",
+      "size": "Taille",
+      "status": "État",
+      "resume": "Reprendre",
+      "resumeInput": "Reprendre l'envoi de {{name}}",
+      "delete": "Supprimer {{name}}",
+      "deleted": "Fichier supprimé.",
+      "deleteTitle": "Supprimer ce fichier ?",
+      "deleteDescription": "{{name}} ne sera plus téléchargeable depuis ce partage."
+    },
+    "upload": {
+      "dropTitle": "Glissez vos fichiers ici",
+      "dropBrowse": "ou <browse>parcourez votre appareil</browse>",
+      "part": "part {{current}}/{{total}}",
+      "dropHelp": "Jusqu'à 20 Gio par fichier et 50 fichiers par partage.",
+      "region": "Envois en cours",
+      "hashProgress": "Calcul de l'empreinte",
+      "sendProgress": "Envoi",
+      "cancel": "Annuler l'envoi de {{name}}",
+      "cancelHelp": "Annule l'envoi et supprime ce qui a déjà été reçu.",
+      "dismiss": "Fermer l'erreur de {{name}}",
+      "phase": {
+        "queued": "En attente",
+        "hashing": "Calcul de l'empreinte",
+        "uploading": "Envoi",
+        "completing": "Finalisation",
+        "canceling": "Annulation",
+        "failed": "Échec"
+      }
+    },
+    "validation": {
+      "maxDownloads": "Nombre entier de 1 à {{max}}",
+      "fileNameTooLong": "nom de {{max}} caractères maximum",
+      "fileEmpty": "fichier vide",
+      "fileTooLarge": "{{max}} maximum par fichier",
+      "fileRefused": "{{name}} refusé : {{reason}}"
+    },
+    "errors": {
+      "invalid": "Slug, expiration ou limite invalide.",
+      "notFound": "Ce partage n'existe plus.",
+      "slugTaken": "Ce slug est déjà pris.",
+      "fileInvalid": "Ce fichier a été refusé : nom, taille ou part invalide.",
+      "fileNotFound": "Ce fichier ou ce partage n'existe plus.",
+      "fileConflict": "Cet envoi n'est plus en cours, ou des parts manquent encore.",
+      "fileTooLarge": "Trop volumineux : limite du fichier, du partage ou du stockage atteinte.",
+      "storageUnavailable": "Le stockage est injoignable, réessayez dans un instant.",
+      "differentFile": "Ce n'est pas le fichier de l'envoi interrompu : rien n'a été envoyé.",
+      "hashFailed": "Impossible de lire ce fichier.",
+      "uploadInterrupted": "Envoi interrompu : vérifiez votre connexion, puis reprenez-le."
+    }
+  },
+  "share": {
+    "title": "Fichiers partagés",
+    "summary_one": "{{count}} fichier · {{size}}",
+    "summary_other": "{{count}} fichiers · {{size}}",
+    "expiresAt": "Disponible jusqu'au {{date}}",
+    "noExpiry": "Sans date d'expiration",
+    "filesRegion": "Fichiers",
+    "download": "Télécharger",
+    "downloadFile": "Télécharger {{name}}",
+    "preparing": "Préparation…",
+    "verifyHint": "Validez la vérification ci-dessous pour télécharger.",
+    "verificationFailed": "La vérification a échoué, réessayez.",
+    "loadFailedTitle": "Impossible d'ouvrir ce partage"
+  },
+  "publicFrame": {
+    "shareFooter": "url.addrien.fr · partage privé",
+    "dropFooter": "url.addrien.fr · dépôt privé"
+  },
+  "dropUpload": {
+    "title": "Envoyer des fichiers",
+    "untitled": "Dépôt de fichiers",
+    "subtitle": "Vous êtes invité à envoyer des fichiers.",
+    "limits": {
+      "files": "Fichiers",
+      "size": "Taille",
+      "closes": "Ferme"
+    },
+    "roomLeft_one": "{{count}} fichier et {{size}} encore possibles",
+    "roomLeft_other": "{{count}} fichiers et {{size}} encore possibles",
+    "noExpiry": "Pas de date de fermeture",
+    "nameLabel": "Votre nom (facultatif)",
+    "namePlaceholder": "Pour que le destinataire sache de qui vient l'envoi",
+    "verifyHint": "Une vérification est demandée pour chaque fichier.",
+    "refused": {
+      "title": "Fichiers refusés",
+      "dismiss": "Fermer le refus de {{name}}",
+      "tooLarge": "Ce fichier dépasse la taille maximale d'un fichier.",
+      "noRoom": "Il ne reste pas assez de place dans ce dépôt pour ce fichier.",
+      "closed": "Ce dépôt est fermé."
+    },
+    "pending": {
+      "title": "Envois interrompus",
+      "help": "Choisissez de nouveau le même fichier pour reprendre l'envoi là où il s'est arrêté.",
+      "resume": "Reprendre",
+      "resumeInput": "Reprendre l'envoi de {{name}}",
+      "abandon": "Abandonner",
+      "abandonLabel": "Abandonner l'envoi de {{name}}"
+    },
+    "receipts": {
+      "title": "Fichiers envoyés",
+      "verifying": "Vérification…",
+      "ready": "Reçu",
+      "rejected": "Rejeté",
+      "unavailable": "Indisponible"
+    },
+    "closed": {
+      "title": "Ce dépôt est fermé",
+      "body": "Ce dépôt n'accepte plus de fichiers : il est expiré ou plein."
+    },
+    "closedInline": "Ce dépôt vient de se fermer : les envois en cours vont jusqu'au bout, mais il n'accepte plus de nouveaux fichiers.",
+    "loadFailedTitle": "Impossible d'ouvrir ce dépôt",
+    "retry": "Réessayer",
+    "errors": {
+      "differentFile": "Ce fichier n'est pas celui dont l'envoi a été interrompu.",
+      "hashFailed": "Le fichier n'a pas pu être lu.",
+      "interrupted": "L'envoi a été interrompu.",
+      "verificationFailed": "La vérification a échoué, réessayez.",
+      "notFound": "Cet envoi est introuvable, il a peut-être été annulé.",
+      "closed": "Le dépôt est fermé.",
+      "noRoom": "Ce fichier est trop gros ou il ne reste pas assez de place dans le dépôt.",
+      "storageUnavailable": "Le stockage est injoignable, réessayez dans un instant."
+    }
+  },
+  "organization": {
+    "title": "Organisation",
+    "subtitle": "Les tags et les dossiers servent à classer vos liens.",
+    "columns": {
+      "links": "Liens"
+    },
+    "tags": {
+      "title": "Tags",
+      "new": "Nouveau tag",
+      "emptyTitle": "Aucun tag pour l'instant",
+      "emptyBody": "Créez un tag pour repérer et regrouper vos liens.",
+      "loadFailedTitle": "Impossible de charger les tags",
+      "actions": "Actions pour le tag {{name}}",
+      "created": "Tag créé.",
+      "updated": "Tag mis à jour.",
+      "deleted": "Tag supprimé.",
+      "columns": {
+        "name": "Tag"
+      },
+      "form": {
+        "name": "Nom",
+        "color": "Couleur",
+        "createTitle": "Nouveau tag",
+        "createDescription": "Un nom unique et une couleur pour le repérer.",
+        "editTitle": "Modifier le tag",
+        "editDescription": "Renommez ou recolorez ce tag."
+      },
+      "delete": {
+        "title": "Supprimer ce tag ?",
+        "description_zero": "Le tag « {{name}} » n'est utilisé par aucun lien.",
+        "description_one": "Le tag « {{name}} » sera retiré de son lien ; le lien reste.",
+        "description_other": "Le tag « {{name}} » sera retiré de ses {{count}} liens ; les liens restent."
+      },
+      "validation": {
+        "nameRequired": "Le nom est obligatoire",
+        "nameTooLong": "{{max}} caractères maximum",
+        "nameCharacters": "Caractères de contrôle interdits",
+        "color": "Couleur au format #rrggbb"
+      },
+      "errors": {
+        "invalid": "Nom ou couleur de tag invalide.",
+        "notFound": "Ce tag n'existe plus.",
+        "nameTaken": "Un tag porte déjà ce nom."
+      }
+    },
+    "folders": {
+      "title": "Dossiers",
+      "new": "Nouveau dossier",
+      "emptyTitle": "Aucun dossier pour l'instant",
+      "emptyBody": "Créez un dossier pour ranger vos liens.",
+      "loadFailedTitle": "Impossible de charger les dossiers",
+      "actions": "Actions pour le dossier {{name}}",
+      "created": "Dossier créé.",
+      "updated": "Dossier mis à jour.",
+      "deleted": "Dossier supprimé.",
+      "columns": {
+        "name": "Dossier"
+      },
+      "form": {
+        "name": "Nom",
+        "createTitle": "Nouveau dossier",
+        "createDescription": "Un nom unique pour ce dossier.",
+        "editTitle": "Renommer le dossier",
+        "editDescription": "Changez le nom de ce dossier."
+      },
+      "delete": {
+        "title": "Supprimer ce dossier ?",
+        "description_zero": "Le dossier « {{name}} » ne contient aucun lien.",
+        "description_one": "Le lien du dossier « {{name}} » reste, il sort simplement du dossier.",
+        "description_other": "Les {{count}} liens du dossier « {{name}} » restent, ils sortent simplement du dossier."
+      },
+      "validation": {
+        "nameRequired": "Le nom est obligatoire",
+        "nameTooLong": "{{max}} caractères maximum",
+        "nameCharacters": "Caractères de contrôle interdits"
+      },
+      "errors": {
+        "invalid": "Nom de dossier invalide.",
+        "notFound": "Ce dossier n'existe plus.",
+        "nameTaken": "Un dossier porte déjà ce nom."
+      }
+    }
+  },
   "notFound": {
     "title": "Lien introuvable",
-    "body": "Ce lien n'existe pas, ou n'est plus disponible.",
-    "backHome": "Retour à l'accueil"
+    "body": "Ce lien n'existe pas, ou n'est plus disponible."
+  },
+  "linkExpired": {
+    "title": "Lien expiré",
+    "body": "Ce lien a expiré et ne mène plus nulle part."
   },
   "errors": {
     "generic": "Une erreur est survenue, réessayez.",
@@ -70,6 +661,81 @@
     "tooManyRequestsNoDelay": "Trop de requêtes, réessayez dans un instant."
   },
   "units": {
-    "bytes": ["o", "Ko", "Mo", "Go", "To"]
+    "bytes": [
+      "o",
+      "Kio",
+      "Mio",
+      "Gio",
+      "Tio"
+    ]
+  },
+  "linkOrganization": {
+    "tags": "Tags",
+    "tagsPlaceholder": "Aucun tag",
+    "tagsHelp": "{{max}} tags au plus.",
+    "tagsMax": "{{max}} tags au plus : retirez-en un pour en ajouter un autre.",
+    "noTags": "Aucun tag créé pour l'instant",
+    "folder": "Dossier",
+    "noFolder": "Aucun",
+    "loadFailed": "Impossible de charger les tags et les dossiers.",
+    "retry": "Réessayer",
+    "tagsLabel": "Tags",
+    "folderLabel": "Dossier",
+    "validation": {
+      "tooManyTags": "{{max}} tags au plus."
+    },
+    "errors": {
+      "tagNotFound": "Un des tags choisis n'existe plus : la liste a été relue.",
+      "folderNotFound": "Le dossier choisi n'existe plus : la liste a été relue."
+    }
+  },
+  "listFilters": {
+    "search": "Rechercher",
+    "placeholders": {
+      "links": "Rechercher un slug ou une destination",
+      "shares": "Rechercher un slug",
+      "drops": "Rechercher un slug ou un titre",
+      "all": "Rechercher un slug, une destination ou un titre"
+    },
+    "tag": "Filtrer par tag",
+    "folder": "Filtrer par dossier",
+    "type": "Filtrer par type",
+    "state": "Filtrer par état",
+    "sort": "Trier",
+    "allTags": "Tous les tags",
+    "allFolders": "Tous les dossiers",
+    "noFolder": "Sans dossier",
+    "allTypes": "Tous les types",
+    "allStates": "Tous les états",
+    "health": {
+      "label": "Filtrer par vérification",
+      "all": "Toutes les vérifications",
+      "broken": "Cassées",
+      "ok": "OK",
+      "unchecked": "Non vérifiées"
+    },
+    "sorts": {
+      "created_desc": "Plus récents",
+      "created_asc": "Plus anciens",
+      "updated_desc": "Modifiés récemment",
+      "slug_asc": "Slug A → Z",
+      "slug_desc": "Slug Z → A"
+    },
+    "filterByTag": "Filtrer par le tag {{name}}",
+    "filterByFolder": "Filtrer par le dossier {{name}}",
+    "emptyTitle": "Aucun résultat",
+    "emptyBody": "Aucun élément ne correspond à ces filtres.",
+    "clear": "Effacer les filtres",
+    "pagination": {
+      "label": "Pagination",
+      "total_one": "{{count}} résultat",
+      "total_other": "{{count}} résultats",
+      "pageOf": "Page {{page}} sur {{pageCount}}",
+      "previous": "Page précédente",
+      "next": "Page suivante"
+    }
+  },
+  "detail": {
+    "breadcrumb": "Fil d'Ariane"
   }
 }

@@ -5,3 +5,22 @@ allowBuilds:
   '@scarf/scarf': false
   esbuild: true
   msw: false
+# Only @ts-morph/common (pulled by shadcn) still pins minimatch 10, affected by
+# GHSA-g3hv-75wg-m249 (fixed in 11.0.1); eslint, @eslint/config-array,
+# typescript-estree and @nestjs/cli already use 11. It only calls minimatch()
+# and Minimatch#match, which 11 keeps. Drop this once it depends on >= 11.0.1.
+overrides:
+  'minimatch@<11.0.1': ^11.0.1
+auditConfig:
+  ignoreGhsas:
+    # deepmerge prototype poisoning (low, no patched version): only reached
+    # through the shadcn CLI, a devDependency kept for the
+    # `@import "shadcn/tailwind.css"` in frontend/src/index.css. Never bundled
+    # in the app nor shipped in the images, and never fed untrusted input.
+    - GHSA-gcqx-w48m-w2h4
+    # picomatch ReDoS on single-branch repeated extglobs (high, no patched
+    # version, <= 4.0.7): only reached through typeorm > tinyglobby, which
+    # globs the entity and migration paths hard-coded in backend/src/config.
+    # No glob pattern ever comes from a request. Drop this once picomatch
+    # ships a fix.
+    - GHSA-fc5q-39xc-vjpf
