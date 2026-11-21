@@ -9,6 +9,7 @@
 - Les fiches d'un lien affichent un fil d'Ariane et l'URL complète.
 - La page de connexion change de présentation.
 - Les pages publiques de téléchargement et de dépôt ont un nouveau cadre : marque au-dessus de la carte, limites du dépôt en tuiles, zone de dépôt plus lisible, progression des envois avec numéro de part, fichiers refusés bordés de rouge.
+- Le site se déploie automatiquement à chaque mise à jour de `main`, une fois les tests passés. ⚠️ Avant la première mise en production, ajouter les secrets de déploiement et la variable `VITE_TURNSTILE_SITE_KEY` du dépôt GitHub (voir « Déploiement continu » dans le README).
 - Dépendances : mises à jour mineures et correctifs (NestJS 12.5, AWS SDK, TypeORM, Vite 8.3, Tailwind 4.3, axios, React Router…).
 
 ## 0.2.13 — 2026-11-19
