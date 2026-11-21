@@ -1,14 +1,15 @@
 import { useTranslation } from 'react-i18next'
-import { Badge } from '#components/ui/badge'
+import { FileIcon } from 'lucide-react'
+import { StatusBadge, type StatusTone } from '#components/StatusBadge'
 import type { DropReceipt } from '#hooks/useDropReceipts'
 import { useFileSize } from '#hooks/useFileSize'
 
 const STATUS_VARIANTS = {
-  verifying: 'secondary',
-  ready: 'default',
-  rejected: 'destructive',
-  unavailable: 'outline',
-} as const
+  verifying: 'outline',
+  ready: 'success',
+  rejected: 'danger',
+  unavailable: 'neutral',
+} as const satisfies Record<string, StatusTone>
 
 export function DropReceiptsList({ receipts }: { receipts: DropReceipt[] }) {
   const { t } = useTranslation()
@@ -22,16 +23,15 @@ export function DropReceiptsList({ receipts }: { receipts: DropReceipt[] }) {
       <h2 id="drop-receipts-title" className="text-sm font-semibold">
         {t('dropUpload.receipts.title')}
       </h2>
-      <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+      <ul className="flex flex-col gap-2.5">
         {receipts.map(({ fileId, name, size, status }) => (
-          <li key={fileId} className="flex items-center gap-3 p-4">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium" title={name}>
-                {name}
-              </p>
-              <p className="text-xs text-muted-foreground">{formatSize(size)}</p>
-            </div>
-            <Badge variant={STATUS_VARIANTS[status]}>{t(`dropUpload.receipts.${status}`)}</Badge>
+          <li key={fileId} className="flex items-center gap-2.5 rounded-[8px] border p-3 text-sm">
+            <FileIcon className="size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate" title={name}>
+              {name}
+            </span>
+            <span className="text-[13px] text-muted-foreground">{formatSize(size)}</span>
+            <StatusBadge tone={STATUS_VARIANTS[status]}>{t(`dropUpload.receipts.${status}`)}</StatusBadge>
           </li>
         ))}
       </ul>

@@ -1,37 +1,41 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PublicDrop } from '#api/public-drops'
-import { Mascot } from '#components/Logo'
 import { useFileSize } from '#hooks/useFileSize'
+import { formatRelativeTime } from '#utils/relative-time'
+
+function LimitTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-1 basis-[120px] flex-col gap-0.5 rounded-[8px] bg-state-neutral-bg px-3 py-2.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="font-semibold">{value}</span>
+    </div>
+  )
+}
 
 export function DropHeader({ drop }: { drop: PublicDrop }) {
   const { t, i18n } = useTranslation()
   const formatSize = useFileSize()
-
-  const expiry = useMemo(() => {
-    if (!drop.expiresAt) return null
-    const formatter = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long', timeStyle: 'short' })
-    return formatter.format(new Date(drop.expiresAt))
-  }, [drop.expiresAt, i18n.language])
+  const closes = drop.expiresAt
+    ? formatRelativeTime(new Date(drop.expiresAt), new Date(), i18n.language)
+    : t('dropUpload.noExpiry')
 
   return (
-    <header className="flex items-center gap-4">
-      <Mascot className="h-14 shrink-0" />
-      <div className="min-w-0">
-        <h1 className="font-heading text-xl font-bold">{drop.title ?? t('dropUpload.untitled')}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t('dropUpload.filesRemaining', { count: drop.filesRemaining, max: drop.maxFiles })}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t('dropUpload.bytesRemaining', {
-            remaining: formatSize(drop.bytesRemaining),
-            total: formatSize(drop.maxTotalBytes),
-          })}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {expiry ? t('dropUpload.closesAt', { date: expiry }) : t('dropUpload.noExpiry')}
-        </p>
+    <>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-[26px] font-bold">{drop.title ?? t('dropUpload.untitled')}</h1>
+        <p className="text-sm text-muted-foreground">{t('dropUpload.subtitle')}</p>
       </div>
-    </header>
+      <div className="flex flex-wrap gap-2">
+        <LimitTile
+          label={t('dropUpload.limits.files')}
+          value={`${drop.maxFiles - drop.filesRemaining} / ${drop.maxFiles}`}
+        />
+        <LimitTile
+          label={t('dropUpload.limits.size')}
+          value={`${formatSize(drop.maxTotalBytes - drop.bytesRemaining)} / ${formatSize(drop.maxTotalBytes)}`}
+        />
+        <LimitTile label={t('dropUpload.limits.closes')} value={closes} />
+      </div>
+    </>
   )
 }

@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next'
 import type { DropState } from '#api/drops'
-import { Badge } from '#components/ui/badge'
+import { StatusBadge, type StatusTone } from '#components/StatusBadge'
 
-const STATE_BADGE_VARIANTS = {
-  open: 'default',
-  full: 'outline',
-  disabled: 'secondary',
-  expired: 'destructive',
-} as const satisfies Record<DropState, string>
+const STATE_TONES = {
+  open: 'success',
+  full: 'expired',
+  disabled: 'neutral',
+  expired: 'expired',
+} as const satisfies Record<DropState, StatusTone>
 
 export function DropStateBadge({ state }: { state: DropState }) {
   const { t } = useTranslation()
 
-  return <Badge variant={STATE_BADGE_VARIANTS[state]}>{t(`drops.state.${state}`)}</Badge>
+  return <StatusBadge tone={STATE_TONES[state]}>{t(`drops.state.${state}`)}</StatusBadge>
 }

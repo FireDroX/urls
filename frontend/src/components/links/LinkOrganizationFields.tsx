@@ -77,7 +77,8 @@ export function LinkOrganizationFields<T extends FieldValues & LinkOrganizationV
               type="button"
               variant="outline"
               disabled={loading}
-              className="h-auto min-h-8 justify-between"
+              size="lg"
+              className="h-auto min-h-9 justify-between"
             >
               <span className="flex flex-wrap gap-1">
                 {selectedTags.length === 0 ? (
@@ -115,7 +116,7 @@ export function LinkOrganizationFields<T extends FieldValues & LinkOrganizationV
         {options.status === 'error' ? (
           <FieldDescription>
             {t('linkOrganization.loadFailed')}{' '}
-            <Button type="button" variant="link" className="h-auto p-0" onClick={reload}>
+            <Button type="button" variant="link" size="sm" className="h-auto p-0 text-sm" onClick={reload}>
               {t('linkOrganization.retry')}
             </Button>
           </FieldDescription>

@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, ChartColumn, Copy, Pencil, RefreshCw, Power, PowerOff, SearchX, Trash } from 'lucide-react'
+import { ChartColumn, Pencil, RefreshCw, Power, PowerOff, SearchX } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link as RouterLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { redirectPath } from '#api/redirects'
-import { checkLink, getLink, updateLink, type Link, type LinkStats } from '#api/links'
+import { checkLink, getLink, linkUrl, updateLink, type Link, type LinkStats } from '#api/links'
+import { DeleteLinkButton } from '#components/DeleteLinkButton'
+import { DetailBreadcrumb } from '#components/DetailBreadcrumb'
+import { DetailUrl } from '#components/DetailUrl'
+import { LinkTypeBadge } from '#components/dashboard/LinkTypeBadge'
 import { DeleteLinkDialog } from '#components/links/DeleteLinkDialog'
 import { LinkFormDialog } from '#components/links/LinkFormDialog'
 import { ClicksChart } from '#components/links/ClicksChart'
@@ -77,19 +81,15 @@ function LinkHeader({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="font-mono text-2xl font-bold text-primary">{redirectPath(link.id)}</h1>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('links.copy', { slug: link.id })}
-          onClick={() => void copyLink(link.id)}
-        >
-          <Copy />
-        </Button>
-        <LinkStateBadge link={link} />
-        <LinkHealthBadge lastCheck={link.lastCheck} />
-        <LinkOrganizationSummary tags={link.tags} folder={link.folder} className="basis-full" />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1>{redirectPath(link.id)}</h1>
+          <LinkTypeBadge type="redirect" />
+          <LinkStateBadge link={link} />
+          <LinkHealthBadge lastCheck={link.lastCheck} />
+        </div>
+        <DetailUrl url={linkUrl(link.id)} slug={link.id} onCopy={() => void copyLink(link.id)} />
+        <LinkOrganizationSummary tags={link.tags} folder={link.folder} />
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={onEdit}>
@@ -100,10 +100,7 @@ function LinkHeader({
           {link.disabled ? <Power /> : <PowerOff />}
           {link.disabled ? t('links.enable') : t('links.disable')}
         </Button>
-        <Button variant="outline" onClick={onDelete}>
-          <Trash />
-          {t('links.delete.action')}
-        </Button>
+        <DeleteLinkButton onClick={onDelete} />
       </div>
     </div>
   )
@@ -118,8 +115,8 @@ function SettingsSection({ link }: { link: Link }) {
     : t('links.noExpiry')
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" aria-labelledby="link-settings-title">
-      <h2 id="link-settings-title" className="font-heading text-xl font-semibold">
+    <section className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5" aria-labelledby="link-settings-title">
+      <h2 id="link-settings-title">
         {t('links.detail.settings')}
       </h2>
       <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[auto_1fr]">
@@ -179,9 +176,9 @@ function CheckSection({ link, onChanged }: { link: Link; onChanged: (link: Link)
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5" aria-labelledby="link-check-title">
+    <section className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5" aria-labelledby="link-check-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="link-check-title" className="font-heading text-xl font-semibold">
+        <h2 id="link-check-title">
           {t('links.health.title')}
         </h2>
         <Button variant="outline" disabled={checking} onClick={() => void runCheck()}>
@@ -253,7 +250,7 @@ function StatsContent({ stats }: { stats: LinkStats }) {
   }
   return (
     <>
-      <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+      <section className="flex flex-col gap-4 rounded-[10px] border border-border bg-card p-5">
         <p className="text-sm text-muted-foreground">
           <span className="block font-heading text-3xl font-bold text-foreground tabular-nums">{stats.total}</span>
           {t('linkStats.totalLabel', { count: stats.total, days: stats.days })}
@@ -276,7 +273,7 @@ function StatsSection({ id, days, onDaysChange }: { id: string; days: number; on
     <section className="flex flex-col gap-4" aria-labelledby="link-stats-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="link-stats-title" className="font-heading text-xl font-semibold">
+          <h2 id="link-stats-title">
             {t('linkStats.title')}
           </h2>
           <p className="text-sm text-muted-foreground">{t('linkStats.timeZoneNote')}</p>
@@ -370,7 +367,6 @@ function LinkDetailContent({
 }
 
 export function RedirectDetail() {
-  const { t } = useTranslation()
   const { id = '' } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const days = parseStatsDays(searchParams.get(DAYS_PARAM))
@@ -382,20 +378,14 @@ export function RedirectDetail() {
   }
 
   return (
-    <>
-      <RouterLink
-        to="/redirects"
-        className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        {t('linkStats.backToList')}
-      </RouterLink>
+    <div data-density="detail" className="contents">
+      <DetailBreadcrumb type="redirect" current={id} />
       {state.status === 'loading' && <Skeleton className="h-16 w-full max-w-lg" aria-busy="true" />}
       {state.status === 'notFound' && <NotFoundPlaceholder />}
       {state.status === 'error' && <LoadFailed onRetry={reload} />}
       {state.status === 'ready' && (
         <LinkDetailContent link={state.value} days={days} onDaysChange={changeDays} onChanged={replace} />
       )}
-    </>
+    </div>
   )
 }

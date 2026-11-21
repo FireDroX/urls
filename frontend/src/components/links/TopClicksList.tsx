@@ -20,8 +20,8 @@ export function TopClicksList({ title, entries, total }: TopClicksListProps) {
   const { t } = useTranslation()
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
-      <h2 className="font-heading text-base font-semibold">{title}</h2>
+    <section className="flex flex-col gap-3 rounded-[10px] border border-border bg-card p-5">
+      <h2>{title}</h2>
       <ol className="flex flex-col gap-2.5">
         {entries.map((entry) => (
           <li key={entry.key} className="flex flex-col gap-1">

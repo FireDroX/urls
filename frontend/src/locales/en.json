@@ -17,7 +17,8 @@
     "validation": {
       "emailInvalid": "Invalid email address",
       "passwordRequired": "Password required"
-    }
+    },
+    "backHome": "Back to home"
   },
   "layout": {
     "navigation": "Navigation",
@@ -35,7 +36,14 @@
     "storageUsed": "Storage used",
     "storageUnavailable": "Unavailable",
     "brokenRedirects_one": "{{count}} broken redirect",
-    "brokenRedirects_other": "{{count}} broken redirects"
+    "brokenRedirects_other": "{{count}} broken redirects",
+    "new": "New",
+    "newRedirect": "Redirect",
+    "newShare": "Share",
+    "newDrop": "Drop",
+    "brokenLinks": "Broken links",
+    "folders": "Folders",
+    "tags": "Tags"
   },
   "linkTypes": {
     "redirect": "Redirect",
@@ -62,6 +70,11 @@
       "disabled": "Disabled",
       "expired": "Expired",
       "full": "Full"
+    },
+    "actions": {
+      "shorten": "Shorten",
+      "createDrop": "Create a drop",
+      "shareFiles": "Share files"
     }
   },
   "links": {
@@ -335,7 +348,6 @@
       "storageUnavailable": "Storage is unreachable. The file was kept, try again later."
     },
     "notFoundTitle": "Drop not found",
-    "backToList": "Back to drops",
     "open": "Open drop {{slug}}",
     "detail": {
       "views": "Views (last 90 days)",
@@ -385,7 +397,6 @@
     "emptyBody": "Create a share to drop files into it and get a link to send.",
     "loadFailedTitle": "Could not load the shares",
     "notFoundTitle": "Share not found",
-    "backToList": "Back to shares",
     "open": "Open share {{slug}}",
     "fileSummary_one": "{{count}} file · {{size}}",
     "fileSummary_other": "{{count}} files · {{size}}",
@@ -440,10 +451,11 @@
       "deleteDescription": "{{name}} will no longer be downloadable from this share."
     },
     "upload": {
-      "dropTitle": "Drop your files here, or click to choose them",
+      "dropTitle": "Drop your files here",
+      "dropBrowse": "or <browse>browse your device</browse>",
+      "part": "part {{current}}/{{total}}",
       "dropHelp": "Up to 20 GiB per file and 50 files per share.",
       "region": "Uploads in progress",
-      "percent": "{{percent}}%",
       "hashProgress": "Computing the fingerprint",
       "sendProgress": "Upload",
       "cancel": "Cancel the upload of {{name}}",
@@ -493,17 +505,24 @@
     "verificationFailed": "The check failed, please try again.",
     "loadFailedTitle": "Could not open this share"
   },
+  "publicFrame": {
+    "shareFooter": "url.addrien.fr · private share",
+    "dropFooter": "url.addrien.fr · private drop"
+  },
   "dropUpload": {
     "title": "Send files",
     "untitled": "File drop",
-    "filesRemaining_one": "{{count}} file left out of {{max}}",
-    "filesRemaining_other": "{{count}} files left out of {{max}}",
-    "bytesRemaining": "{{remaining}} left out of {{total}}",
-    "closesAt": "Closes on {{date}}",
+    "subtitle": "You are invited to send files.",
+    "limits": {
+      "files": "Files",
+      "size": "Size",
+      "closes": "Closes"
+    },
+    "roomLeft_one": "{{count}} file and {{size}} still allowed",
+    "roomLeft_other": "{{count}} files and {{size}} still allowed",
     "noExpiry": "No closing date",
     "nameLabel": "Your name (optional)",
     "namePlaceholder": "So the recipient knows who sent this",
-    "dropHelp": "{{size}} still available",
     "verifyHint": "A check is requested for each file.",
     "refused": {
       "title": "Refused files",
@@ -715,5 +734,8 @@
       "previous": "Previous page",
       "next": "Next page"
     }
+  },
+  "detail": {
+    "breadcrumb": "Breadcrumb"
   }
 }

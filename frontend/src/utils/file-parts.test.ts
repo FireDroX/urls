@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { missingParts, partSizeOf, splitIntoParts } from './file-parts'
+import { currentPartOf, missingParts, partSizeOf, splitIntoParts } from './file-parts'
 
 const MIB = 1024 ** 2
 const PART_SIZE = 32 * MIB
@@ -62,5 +62,17 @@ describe('missingParts', () => {
     ]
 
     expect(missingParts(20, 10, received)).toEqual([])
+  })
+})
+
+describe('currentPartOf', () => {
+  it('numbers the part being sent', () => {
+    expect(currentPartOf(25, 10, 0)).toEqual({ current: 1, total: 3 })
+    expect(currentPartOf(25, 10, 10)).toEqual({ current: 2, total: 3 })
+    expect(currentPartOf(25, 10, 19)).toEqual({ current: 2, total: 3 })
+  })
+
+  it('never goes past the last part', () => {
+    expect(currentPartOf(25, 10, 25)).toEqual({ current: 3, total: 3 })
   })
 })

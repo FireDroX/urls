@@ -27,7 +27,7 @@ function SettingsCard({ title, description, children }: { title: string; descrip
   return (
     <section className="flex w-full max-w-lg flex-col gap-4 rounded-xl border border-border bg-card p-6">
       <div>
-        <h2 className="font-heading text-lg font-semibold">{title}</h2>
+        <h2>{title}</h2>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       {children}
@@ -136,7 +136,7 @@ export function Settings() {
   return (
     <>
       <div>
-        <h1 className="font-heading text-3xl font-bold">{t('settings.title')}</h1>
+        <h1>{t('settings.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('settings.subtitle')}</p>
       </div>
       <LanguageSetting />

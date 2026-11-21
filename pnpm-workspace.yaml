@@ -5,10 +5,10 @@ allowBuilds:
   '@scarf/scarf': false
   esbuild: true
   msw: false
-# eslint, @eslint/config-array, @typescript-eslint/typescript-estree,
-# @nestjs/cli and ts-morph (via shadcn) still pin minimatch 10, affected by
-# GHSA-g3hv-75wg-m249 (fixed in 11.0.1). They only call minimatch() and
-# Minimatch#match, which 11 keeps. Drop this once they depend on >= 11.0.1.
+# Only @ts-morph/common (pulled by shadcn) still pins minimatch 10, affected by
+# GHSA-g3hv-75wg-m249 (fixed in 11.0.1); eslint, @eslint/config-array,
+# typescript-estree and @nestjs/cli already use 11. It only calls minimatch()
+# and Minimatch#match, which 11 keeps. Drop this once it depends on >= 11.0.1.
 overrides:
   'minimatch@<11.0.1': ^11.0.1
 auditConfig:

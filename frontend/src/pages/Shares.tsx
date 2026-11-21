@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FolderUp, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
@@ -16,6 +16,7 @@ import { SharesTable, type ShareActions } from '#components/shares/SharesTable'
 import { Button } from '#components/ui/button'
 import { Skeleton } from '#components/ui/skeleton'
 import { useCopyLink } from '#hooks/useCopyLink'
+import { useCreateRequest } from '#hooks/useCreateRequest'
 import { useDocumentTitle } from '#hooks/useDocumentTitle'
 import { useLinkOrganizationOptions } from '#hooks/useLinkOrganizationOptions'
 import { useListView } from '#hooks/useListView'
@@ -100,6 +101,8 @@ export function Shares() {
     if (beyondLastPage && lastPage !== null) setPage(lastPage)
   }, [beyondLastPage, lastPage, setPage])
   const [dialog, setDialog] = useState<DialogState>({ kind: 'form', open: false })
+  const openCreate = useCallback(() => setDialog({ kind: 'form', open: true }), [])
+  useCreateRequest(openCreate)
   const copyLink = useCopyLink(shareUrl)
   const navigate = useNavigate()
 
@@ -148,10 +151,10 @@ export function Shares() {
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold">{t('shares.title')}</h1>
+          <h1>{t('shares.title')}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t('shares.subtitle')}</p>
         </div>
-        <Button onClick={() => setDialog({ kind: 'form', open: true })}>
+        <Button onClick={openCreate}>
           <Plus />
           {t('shares.new')}
         </Button>

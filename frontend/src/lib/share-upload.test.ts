@@ -38,7 +38,7 @@ function file(content = CONTENT, name = 'video.mp4', lastModified = 1000): File 
 }
 
 function observer(): UploadObserver {
-  return { onPhase: vi.fn(), onHashed: vi.fn(), onSent: vi.fn(), onTokenIssued: vi.fn(), onOpened: vi.fn() }
+  return { onPhase: vi.fn(), onHashed: vi.fn(), onSent: vi.fn(), onPartSize: vi.fn(), onTokenIssued: vi.fn(), onOpened: vi.fn() }
 }
 
 function httpError(status: number, headers: Record<string, string> = {}): AxiosError {

@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { isAxiosError } from 'axios'
-import { ArrowLeft, Copy, Inbox, Pencil, Power, PowerOff, SearchX, Share2, Trash } from 'lucide-react'
+import { Inbox, Pencil, Power, PowerOff, SearchX, Share2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 import {
   deleteDrop,
@@ -16,6 +16,10 @@ import {
   type DropFile,
 } from '#api/drops'
 import { createFileDownloadUrl } from '#api/files'
+import { DeleteLinkButton } from '#components/DeleteLinkButton'
+import { DetailBreadcrumb } from '#components/DetailBreadcrumb'
+import { DetailUrl } from '#components/DetailUrl'
+import { LinkTypeBadge } from '#components/dashboard/LinkTypeBadge'
 import { shareDetailPath } from '#api/shares'
 import { DropFilesTable } from '#components/drops/DropFilesTable'
 import { DropFormDialog } from '#components/drops/DropFormDialog'
@@ -41,23 +45,9 @@ const NOT_FOUND = 404
 
 type DialogState = { kind: 'closed' } | { kind: 'share' } | { kind: 'edit' } | { kind: 'delete' } | { kind: 'deleteFile'; file: DropFile }
 
-function BackLink() {
-  const { t } = useTranslation()
-
-  return (
-    <RouterLink
-      to={DROPS_LIST_PATH}
-      className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <ArrowLeft className="size-4" aria-hidden="true" />
-      {t('drops.backToList')}
-    </RouterLink>
-  )
-}
-
 function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-1 rounded-[10px] border border-border bg-card p-5">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className="font-heading text-lg font-semibold tabular-nums">{children}</dd>
     </div>
@@ -102,10 +92,14 @@ function DropDetailHeader({ drop, onShare, onEdit, onToggle, onDelete }: DropHea
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-heading text-2xl font-bold">{drop.title ?? t('drops.untitled')}</h1>
-          <DropStateBadge state={drop.state} />
-          <LinkOrganizationSummary tags={drop.tags} folder={drop.folder} className="basis-full" />
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1>{drop.title ?? t('drops.untitled')}</h1>
+            <LinkTypeBadge type="drop" />
+            <DropStateBadge state={drop.state} />
+          </div>
+          <DetailUrl url={dropUrl(drop.id)} slug={drop.id} onCopy={() => void copyLink(drop.id)} />
+          <LinkOrganizationSummary tags={drop.tags} folder={drop.folder} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" disabled={!drop.files.some((file) => file.status === 'ready')} onClick={onShare}>
@@ -120,22 +114,8 @@ function DropDetailHeader({ drop, onShare, onEdit, onToggle, onDelete }: DropHea
             {drop.disabled ? <Power /> : <PowerOff />}
             {drop.disabled ? t('links.enable') : t('links.disable')}
           </Button>
-          <Button variant="outline" onClick={onDelete}>
-            <Trash />
-            {t('links.delete.action')}
-          </Button>
+          <DeleteLinkButton onClick={onDelete} />
         </div>
-      </div>
-      <div className="flex items-center gap-1">
-        <span className="font-mono text-primary">{dropUrl(drop.id)}</span>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t('links.copy', { slug: drop.id })}
-          onClick={() => void copyLink(drop.id)}
-        >
-          <Copy />
-        </Button>
       </div>
     </div>
   )
@@ -223,7 +203,7 @@ function DropView({ drop, onChanged, onRefresh }: DropViewProps) {
       />
       <DropStats drop={drop} />
       <section className="flex flex-col gap-4" aria-labelledby="drop-files-title">
-        <h2 id="drop-files-title" className="font-heading text-xl font-semibold">
+        <h2 id="drop-files-title">
           {t('drops.files.title')}
         </h2>
         {drop.files.length > 0 ? (
@@ -281,8 +261,8 @@ export function DropDetail() {
   useDocumentTitle(dropPath(id))
 
   return (
-    <>
-      <BackLink />
+    <div data-density="detail" className="contents">
+      <DetailBreadcrumb type="drop" current={state.status === 'ready' ? (state.value.title ?? t('drops.untitled')) : id} />
       {state.status === 'loading' && <Skeleton className="h-16 w-full max-w-lg" aria-busy="true" />}
       {state.status === 'notFound' && (
         <LinksPlaceholder icon={SearchX} title={t('drops.notFoundTitle')} body={t('drops.errors.notFound')} />
@@ -300,6 +280,6 @@ export function DropDetail() {
         />
       )}
       {state.status === 'ready' && <DropView drop={state.value} onChanged={replace} onRefresh={refresh} />}
-    </>
+    </div>
   )
 }

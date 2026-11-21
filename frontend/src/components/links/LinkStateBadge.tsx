@@ -1,16 +1,16 @@
 import { useTranslation } from 'react-i18next'
-import { Badge } from '#components/ui/badge'
+import { StatusBadge, type StatusTone } from '#components/StatusBadge'
 import { linkState, type LinkState, type LinkStatus } from '#utils/link-state'
 
-const STATE_BADGE_VARIANTS = {
-  active: 'default',
-  disabled: 'secondary',
-  expired: 'destructive',
-} as const satisfies Record<LinkState, string>
+const STATE_TONES = {
+  active: 'success',
+  disabled: 'neutral',
+  expired: 'expired',
+} as const satisfies Record<LinkState, StatusTone>
 
 export function LinkStateBadge({ link }: { link: LinkStatus }) {
   const { t } = useTranslation()
   const state = linkState(link)
 
-  return <Badge variant={STATE_BADGE_VARIANTS[state]}>{t(`links.state.${state}`)}</Badge>
+  return <StatusBadge tone={STATE_TONES[state]}>{t(`links.state.${state}`)}</StatusBadge>
 }

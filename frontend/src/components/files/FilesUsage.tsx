@@ -16,14 +16,14 @@ export function FilesUsage({ summary }: { summary: FilesSummary }) {
   return (
     <section className="rounded-xl border border-border bg-card p-4" aria-label={t('files.usage.title')}>
       <div
-        className="h-2 rounded-full bg-accent"
+        className="h-2 rounded-full bg-bar-track"
         role="progressbar"
         aria-label={t('files.usage.label')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(usedPercent)}
       >
-        <div className="relative h-2 overflow-hidden rounded-full bg-primary" style={{ width: `${usedPercent}%` }}>
+        <div className="relative h-2 overflow-hidden rounded-full bg-bar" style={{ width: `${usedPercent}%` }}>
           <div className="absolute inset-y-0 right-0 bg-destructive" style={{ width: `${orphanShare}%` }} />
         </div>
       </div>

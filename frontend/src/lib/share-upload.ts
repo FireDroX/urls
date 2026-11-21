@@ -21,6 +21,7 @@ export interface UploadObserver {
   onPhase: (phase: TransferPhase) => void
   onHashed: (hashedBytes: number) => void
   onSent: (sentBytes: number) => void
+  onPartSize: (partSize: number) => void
   onTokenIssued: (uploadToken: string) => void
   onOpened: (fileId: string) => void
 }
@@ -200,6 +201,7 @@ export async function uploadNewFile(request: UploadRequest): Promise<void> {
       observer.onTokenIssued(uploadToken)
     }
     observer.onOpened(fileId)
+    observer.onPartSize(partSize)
     throwIfCanceled(signal)
     await transferAndComplete({
       ...request,
@@ -233,9 +235,10 @@ async function checkSameFile(request: ResumeRequest, size: number, sha256: strin
 }
 
 export async function resumeFile(request: ResumeRequest): Promise<void> {
-  const { target, signal } = request
+  const { target, signal, observer } = request
   try {
     const { size, sha256, partSize, parts: received } = await target.listParts(handleOf(request))
+    observer.onPartSize(partSize)
     await checkSameFile(request, size, sha256)
     throwIfCanceled(signal)
     const parts = missingParts(size, partSize, received)

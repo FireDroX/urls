@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent, type DragEvent } from 'react'
 import { Upload } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
+import { IconTile } from '#components/IconTile'
 import { cn } from '#lib/utils'
 
 interface FileDropZoneProps {
@@ -32,17 +33,24 @@ export function FileDropZone({ onFiles, help, disabled = false }: FileDropZonePr
   return (
     <label
       className={cn(
-        'flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-8 text-center transition-colors hover:border-primary focus-within:border-primary',
-        dragging && 'border-primary bg-accent',
-        disabled && 'cursor-not-allowed opacity-60 hover:border-border',
+        'flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[12px] border-2 border-dashed border-drop-zone-border bg-drop-zone-bg p-5 text-center transition-colors focus-within:border-link-accent hover:border-link-accent',
+        dragging && 'border-link-accent bg-state-expired-bg',
+        disabled && 'cursor-not-allowed opacity-60 hover:border-drop-zone-border',
       )}
       onDragOver={handleDragOver}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
     >
-      <Upload className="size-5 text-muted-foreground" aria-hidden="true" />
-      <span className="text-sm font-medium">{t('shares.upload.dropTitle')}</span>
-      <span className="text-xs text-muted-foreground">{help ?? t('shares.upload.dropHelp')}</span>
+      <IconTile icon={Upload} />
+      <span className="font-semibold">{t('shares.upload.dropTitle')}</span>
+      <span className="text-[13px] text-muted-foreground">
+        <Trans
+          i18nKey="shares.upload.dropBrowse"
+          components={{ browse: <span className="text-link-accent underline" /> }}
+        />
+        {' · '}
+        {help ?? t('shares.upload.dropHelp')}
+      </span>
       <input type="file" multiple disabled={disabled} className="sr-only" onChange={handleChange} />
     </label>
   )

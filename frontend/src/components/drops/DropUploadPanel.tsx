@@ -77,7 +77,7 @@ export function DropUploadPanel({
   }
 
   return (
-    <main className="flex w-full max-w-xl flex-col gap-5 rounded-lg border border-border bg-card p-6 shadow-sm">
+    <div className="flex flex-col gap-5 p-7">
       <DropHeader drop={drop} />
       {closed && (
         <p role="status" className="rounded-md border border-border bg-muted p-3 text-sm">
@@ -85,7 +85,7 @@ export function DropUploadPanel({
         </p>
       )}
       <div className="flex flex-col gap-2">
-        <Label htmlFor="drop-uploader-name">{t('dropUpload.nameLabel')}</Label>
+        <Label htmlFor="drop-uploader-name" className="text-[13px] font-semibold">{t('dropUpload.nameLabel')}</Label>
         <Input
           id="drop-uploader-name"
           value={uploaderName}
@@ -97,11 +97,11 @@ export function DropUploadPanel({
       <FileDropZone
         onFiles={addFiles}
         disabled={closed}
-        help={t('dropUpload.dropHelp', { size: formatSize(bytesRemaining) })}
+        help={t('dropUpload.roomLeft', { count: filesRemaining, size: formatSize(bytesRemaining) })}
       />
       <div className="flex flex-col gap-2">
         <TurnstileWidget onVerify={(token) => gate.provide(token)} onExpire={() => gate.expire()} resetKey={resetKey} />
-        <p className="text-sm text-muted-foreground">{t('dropUpload.verifyHint')}</p>
+        <p className="text-xs text-muted-foreground">{t('dropUpload.verifyHint')}</p>
       </div>
       <RefusedFilesList
         refused={refused}
@@ -123,6 +123,6 @@ export function DropUploadPanel({
         onAbandon={(upload) => void pending.abandon(upload)}
       />
       <DropReceiptsList receipts={receipts} />
-    </main>
+    </div>
   )
 }

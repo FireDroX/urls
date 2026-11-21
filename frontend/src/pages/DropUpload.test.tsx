@@ -103,7 +103,7 @@ function renderPage() {
 }
 
 function zoneInput(): HTMLInputElement {
-  const label = screen.getByText('Déposez vos fichiers ici, ou cliquez pour les choisir').closest('label')
+  const label = screen.getByText('Glissez vos fichiers ici').closest('label')
   return label!.querySelector('input')!
 }
 
@@ -137,20 +137,21 @@ describe('DropUpload page states', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: DROP_HEADING })).toBeInTheDocument()
-    expect(screen.getByText('4 fichiers restants sur 10')).toBeInTheDocument()
-    expect(screen.getByText(/^50.* restants sur 100/)).toBeInTheDocument()
+    expect(screen.getByText('6 / 10')).toBeInTheDocument()
+    expect(screen.getByText(/^50.* \/ 100/)).toBeInTheDocument()
     expect(screen.getByText('Pas de date de fermeture')).toBeInTheDocument()
+    expect(screen.getByText('url.addrien.fr · dépôt privé')).toBeInTheDocument()
     expect(screen.getByLabelText('Votre nom (facultatif)')).toHaveAttribute('maxlength', '80')
-    expect(screen.getByText(/Encore .* disponibles/)).toBeInTheDocument()
+    expect(screen.getByText(/4 fichiers et 50.* encore possibles/)).toBeInTheDocument()
     expect(screen.getByText('Une vérification est demandée pour chaque fichier.')).toBeInTheDocument()
   })
 
-  it('shows the closing date when there is one', async () => {
-    vi.mocked(getPublicDrop).mockResolvedValue({ ...drop, expiresAt: '2026-12-24T18:00:00.000Z' })
+  it('shows when the drop closes as a relative time', async () => {
+    vi.mocked(getPublicDrop).mockResolvedValue({ ...drop, expiresAt: new Date(Date.now() + 3 * 86_400_000 + 3_600_000).toISOString() })
 
     renderPage()
 
-    expect(await screen.findByText(/^Fermeture le .*2026/)).toBeInTheDocument()
+    expect(await screen.findByText('dans 3 jours')).toBeInTheDocument()
   })
 
   it('shows an untitled drop with its default title', async () => {
@@ -189,7 +190,7 @@ describe('DropUpload page states', () => {
     renderPage()
 
     expect(await screen.findByLabelText('Your name (optional)')).toBeInTheDocument()
-    expect(screen.getByText('4 files left out of 10')).toBeInTheDocument()
+    expect(screen.getByText('6 / 10')).toBeInTheDocument()
   })
 
   it('purges the expired pending uploads when it loads', async () => {

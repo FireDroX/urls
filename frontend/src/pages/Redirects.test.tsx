@@ -73,6 +73,18 @@ beforeEach(() => {
 })
 
 describe('Redirects page', () => {
+  it('opens the creation dialog when asked through the router state', async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/redirects', state: { create: true } }]}>
+        <Routes>
+          <Route path="/redirects" element={<Redirects />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('dialog', { name: 'Nouvelle redirection' })).toBeInTheDocument()
+  })
+
   it('lists the redirects with their state and expiry', async () => {
     render(<Redirects />, { wrapper: MemoryRouter })
 

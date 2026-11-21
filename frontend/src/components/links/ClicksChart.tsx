@@ -12,7 +12,7 @@ const TICK_MIN_GAP = 16
 export function ClicksChart({ daily }: { daily: DailyClicks[] }) {
   const { t, i18n } = useTranslation()
   const config = useMemo(
-    () => ({ clicks: { label: t('linkStats.clicks'), color: 'var(--primary)' } }) satisfies ChartConfig,
+    () => ({ clicks: { label: t('linkStats.clicks'), color: 'var(--bar)' } }) satisfies ChartConfig,
     [t],
   )
   const formatDay = useMemo(() => {

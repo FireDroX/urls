@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { PublicDrop } from '#api/public-drops'
 import { DropClosed } from '#components/drops/DropClosed'
 import { DropUploadPanel } from '#components/drops/DropUploadPanel'
+import { PublicFrame } from '#components/PublicFrame'
 import { StatusMessage } from '#components/StatusMessage'
 import { Button } from '#components/ui/button'
 import { Skeleton } from '#components/ui/skeleton'
@@ -18,10 +19,11 @@ import { NotFound } from '#pages/NotFound'
 import { purgeExpiredUploads } from '#utils/pending-uploads'
 
 function DropSkeleton() {
+  const { t } = useTranslation()
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Skeleton className="h-96 w-full max-w-xl" />
-    </div>
+    <PublicFrame footer={t('publicFrame.dropFooter')}>
+      <Skeleton className="h-96 w-full" />
+    </PublicFrame>
   )
 }
 
@@ -69,7 +71,7 @@ function DropPage({
 
   return (
     <UploadQueueProvider targetOf={targetOf} onUploaded={onUploaded}>
-      <div className="flex min-h-svh items-center justify-center bg-muted/30 p-4">
+      <PublicFrame footer={t('publicFrame.dropFooter')}>
         <DropUploadPanel
           drop={drop}
           closed={closed}
@@ -79,7 +81,7 @@ function DropPage({
           gate={gate}
           resetKey={resetKey}
         />
-      </div>
+      </PublicFrame>
     </UploadQueueProvider>
   )
 }
@@ -97,12 +99,16 @@ export function DropUpload() {
     case 'loading':
       return <DropSkeleton />
     case 'notFound':
-      return <NotFound />
+      return <NotFound footer={t('publicFrame.dropFooter')} />
     case 'closed':
       return <DropClosed />
     case 'failed':
       return (
-        <StatusMessage title={t('dropUpload.loadFailedTitle')} body={state.message}>
+        <StatusMessage
+          title={t('dropUpload.loadFailedTitle')}
+          body={state.message}
+          footer={t('publicFrame.dropFooter')}
+        >
           <Button variant="outline" onClick={reload}>
             {t('dropUpload.retry')}
           </Button>

@@ -14,7 +14,7 @@ export function LinksPlaceholder({ title, body, action, icon: Icon = ArrowRightL
       <div className="flex size-12 items-center justify-center rounded-full bg-accent text-muted-foreground">
         <Icon className="size-5" aria-hidden="true" />
       </div>
-      <h2 className="font-heading text-lg font-semibold">{title}</h2>
+      <h2>{title}</h2>
       <p className="max-w-md text-sm text-muted-foreground">{body}</p>
       {action}
     </section>
