@@ -73,6 +73,36 @@ describe('Organization page', () => {
     expect(await screen.findByText("Aucun dossier pour l'instant")).toBeInTheDocument()
   })
 
+  it('creates the first tag from the empty state', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listTags).mockResolvedValue([])
+    vi.mocked(createTag).mockResolvedValue({ ...tag, name: 'Perso', linkCount: 0 })
+    render(<Organization />)
+
+    await screen.findByText("Aucun tag pour l'instant")
+    await user.click(screen.getByRole('button', { name: 'Nouveau tag' }))
+    await user.type(await screen.findByLabelText('Nom'), 'Perso')
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    await waitFor(() => expect(createTag).toHaveBeenCalledWith({ name: 'Perso', color: '#6b7280' }))
+    expect(await screen.findByText('Perso')).toBeInTheDocument()
+  })
+
+  it('creates the first folder from the empty state', async () => {
+    const user = userEvent.setup()
+    vi.mocked(listFolders).mockResolvedValue([])
+    vi.mocked(createFolder).mockResolvedValue({ ...folder, name: 'Clients', linkCount: 0 })
+    render(<Organization />)
+
+    await screen.findByText("Aucun dossier pour l'instant")
+    await user.click(screen.getByRole('button', { name: 'Nouveau dossier' }))
+    await user.type(await screen.findByLabelText('Nom'), 'Clients')
+    await user.click(screen.getByRole('button', { name: 'Créer' }))
+
+    await waitFor(() => expect(createFolder).toHaveBeenCalledWith({ name: 'Clients' }))
+    expect(await screen.findByText('Clients')).toBeInTheDocument()
+  })
+
   it('creates a tag with a lowercase colour', async () => {
     const user = userEvent.setup()
     vi.mocked(createTag).mockResolvedValue({ ...tag, id: 'tag00002', name: 'Perso', linkCount: 0 })

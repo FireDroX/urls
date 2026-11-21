@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.15 — 2026-11-21
+
+- Les boutons « Nouveau tag » et « Nouveau dossier » de la page Organisation ouvrent bien leur formulaire quand aucun tag ou aucun dossier n'existe encore.
+- Dépendances : i18next 27, react-i18next 18, @hookform/resolvers 7, jsdom 31, et actions de CI à jour (docker/login-action 4.8, pnpm/action-setup 6.1.1).
+
 ## 0.2.14 — 2026-11-19
 
 - L'interface reprend la charte de la maquette : badges d'état colorés, contrôles plus grands et thème clair conservé.
